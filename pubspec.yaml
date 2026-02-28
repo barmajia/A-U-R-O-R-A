@@ -1,0 +1,35 @@
+name: aurora
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.10.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+  supabase_flutter: ^2.12.0
+  provider: ^6.1.5+1
+  sqlite3: ^3.1.6
+  geolocator: ^14.0.2
+  permission_handler: ^12.0.0+1
+  geocoding: ^4.0.0
+  country_picker: ^2.0.27
+  path_provider: ^2.1.5
+  path: ^1.9.0
+  intl: ^0.19.0
+  qr_flutter: ^4.1.0
+  image_picker: ^1.0.7
+  image_cropper: ^8.0.2
+  uuid: ^4.3.3
+  shared_preferences: ^2.2.2
+  local_auth: ^2.3.0
+  flutter_secure_storage: ^10.0.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
