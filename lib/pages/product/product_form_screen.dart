@@ -347,6 +347,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   ColorOption? _selectedColor; // Color selection
   Map<String, dynamic> _productAttributes = {};
 
+  // Focus management to prevent keyboard flickering
+  final _focusNode = FocusNode();
+
   bool _isLoading = false;
   String _status = 'draft';
   String? _accountCurrency;
@@ -426,6 +429,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _titleController.dispose();
     _brandController.dispose();
     _priceController.dispose();
@@ -515,6 +519,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   }
 
   Future<void> _saveProduct() async {
+    // Unfocus to close keyboard and prevent flickering
+    _focusNode.unfocus();
+
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategory == null || _selectedSubcategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -531,12 +538,15 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       final user = supabaseProvider.currentUser;
       if (user == null) throw Exception('User not logged in');
 
-      final productId =
-          widget.product?.asin ??
-          'temp-${DateTime.now().millisecondsSinceEpoch}';
+      // For image upload: use existing ASIN for edits, temp ID for storage path only
+      // DO NOT send temp ASIN to Edge Function (server generates ASIN)
+      final existingAsin = widget.product?.asin;
+      final storageId =
+          existingAsin ?? 'temp-${DateTime.now().millisecondsSinceEpoch}';
+
       List<String> imageUrls = _uploadedImageUrls;
       if (_productImages.isNotEmpty) {
-        imageUrls = await _uploadImages(user.id, productId);
+        imageUrls = await _uploadImages(user.id, storageId);
       }
 
       // Determine final brand name
@@ -566,38 +576,66 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         attributes: _productAttributes,
       );
 
-      final product = AmazonProduct(
-        asin: widget.product?.asin,
-        sku: widget.product?.sku,
-        sellerId: user.id,
-        images: imageUrls.isNotEmpty
-            ? imageUrls.map((url) => ProductImage(url: url)).toList()
-            : null,
-        content: ProductContent(
-          title: _titleController.text.trim(),
-          description: generatedDescription,
-          brand: finalBrandName,
-        ),
-        pricing: ProductPricing(
-          currency: _accountCurrency,
-          sellingPrice: double.tryParse(_priceController.text.trim()),
-        ),
-        inventory: ProductInventory(
-          quantity: int.tryParse(_quantityController.text.trim()) ?? 0,
-        ),
-        status: _status,
-        attributes: _productAttributes,
-        brandId: finalBrandId,
-        isLocalBrand: isLocalBrand,
-        metadata: ProductMetadata(
-          createdAt: widget.product?.metadata?.createdAt,
-          updatedAt: DateTime.now(),
-        ),
-      );
-
+      // ======================================================================
+      // ASIN HANDLING: Server generates ASIN for new products via Edge Function
+      // ======================================================================
       final result = widget.product != null
-          ? await supabaseProvider.updateProduct(product)
-          : await supabaseProvider.createProduct(product);
+          // UPDATE: Existing product has ASIN, use update edge function
+          ? await supabaseProvider.updateProductWithEdgeFunction(
+              asin: widget.product!.asin!,
+              updates: {
+                'title': _titleController.text.trim(),
+                'description': generatedDescription,
+                'brand': finalBrandName,
+                'price': double.tryParse(_priceController.text.trim()),
+                'quantity': int.tryParse(_quantityController.text.trim()) ?? 0,
+                'status': _status,
+                'category': _selectedCategory,
+                'subcategory': _selectedSubcategory,
+                'attributes': _productAttributes,
+                'brand_id': finalBrandId,
+                'is_local_brand': isLocalBrand,
+                'images': imageUrls.map((url) => {'url': url}).toList(),
+              },
+            )
+          // CREATE: New product - NO ASIN sent, server generates it
+          : await supabaseProvider.createProductWithEdgeFunction(
+              title: _titleController.text.trim(),
+              brand: finalBrandName,
+              category: _selectedCategory!,
+              subcategory: _selectedSubcategory!,
+              price: double.tryParse(_priceController.text.trim()) ?? 0,
+              quantity: int.tryParse(_quantityController.text.trim()) ?? 0,
+              description: generatedDescription,
+              attributes: _productAttributes,
+              brandId: finalBrandId,
+              isLocalBrand: isLocalBrand,
+              images: imageUrls.map((url) => {'url': url}).toList(),
+              status: _status,
+              currency: _accountCurrency,
+            );
+
+      // ======================================================================
+      // CAPTURE ASIN: For new products, extract ASIN from server response
+      // ======================================================================
+      if (result.success && widget.product == null) {
+        final generatedAsin = result.data?['asin'] as String?;
+        final productData = result.data?['product'] as Map<String, dynamic>?;
+        final productAsin = productData?['asin'] as String?;
+
+        final finalAsin = generatedAsin ?? productAsin;
+
+        if (finalAsin != null && mounted) {
+          // Show success with ASIN for user reference
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Product created! ASIN: $finalAsin'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -766,6 +804,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return DropdownButtonFormField<ColorOption>(
+      isExpanded: true,
       initialValue: _selectedColor,
       decoration: InputDecoration(
         labelText: 'Color',
@@ -825,6 +864,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return DropdownButtonFormField<String>(
+      isExpanded: true,
       initialValue: _selectedCategory,
       decoration: InputDecoration(
         labelText: 'Category',
@@ -870,6 +910,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         : [];
 
     return DropdownButtonFormField<String>(
+      isExpanded: true,
       initialValue: _selectedSubcategory,
       decoration: InputDecoration(
         labelText: 'Subcategory',
@@ -945,6 +986,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: DropdownButtonFormField<String>(
+                isExpanded: true,
                 initialValue: _productAttributes[key],
                 decoration: InputDecoration(
                   labelText: label,
@@ -1325,6 +1367,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<BrandOption>(
+          isExpanded: true,
           initialValue: _selectedBrand?.isLocal == true
               ? BrandOption.localBrand
               : _selectedBrand,

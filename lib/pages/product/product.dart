@@ -43,18 +43,55 @@ class _ProductPageState extends State<ProductPage> {
 
     try {
       final supabaseProvider = context.read<SupabaseProvider>();
+
+      // ✅ Check if user is logged in
+      if (!supabaseProvider.isLoggedIn) {
+        setState(() {
+          _products = [];
+          _isLoading = false;
+        });
+        return;
+      }
+
       List<AmazonProduct> products;
 
       if (_selectedFilter == 'instock') {
-        products = await supabaseProvider.getInStockProducts();
+        // ✅ Use Edge Function for in-stock products (seller-only)
+        final result = await supabaseProvider.searchProductsWithEdgeFunction(
+          query: '',
+          status: 'active',
+          limit: 100,
+          offset: 0,
+        );
+        products = result.success ? result.data! : [];
+      } else if (_selectedFilter == 'lowstock') {
+        // ✅ Fetch all active products, then filter low stock locally
+        final result = await supabaseProvider.searchProductsWithEdgeFunction(
+          query: '',
+          status: 'active',
+          limit: 200,
+          offset: 0,
+        );
+        products = result.success ? result.data! : [];
+        products = products.where((p) => (p.quantity ?? 0) <= 10).toList();
+      } else if (_selectedFilter == 'draft') {
+        // ✅ Fetch draft products only
+        final result = await supabaseProvider.searchProductsWithEdgeFunction(
+          query: '',
+          status: 'draft',
+          limit: 100,
+          offset: 0,
+        );
+        products = result.success ? result.data! : [];
       } else {
-        products = await supabaseProvider.getAllProducts();
-
-        if (_selectedFilter == 'lowstock') {
-          products = products.where((p) => (p.quantity ?? 0) <= 10).toList();
-        } else if (_selectedFilter == 'draft') {
-          products = products.where((p) => p.status == 'draft').toList();
-        }
+        // ✅ Fetch ALL products for current seller (no status filter)
+        final result = await supabaseProvider.searchProductsWithEdgeFunction(
+          query: '',
+          status: null, // null = all statuses
+          limit: 100,
+          offset: 0,
+        );
+        products = result.success ? result.data! : [];
       }
 
       setState(() {
@@ -66,6 +103,9 @@ class _ProductPageState extends State<ProductPage> {
         _errorMessage = 'Failed to load products: $e';
         _isLoading = false;
       });
+
+      // Log error for debugging
+      debugPrint('Error loading products: $e');
     }
   }
 
@@ -75,16 +115,21 @@ class _ProductPageState extends State<ProductPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final supabaseProvider = context.read<SupabaseProvider>();
-      final products = await supabaseProvider.searchProducts(query);
+
+      // ✅ Use Edge Function for server-side search (seller-only)
+      final result = await supabaseProvider.searchProductsWithEdgeFunction(
+        query: query,
+        status: null, // Search all statuses
+        limit: 50,
+        offset: 0,
+      );
 
       setState(() {
-        _products = products;
+        _products = result.success ? result.data! : [];
         _isLoading = false;
       });
     } catch (e) {
@@ -163,25 +208,34 @@ class _ProductPageState extends State<ProductPage> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadProducts,
-            tooltip: 'Refresh',
+            icon: _isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+            onPressed: _isLoading ? null : _loadProducts,
+            tooltip: 'Refresh from server',
           ),
         ],
       ),
       drawer: const AppDrawer(currentPage: 'products'),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-          ? _buildErrorState()
-          : Column(
-              children: [
-                _buildSearchBar(),
-                _buildFilterChips(),
-                _buildProductCount(),
-                Expanded(child: _buildProductList()),
-              ],
-            ),
+      body: RefreshIndicator(
+        onRefresh: () async => await _loadProducts(),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _errorMessage != null
+            ? _buildErrorState()
+            : Column(
+                children: [
+                  _buildSearchBar(),
+                  _buildFilterChips(),
+                  _buildProductCount(),
+                  Expanded(child: _buildProductList()),
+                ],
+              ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToProductForm(),
         child: const Icon(Icons.add),
@@ -208,7 +262,7 @@ class _ProductPageState extends State<ProductPage> {
               : null,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
-          fillColor: Colors.grey[100],
+          fillColor: Colors.black45.withValues(alpha: 0.05),
         ),
         onChanged: _searchProducts,
       ),
@@ -237,7 +291,10 @@ class _ProductPageState extends State<ProductPage> {
   Widget _buildFilterChip(String label, String value) {
     final isSelected = _selectedFilter == value;
     return FilterChip(
-      label: Text(label),
+      label: Text(
+        label,
+        style: TextStyle(color: isSelected ? Colors.white : Colors.black),
+      ),
       selected: isSelected,
       onSelected: (selected) {
         setState(() {

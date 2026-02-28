@@ -1,7 +1,7 @@
 name: aurora
-description: "A new Flutter project."
+description: "Aurora E-commerce - Multi-vendor marketplace platform"
 publish_to: 'none'
-version: 0.1.0
+version: 1.0.0
 
 environment:
   sdk: ^3.10.7
@@ -9,23 +9,49 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  
+  # Backend & Database
   supabase_flutter: ^2.12.0
-  provider: ^6.1.5+1
   sqlite3: ^3.1.6
+  provider: ^6.1.5+1
+  
+  # Authentication & Security
+  flutter_secure_storage: ^10.0.0
+  local_auth: ^2.3.0
+  
+  # Location Services
   geolocator: ^14.0.2
   permission_handler: ^12.0.0+1
   geocoding: ^4.0.0
+  
+  # UI Components
   country_picker: ^2.0.27
-  path_provider: ^2.1.5
-  path: ^1.9.0
-  intl: ^0.19.0
   qr_flutter: ^4.1.0
+  
+  # Image Handling
   image_picker: ^1.0.7
   image_cropper: ^8.0.2
-  uuid: ^4.3.3
+  image: ^4.5.2  # For image optimization
+  
+  # Storage & Caching
   shared_preferences: ^2.2.2
-  local_auth: ^2.3.0
-  flutter_secure_storage: ^10.0.0
+  path_provider: ^2.1.5
+  path: ^1.9.0
+  
+  # Utilities
+  uuid: ^4.3.3
+  intl: ^0.19.0
+  
+  # Push Notifications (Firebase)
+  firebase_core: ^3.6.0
+  firebase_messaging: ^15.1.3
+  
+  # Network & Connectivity
+  connectivity_plus: ^6.0.5
+  
+  # State Management
+  flutter_lints: ^6.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
