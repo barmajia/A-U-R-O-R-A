@@ -47,12 +47,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, ColorScheme colorScheme) {
-    final isSearching = _searchController.text.isNotEmpty || FocusScope.of(context).hasFocus && _searchController.text.isNotEmpty;
-    
+  PreferredSizeWidget _buildAppBar(
+    BuildContext context,
+    ColorScheme colorScheme,
+  ) {
     return AppBar(
-      title: _isSearching ? _buildSearchField(colorScheme) : null,
-      titleSpacing: 0,
+      title: _isSearching
+          ? _buildSearchField(colorScheme)
+          : Text(
+              _showArchived ? 'Archived' : 'Messages',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
       centerTitle: false,
       elevation: 0,
       backgroundColor: colorScheme.surface,
@@ -68,26 +73,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
               },
             )
           : null,
-      titleTextStyle: TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 20,
-        color: colorScheme.onSurface,
-      ),
       actions: [
         if (!_isSearching) ...[
-          // Title text when not searching
-          Expanded(
-            child: Text(
-              _showArchived ? 'Archived' : 'Messages',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: colorScheme.onSurface,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 8),
           // Search button
           IconButton(
             icon: const Icon(Icons.search, size: 24),
@@ -111,6 +98,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             },
             tooltip: 'Close search',
           ),
+          const SizedBox(width: 8),
         ],
         // More options menu
         PopupMenuButton<String>(
@@ -156,16 +144,53 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   Widget _buildSearchField(ColorScheme colorScheme) {
-    return Expanded(
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: TextField(
         controller: _searchController,
         autofocus: true,
-        style: TextStyle(color: colorScheme.onSurface),
+        style: TextStyle(
+          color: colorScheme.onSurface,
+          fontSize: 16,
+        ),
         decoration: InputDecoration(
           hintText: 'Search conversations...',
-          hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.5)),
+          hintStyle: TextStyle(
+            color: colorScheme.onSurface.withOpacity(0.5),
+            fontSize: 16,
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            color: colorScheme.onSurface.withOpacity(0.6),
+            size: 22,
+          ),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.clear,
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                  },
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                )
+              : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          isDense: true,
         ),
         onChanged: (value) {
           setState(() {}); // Trigger rebuild to filter results
@@ -234,10 +259,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: conversations.length,
-            separatorBuilder: (context, index) => Divider(
-              height: 0,
-              color: colorScheme.outlineVariant,
-            ),
+            separatorBuilder: (context, index) =>
+                Divider(height: 0, color: colorScheme.outlineVariant),
             itemBuilder: (context, index) {
               final conversation = conversations[index];
               return _buildConversationTile(conversation, colorScheme);
@@ -250,10 +273,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Widget _buildConversationTile(dynamic conversation, ColorScheme colorScheme) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 8,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: _buildAvatar(conversation, colorScheme),
       title: Row(
         children: [
@@ -284,20 +304,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
           children: [
             if (conversation.hasProduct) ...[
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 2,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   conversation.productName ?? '',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: colorScheme.primary,
-                  ),
+                  style: TextStyle(fontSize: 11, color: colorScheme.primary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -312,8 +326,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   color: conversation.unreadCount > 0
                       ? colorScheme.onSurface
                       : colorScheme.onSurface.withOpacity(0.6),
-                  fontWeight:
-                      conversation.unreadCount > 0 ? FontWeight.w600 : null,
+                  fontWeight: conversation.unreadCount > 0
+                      ? FontWeight.w600
+                      : null,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -381,9 +396,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            _showArchived
-                ? Icons.archive_outlined
-                : Icons.chat_bubble_outline,
+            _showArchived ? Icons.archive_outlined : Icons.chat_bubble_outline,
             size: 80,
             color: colorScheme.onSurface.withOpacity(0.3),
           ),
@@ -420,9 +433,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     if (mounted) {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => const ChatDetailScreen(),
-        ),
+        MaterialPageRoute(builder: (context) => const ChatDetailScreen()),
       );
     }
   }
@@ -481,9 +492,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Delete Conversation'),
         content: const Text(
           'Are you sure you want to delete this conversation? This action cannot be undone.',
@@ -523,7 +532,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_showArchived ? 'Showing archived' : 'Showing messages'),
+            content: Text(
+              _showArchived ? 'Showing archived' : 'Showing messages',
+            ),
             backgroundColor: colorScheme.primary,
             behavior: SnackBarBehavior.floating,
           ),
