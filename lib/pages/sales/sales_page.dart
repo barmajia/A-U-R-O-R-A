@@ -65,7 +65,6 @@ class _SalesPageState extends State<SalesPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: _buildAppBar(context, colorScheme),
@@ -116,28 +115,17 @@ class _SalesPageState extends State<SalesPage> {
 
   Widget _buildPeriodFilter(ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      color: colorScheme.surface,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: Row(
         children: [
-          Text('Period:', style: TextStyle(color: colorScheme.onSurface)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildPeriodChip('7d', colorScheme),
-                  const SizedBox(width: 8),
-                  _buildPeriodChip('30d', colorScheme),
-                  const SizedBox(width: 8),
-                  _buildPeriodChip('90d', colorScheme),
-                  const SizedBox(width: 8),
-                  _buildPeriodChip('1y', colorScheme),
-                ],
-              ),
-            ),
-          ),
+          _buildPeriodChip('7d', colorScheme),
+          _buildPeriodChip('30d', colorScheme),
+          _buildPeriodChip('90d', colorScheme),
+          _buildPeriodChip('1y', colorScheme),
         ],
       ),
     );
@@ -145,21 +133,30 @@ class _SalesPageState extends State<SalesPage> {
 
   Widget _buildPeriodChip(String period, ColorScheme colorScheme) {
     final isSelected = _selectedPeriod == period;
-    return FilterChip(
-      label: Text(period),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _selectedPeriod = period;
-        });
-        _loadSales();
-      },
-      backgroundColor: colorScheme.surfaceContainerHighest,
-      selectedColor: colorScheme.primary.withOpacity(0.2),
-      checkmarkColor: colorScheme.primary,
-      labelStyle: TextStyle(
-        color: isSelected ? colorScheme.primary : colorScheme.onSurface,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() => _selectedPeriod = period);
+          _loadSales();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? colorScheme.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Center(
+            child: Text(
+              period,
+              style: TextStyle(
+                color: isSelected
+                    ? colorScheme.onPrimary
+                    : colorScheme.onSurface,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -172,45 +169,64 @@ class _SalesPageState extends State<SalesPage> {
     final totalSales = _sales.length;
     final totalItems = _sales.fold<int>(0, (sum, sale) => sum + sale.quantity);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [colorScheme.primary, colorScheme.secondary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryItem(
+                label: 'Revenue',
+                value: NumberFormat.currency(
+                  symbol: '\$',
+                  decimalDigits: 2,
+                ).format(totalRevenue),
+                icon: Icons.attach_money,
+                color: Colors.green,
+                colorScheme: colorScheme,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSummaryItem(
+                label: 'Sales',
+                value: totalSales.toString(),
+                icon: Icons.shopping_cart,
+                color: Colors.blue,
+                colorScheme: colorScheme,
+              ),
+            ),
+          ],
         ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildSummaryItem(
-            label: 'Revenue',
-            value: NumberFormat.currency(
-              symbol: '\$',
-              decimalDigits: 2,
-            ).format(totalRevenue),
-            icon: Icons.attach_money,
-            colorScheme: colorScheme,
-          ),
-          Container(width: 1, height: 40, color: Colors.white.withOpacity(0.3)),
-          _buildSummaryItem(
-            label: 'Sales',
-            value: totalSales.toString(),
-            icon: Icons.shopping_cart,
-            colorScheme: colorScheme,
-          ),
-          Container(width: 1, height: 40, color: Colors.white.withOpacity(0.3)),
-          _buildSummaryItem(
-            label: 'Items',
-            value: totalItems.toString(),
-            icon: Icons.inventory_2,
-            colorScheme: colorScheme,
-          ),
-        ],
-      ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryItem(
+                label: 'Items',
+                value: totalItems.toString(),
+                icon: Icons.inventory_2,
+                color: Colors.orange,
+                colorScheme: colorScheme,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSummaryItem(
+                label: 'Avg Order',
+                value: totalSales > 0
+                    ? NumberFormat.currency(
+                        symbol: '\$',
+                        decimalDigits: 1,
+                      ).format(totalRevenue / totalSales)
+                    : '\$0',
+                icon: Icons.receipt_long,
+                color: Colors.purple,
+                colorScheme: colorScheme,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -218,25 +234,56 @@ class _SalesPageState extends State<SalesPage> {
     required String label,
     required String value,
     required IconData icon,
+    required Color color,
     required ColorScheme colorScheme,
   }) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.white, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+    return Card(
+      elevation: 2,
+      color: colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: color, size: 18),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+          ],
         ),
-        Text(
-          label,
-          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12),
-        ),
-      ],
+      ),
     );
   }
 
