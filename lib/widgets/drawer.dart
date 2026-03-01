@@ -1,3 +1,4 @@
+import 'package:aurora/pages/chat/chat_list.dart';
 import 'package:aurora/pages/product/product.dart';
 import 'package:aurora/pages/seller/sellerProfile.dart';
 import 'package:aurora/pages/setting/setting.dart';
@@ -123,14 +124,6 @@ class AppDrawer extends StatelessWidget {
                       // Common Menu Items
                       _buildMenuItem(
                         context,
-                        icon: Icons.person_outline,
-                        activeIcon: Icons.person,
-                        title: 'Profile',
-                        pageName: 'profile',
-                        onTap: () => _showComingSoon(context, 'Profile'),
-                      ),
-                      _buildMenuItem(
-                        context,
                         icon: Icons.notifications_outlined,
                         activeIcon: Icons.notifications,
                         title: 'Notifications',
@@ -145,7 +138,11 @@ class AppDrawer extends StatelessWidget {
                         title: 'Messages',
                         pageName: 'messages',
                         badge: '5',
-                        onTap: () => _showComingSoon(context, 'Messages'),
+                        onTap: () => _navigateTo(
+                          context,
+                          const ChatListScreen(),
+                          'messages',
+                        ),
                       ),
                       _buildMenuItem(
                         context,

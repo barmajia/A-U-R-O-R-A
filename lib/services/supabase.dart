@@ -857,7 +857,7 @@ class SupabaseProvider extends ChangeNotifier {
       if (_productsDb == null) return [];
 
       // Start with basic search
-      List<AmazonProduct> products = await _productsDb!.searchProducts(query);
+      List<AmazonProduct> products = await _productsDb.searchProducts(query);
 
       // Apply additional filters
       if (category != null && category.isNotEmpty) {
@@ -1989,7 +1989,7 @@ class SupabaseProvider extends ChangeNotifier {
         if (productData != null && _productsDb != null) {
           try {
             final product = AmazonProduct.fromJson(productData);
-            await _productsDb!.addProduct(product);
+            await _productsDb.addProduct(product);
             if (kDebugMode) {
               print('✅ Product saved to local DB: ${product.asin}');
             }

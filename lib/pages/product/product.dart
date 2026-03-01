@@ -18,24 +18,43 @@ class ProductPage extends StatefulWidget {
 
 class _ProductPageState extends State<ProductPage> {
   List<AmazonProduct> _products = [];
-  bool _isLoading = true;
+  bool _isLoading = false; // Start as false - don't show loading on first open
   String? _errorMessage;
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'all'; // all, instock, lowstock, draft
+  
+  // ✅ Cache to prevent repeated loading
+  DateTime? _lastLoadedTime;
+  static const _cacheDuration = Duration(minutes: 5); // Cache for 5 minutes
+  bool _hasLoadedOnce = false; // Track if we've loaded at least once
 
   @override
   void initState() {
     super.initState();
-    _loadProducts();
+    // ✅ Load only if not cached or cache expired
+    _loadProductsIfNeeded();
+  }
+  
+  /// ✅ Smart loading: Only load if necessary
+  Future<void> _loadProductsIfNeeded() async {
+    final now = DateTime.now();
+    
+    // Don't load if we have recent data
+    if (_hasLoadedOnce && 
+        _lastLoadedTime != null && 
+        now.difference(_lastLoadedTime!) < _cacheDuration &&
+        _products.isNotEmpty) {
+      return; // Use cached data
+    }
+    
+    await _loadProducts();
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
+  /// ✅ Force reload from server (used by refresh button)
   Future<void> _loadProducts() async {
+    // Don't reload if already loading
+    if (_isLoading) return;
+    
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -97,6 +116,8 @@ class _ProductPageState extends State<ProductPage> {
       setState(() {
         _products = products;
         _isLoading = false;
+        _lastLoadedTime = DateTime.now(); // ✅ Update cache timestamp
+        _hasLoadedOnce = true; // ✅ Mark as loaded
       });
     } catch (e) {
       setState(() {
@@ -200,6 +221,9 @@ class _ProductPageState extends State<ProductPage> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Show cached data immediately, load in background if needed
+    final showLoading = _isLoading && _products.isEmpty;
+    
     return Scaffold(
       drawerEdgeDragWidth: double.infinity,
       drawerEnableOpenDragGesture: true,
@@ -215,7 +239,10 @@ class _ProductPageState extends State<ProductPage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.refresh),
-            onPressed: _isLoading ? null : _loadProducts,
+            onPressed: _isLoading ? null : () async {
+              // ✅ Force refresh ignoring cache
+              await _loadProducts();
+            },
             tooltip: 'Refresh from server',
           ),
         ],
@@ -223,18 +250,18 @@ class _ProductPageState extends State<ProductPage> {
       drawer: const AppDrawer(currentPage: 'products'),
       body: RefreshIndicator(
         onRefresh: () async => await _loadProducts(),
-        child: _isLoading
+        child: showLoading
             ? const Center(child: CircularProgressIndicator())
             : _errorMessage != null
-            ? _buildErrorState()
-            : Column(
-                children: [
-                  _buildSearchBar(),
-                  _buildFilterChips(),
-                  _buildProductCount(),
-                  Expanded(child: _buildProductList()),
-                ],
-              ),
+                ? _buildErrorState()
+                : Column(
+                    children: [
+                      _buildSearchBar(),
+                      _buildFilterChips(),
+                      _buildProductCount(),
+                      Expanded(child: _buildProductList()),
+                    ],
+                  ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToProductForm(),

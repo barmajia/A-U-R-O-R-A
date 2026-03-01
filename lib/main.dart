@@ -3,6 +3,7 @@ import 'package:aurora/backend/productsdb.dart';
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/login.dart';
 import 'package:aurora/services/supabase.dart';
+import 'package:aurora/services/chat_provider.dart';
 import 'package:aurora/services/permissions.dart';
 import 'package:aurora/theme/themeprovider.dart';
 import 'package:flutter/material.dart';
@@ -29,16 +30,18 @@ Future<void> main() async {
   final themeProvider = ThemeProvider();
   await themeProvider.loadTheme();
 
+  // Initialize providers
+  final supabaseProvider = SupabaseProvider(Supabase.instance.client, sellerDb, productsDb);
+  final chatProvider = ChatProvider(supabaseProvider);
+
   // Wait a bit for DBs to initialize
   await Future.delayed(const Duration(milliseconds: 300));
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (context) =>
-              SupabaseProvider(Supabase.instance.client, sellerDb, productsDb),
-        ),
+        ChangeNotifierProvider.value(value: supabaseProvider),
+        ChangeNotifierProvider.value(value: chatProvider),
         ChangeNotifierProvider(create: (context) => sellerDb),
         Provider(create: (context) => productsDb),
         ChangeNotifierProvider.value(value: themeProvider),

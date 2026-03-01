@@ -298,14 +298,15 @@ class _SellerprofileState extends State<Sellerprofile> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Colors.black87,
+          color: isDark ? Colors.white : Colors.black87,
         ),
       ),
     );
@@ -362,6 +363,7 @@ class _SellerprofileState extends State<Sellerprofile> {
   }
 
   Widget _buildReadOnlyUuidField(String uuid) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -380,11 +382,11 @@ class _SellerprofileState extends State<Sellerprofile> {
               ),
             ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               'User ID (UUID)',
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.grey,
+                color: isDark ? Colors.grey[400]! : Colors.grey,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -394,10 +396,10 @@ class _SellerprofileState extends State<Sellerprofile> {
         TextField(
           controller: TextEditingController(text: uuid),
           readOnly: true,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: isDark ? Colors.white : Colors.black87,
             fontFamily: 'monospace',
           ),
           decoration: InputDecoration(
@@ -410,10 +412,14 @@ class _SellerprofileState extends State<Sellerprofile> {
               borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
             ),
             filled: true,
-            fillColor: Colors.grey[100],
+            fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
             suffixIcon: uuid != 'N/A'
                 ? IconButton(
-                    icon: const Icon(Icons.copy, size: 18),
+                    icon: Icon(
+                      Icons.copy,
+                      size: 18,
+                      color: isDark ? Colors.grey[300] : Colors.grey[700],
+                    ),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: uuid));
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -436,10 +442,11 @@ class _SellerprofileState extends State<Sellerprofile> {
     required String label,
     required String value,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: isDark ? Colors.grey[800] : Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -451,9 +458,9 @@ class _SellerprofileState extends State<Sellerprofile> {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
-                  color: Colors.grey,
+                  color: isDark ? Colors.grey[400] : Colors.grey,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -462,10 +469,10 @@ class _SellerprofileState extends State<Sellerprofile> {
           const SizedBox(height: 6),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: isDark ? Colors.white : Colors.black87,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -604,6 +611,7 @@ class _SellerprofileState extends State<Sellerprofile> {
     required String label,
     required String value,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Container(
@@ -621,18 +629,18 @@ class _SellerprofileState extends State<Sellerprofile> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey,
+                  color: isDark ? Colors.grey[400] : Colors.grey,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
               ),
             ],
