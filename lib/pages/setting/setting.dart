@@ -1,3 +1,5 @@
+import 'package:aurora/pages/auth/biometric_login.dart';
+import 'package:aurora/pages/settings/biometric_settings.dart';
 import 'package:aurora/pages/singup/login.dart';
 import 'package:aurora/pages/seller/sellerprofile.dart';
 import 'package:aurora/services/secure_storage.dart';
@@ -973,22 +975,24 @@ class _SettingState extends State<Setting> {
               : !_hasEnrolledBiometric
                   ? 'No biometrics enrolled'
                   : _biometricEnabled
-                      ? 'Enabled'
-                      : 'Disabled',
-          trailing: _isBiometricLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : _isBiometricAvailable && _hasEnrolledBiometric
-                  ? Switch(
-                      value: _biometricEnabled,
-                      onChanged: (value) {
-                        _toggleBiometricAuthentication(value);
-                      },
-                    )
-                  : null,
+                      ? 'Enabled - Tap to configure'
+                      : 'Disabled - Tap to enable',
+          trailing: Icon(
+            Icons.chevron_right,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          ),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const BiometricSettingsScreen(),
+              ),
+            ).then((_) {
+              // Refresh biometric status when returning from settings
+              _checkBiometricAvailability();
+              _loadSettings();
+            });
+          },
         ),
         _buildListTile(
           icon: Icons.history,

@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:aurora/backend/sellerdb.dart';
 import 'package:aurora/backend/productsdb.dart';
 import 'package:aurora/models/product.dart';
+import 'package:aurora/models/customer.dart';
+import 'package:aurora/models/sale.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -2188,6 +2190,371 @@ class SupabaseProvider extends ChangeNotifier {
       limit: limit,
       offset: offset,
     );
+  }
+
+  // ==========================================================================
+  // CUSTOMER MANAGEMENT
+  // ==========================================================================
+
+  /// Add new customer
+  Future<AuthResult> addCustomer({
+    required String name,
+    required String phone,
+    String? ageRange,
+    String? email,
+    String? notes,
+  }) async {
+    if (!isLoggedIn) {
+      return _failure('You must be logged in');
+    }
+
+    try {
+      final sellerId = currentUser!.id;
+
+      await _client.from('customers').insert({
+        'seller_id': sellerId,
+        'name': name,
+        'phone': phone,
+        'age_range': ageRange,
+        'email': email,
+        'notes': notes,
+        'total_orders': 0,
+        'total_spent': 0,
+      });
+
+      // Invalidate cache
+      await _cache.remove(_getUserCacheKey('cache_customers'));
+
+      return _success('Customer added successfully');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Add Customer');
+      return _failure('Failed to add customer: $e');
+    }
+  }
+
+  /// Get all customers for current seller
+  Future<List<Customer>> getCustomers() async {
+    if (!isLoggedIn) return [];
+
+    try {
+      final sellerId = currentUser!.id;
+      final cacheKey = _getUserCacheKey('cache_customers');
+
+      // Check cache
+      final cached = await _cache.get<List<Customer>>(cacheKey);
+      if (cached != null) return cached;
+
+      final response = await _client
+          .from('customers')
+          .select()
+          .eq('seller_id', sellerId)
+          .order('created_at', ascending: false);
+
+      final customers = (response as List)
+          .map((json) => Customer.fromJson(json))
+          .toList();
+
+      // Cache for 5 minutes
+      await _cache.set(cacheKey, customers, const Duration(minutes: 5));
+
+      return customers;
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Customers');
+      return [];
+    }
+  }
+
+  /// Update customer
+  Future<AuthResult> updateCustomer({
+    required String customerId,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      await _client
+          .from('customers')
+          .update({...data, 'updated_at': DateTime.now().toIso8601String()})
+          .eq('id', customerId);
+
+      // Invalidate cache
+      await _cache.remove(_getUserCacheKey('cache_customers'));
+
+      return _success('Customer updated successfully');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Update Customer');
+      return _failure('Failed to update customer: $e');
+    }
+  }
+
+  /// Delete customer
+  Future<AuthResult> deleteCustomer(String customerId) async {
+    try {
+      await _client.from('customers').delete().eq('id', customerId);
+
+      // Invalidate cache
+      await _cache.remove(_getUserCacheKey('cache_customers'));
+
+      return _success('Customer deleted successfully');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Delete Customer');
+      return _failure('Failed to delete customer: $e');
+    }
+  }
+
+  /// Search customers
+  Future<List<Customer>> searchCustomers(String query) async {
+    if (!isLoggedIn) return [];
+
+    try {
+      final sellerId = currentUser!.id;
+      final response = await _client
+          .from('customers')
+          .select()
+          .eq('seller_id', sellerId)
+          .or('name.ilike.%$query%,phone.ilike.%$query%,email.ilike.%$query%')
+          .limit(50);
+
+      return (response as List).map((json) => Customer.fromJson(json)).toList();
+    } catch (e) {
+      _errorHandler.handleError(e, 'Search Customers');
+      return [];
+    }
+  }
+
+  /// Get customer by ID
+  Future<Customer?> getCustomerById(String customerId) async {
+    try {
+      final response = await _client
+          .from('customers')
+          .select()
+          .eq('id', customerId)
+          .single();
+
+      return Customer.fromJson(response);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ==========================================================================
+  // SALES MANAGEMENT
+  // ==========================================================================
+
+  /// Record a sale
+  Future<AuthResult> recordSale({
+    String? customerId,
+    String? productId,
+    required int quantity,
+    required double unitPrice,
+    double? discount,
+    String? paymentMethod,
+  }) async {
+    if (!isLoggedIn) {
+      return _failure('You must be logged in');
+    }
+
+    try {
+      final sellerId = currentUser!.id;
+      final totalPrice = (unitPrice * quantity) - (discount ?? 0);
+
+      await _client.from('sales').insert({
+        'seller_id': sellerId,
+        'customer_id': customerId,
+        'product_id': productId,
+        'quantity': quantity,
+        'unit_price': unitPrice,
+        'total_price': totalPrice,
+        'discount': discount ?? 0,
+        'payment_method': paymentMethod ?? 'cash',
+        'payment_status': 'completed',
+      });
+
+      // Invalidate analytics cache
+      await _cache.remove(_getUserCacheKey('cache_analytics'));
+      await _cache.remove(_getUserCacheKey('cache_kpis'));
+
+      return _success('Sale recorded successfully');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Record Sale');
+      return _failure('Failed to record sale: $e');
+    }
+  }
+
+  /// Get sales for current seller
+  Future<List<Sale>> getSales({
+    DateTime? startDate,
+    DateTime? endDate,
+    String? customerId,
+    int limit = 100,
+  }) async {
+    if (!isLoggedIn) return [];
+
+    try {
+      final sellerId = currentUser!.id;
+      dynamic query = _client
+          .from('sales')
+          .select('''
+            *,
+            customers (id, name, phone, age_range),
+            products (id, name, asin, image_url)
+          ''')
+          .eq('seller_id', sellerId)
+          .order('sale_date', ascending: false)
+          .limit(limit);
+
+      if (startDate != null) {
+        query = query.gte('sale_date', startDate.toIso8601String());
+      }
+      if (endDate != null) {
+        query = query.lte('sale_date', endDate.toIso8601String());
+      }
+      if (customerId != null) {
+        query = query.eq('customer_id', customerId);
+      }
+
+      final response = await query;
+      return (response as List).map((json) => Sale.fromJson(json)).toList();
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Sales');
+      return [];
+    }
+  }
+
+  /// Delete a sale
+  Future<AuthResult> deleteSale(String saleId) async {
+    try {
+      await _client.from('sales').delete().eq('id', saleId);
+
+      // Invalidate analytics cache
+      await _cache.remove(_getUserCacheKey('cache_analytics'));
+
+      return _success('Sale deleted successfully');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Delete Sale');
+      return _failure('Failed to delete sale: $e');
+    }
+  }
+
+  // ==========================================================================
+  // ANALYTICS & KPIs
+  // ==========================================================================
+
+  /// Get seller KPIs
+  Future<Map<String, dynamic>> getSellerKPIs({String period = '30d'}) async {
+    if (!isLoggedIn) return {};
+
+    try {
+      final sellerId = currentUser!.id;
+      final cacheKey = _getUserCacheKey('cache_kpis_$period');
+
+      // Check cache
+      final cached = await _cache.get<Map<String, dynamic>>(cacheKey);
+      if (cached != null) return cached!;
+
+      // Calculate date range
+      final now = DateTime.now();
+      final days = int.tryParse(period.replaceAll('d', '')) ?? 30;
+      final startDate = now.subtract(Duration(days: days));
+
+      // Get sales in period
+      final sales = await _client
+          .from('sales')
+          .select('total_price, quantity, customer_id')
+          .eq('seller_id', sellerId)
+          .gte('sale_date', startDate.toIso8601String());
+
+      // Get customers
+      final customers = await _client
+          .from('customers')
+          .select('id, total_spent, total_orders')
+          .eq('seller_id', sellerId);
+
+      // Calculate KPIs
+      double totalRevenue = 0;
+      int totalSales = 0;
+      int totalItems = 0;
+      final Set<String> uniqueCustomers = {};
+
+      for (final sale in sales) {
+        totalRevenue += double.tryParse(sale['total_price']?.toString() ?? '0') ?? 0;
+        totalSales++;
+        totalItems += sale['quantity'] as int? ?? 0;
+        if (sale['customer_id'] != null) {
+          uniqueCustomers.add(sale['customer_id'] as String);
+        }
+      }
+
+      // Get top customers
+      final customerList = customers as List;
+      customerList.sort((a, b) {
+        final aSpent = double.tryParse(a['total_spent']?.toString() ?? '0') ?? 0;
+        final bSpent = double.tryParse(b['total_spent']?.toString() ?? '0') ?? 0;
+        return bSpent.compareTo(aSpent);
+      });
+      final topCustomers = customerList.take(5).toList();
+
+      final kpis = {
+        'total_revenue': totalRevenue,
+        'total_sales': totalSales,
+        'total_items_sold': totalItems,
+        'total_customers': customers.length,
+        'unique_customers_in_period': uniqueCustomers.length,
+        'average_order_value': totalSales > 0 ? totalRevenue / totalSales : 0,
+        'period': period,
+        'period_days': days,
+        'top_customers': topCustomers,
+      };
+
+      // Cache for 15 minutes
+      await _cache.set(cacheKey, kpis, const Duration(minutes: 15));
+
+      return kpis;
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get KPIs');
+      return {};
+    }
+  }
+
+  /// Get daily sales data for charts
+  Future<List<Map<String, dynamic>>> getDailySalesData({int days = 30}) async {
+    if (!isLoggedIn) return [];
+
+    try {
+      final sellerId = currentUser!.id;
+      final startDate = DateTime.now().subtract(Duration(days: days));
+
+      final response = await _client
+          .from('daily_sales_summary')
+          .select()
+          .eq('seller_id', sellerId)
+          .gte('sale_day', startDate.toIso8601String())
+          .order('sale_day', ascending: true);
+
+      return response as List<Map<String, dynamic>>;
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Daily Sales Data');
+      return [];
+    }
+  }
+
+  /// Get monthly sales data for charts
+  Future<List<Map<String, dynamic>>> getMonthlySalesData({int months = 12}) async {
+    if (!isLoggedIn) return [];
+
+    try {
+      final sellerId = currentUser!.id;
+
+      final response = await _client
+          .from('monthly_sales_summary')
+          .select()
+          .eq('seller_id', sellerId)
+          .order('sale_month', ascending: true)
+          .limit(months);
+
+      return response as List<Map<String, dynamic>>;
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Monthly Sales Data');
+      return [];
+    }
   }
 
   @override

@@ -55,6 +55,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      drawerEdgeDragWidth: double.infinity,
+      drawerEnableOpenDragGesture: true,
       backgroundColor: colorScheme.surface,
       appBar: _buildAppBar(context, colorScheme),
       body: Column(

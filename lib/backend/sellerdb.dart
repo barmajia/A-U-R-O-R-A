@@ -113,6 +113,28 @@ class SellerDB extends ChangeNotifier {
     }
   }
 
+  /// Get current seller credentials (email and password)
+  Future<Map<String, String>?> getCurrentSellerCredentials() async {
+    try {
+      // Get the first seller (current user)
+      final results = db.select(
+        'SELECT email, password FROM $tableName LIMIT 1;',
+      );
+
+      if (results.isNotEmpty) {
+        final row = results.first;
+        return {
+          'email': row['email'] as String,
+          'password': row['password'] as String,
+        };
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting seller credentials: $e');
+      return null;
+    }
+  }
+
   /// Get seller by email
   Future<Map<String, dynamic>?> getSellerByEmail(String email) async {
     try {

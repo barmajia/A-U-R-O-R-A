@@ -1,5 +1,8 @@
+import 'package:aurora/pages/analytics/analytics_page.dart';
 import 'package:aurora/pages/chat/chat_list.dart';
+import 'package:aurora/pages/customers/customers_page.dart';
 import 'package:aurora/pages/product/product.dart';
+import 'package:aurora/pages/sales/sales_page.dart';
 import 'package:aurora/pages/seller/sellerProfile.dart';
 import 'package:aurora/pages/setting/setting.dart';
 import 'package:aurora/pages/singup/home.dart';
@@ -85,11 +88,27 @@ class AppDrawer extends StatelessWidget {
                         ),
                         _buildMenuItem(
                           context,
-                          icon: Icons.shopping_cart_outlined,
-                          activeIcon: Icons.shopping_cart,
-                          title: 'Orders',
-                          pageName: 'orders',
-                          onTap: () => _showComingSoon(context, 'Orders'),
+                          icon: Icons.people_outlined,
+                          activeIcon: Icons.people,
+                          title: 'Customers',
+                          pageName: 'customers',
+                          onTap: () => _navigateTo(
+                            context,
+                            const CustomersPage(),
+                            'customers',
+                          ),
+                        ),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.point_of_sale_outlined,
+                          activeIcon: Icons.point_of_sale,
+                          title: 'Sales',
+                          pageName: 'sales',
+                          onTap: () => _navigateTo(
+                            context,
+                            const SalesPage(),
+                            'sales',
+                          ),
                         ),
                         _buildMenuItem(
                           context,
@@ -97,7 +116,11 @@ class AppDrawer extends StatelessWidget {
                           activeIcon: Icons.analytics,
                           title: 'Analytics',
                           pageName: 'analytics',
-                          onTap: () => _showComingSoon(context, 'Analytics'),
+                          onTap: () => _navigateTo(
+                            context,
+                            const AnalyticsPage(),
+                            'analytics',
+                          ),
                         ),
                       ],
 

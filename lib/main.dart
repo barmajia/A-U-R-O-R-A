@@ -1,7 +1,9 @@
 import 'package:aurora/backend/sellerdb.dart';
 import 'package:aurora/backend/productsdb.dart';
+import 'package:aurora/pages/auth/biometric_login.dart';
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/login.dart';
+import 'package:aurora/services/biometric_service.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/services/chat_provider.dart';
 import 'package:aurora/services/permissions.dart';
@@ -76,16 +78,82 @@ class Aurora extends StatelessWidget {
             title: 'Aurora E-commerce',
             theme: themeProvider.themeData,
             home: Homepage(),
+            routes: {
+              '/login': (context) => const Login(),
+              '/home': (context) => Homepage(),
+            },
           );
         } else {
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'Aurora E-commerce',
-            theme: themeProvider.themeData,
-            home: Login(),
+          // Check if biometric is enabled for quick login
+          return FutureBuilder(
+            future: _checkBiometricLogin(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return MaterialApp(
+                  debugShowCheckedModeBanner: false,
+                  title: 'Aurora E-commerce',
+                  theme: themeProvider.themeData,
+                  home: const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  ),
+                );
+              }
+
+              // If biometric enabled and authenticated, go to home
+              if (snapshot.data == true) {
+                return MaterialApp(
+                  debugShowCheckedModeBanner: false,
+                  title: 'Aurora E-commerce',
+                  theme: themeProvider.themeData,
+                  home: Homepage(),
+                  routes: {
+                    '/login': (context) => const Login(),
+                    '/home': (context) => Homepage(),
+                  },
+                );
+              }
+
+              // Show biometric login screen if available, otherwise regular login
+              return MaterialApp(
+                debugShowCheckedModeBanner: false,
+                title: 'Aurora E-commerce',
+                theme: themeProvider.themeData,
+                home: const BiometricLoginScreen(),
+                routes: {
+                  '/login': (context) => const Login(),
+                  '/home': (context) => Homepage(),
+                },
+              );
+            },
           );
         }
       },
     );
+  }
+
+  Future<bool> _checkBiometricLogin() async {
+    try {
+      final biometricService = BiometricService();
+      final isEnabled = await biometricService.isBiometricEnabled();
+      
+      if (!isEnabled) return false;
+      
+      // Try to authenticate
+      final authenticated = await biometricService.authenticate(
+        reason: 'Login to Aurora',
+      );
+      
+      if (!authenticated) return false;
+      
+      // Get credentials and login
+      final credentials = await biometricService.getStoredCredentials();
+      if (credentials == null) return false;
+      
+      // Note: Actual login will happen in BiometricLoginScreen
+      // This just checks if biometric is available
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }

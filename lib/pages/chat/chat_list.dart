@@ -153,10 +153,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       child: TextField(
         controller: _searchController,
         autofocus: true,
-        style: TextStyle(
-          color: colorScheme.onSurface,
-          fontSize: 16,
-        ),
+        style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
         decoration: InputDecoration(
           hintText: 'Search conversations...',
           hintStyle: TextStyle(
