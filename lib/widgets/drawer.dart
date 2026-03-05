@@ -104,11 +104,8 @@ class AppDrawer extends StatelessWidget {
                           activeIcon: Icons.point_of_sale,
                           title: 'Sales',
                           pageName: 'sales',
-                          onTap: () => _navigateTo(
-                            context,
-                            const SalesPage(),
-                            'sales',
-                          ),
+                          onTap: () =>
+                              _navigateTo(context, const SalesPage(), 'sales'),
                         ),
                         _buildMenuItem(
                           context,
@@ -145,15 +142,6 @@ class AppDrawer extends StatelessWidget {
                       ],
 
                       // Common Menu Items
-                      _buildMenuItem(
-                        context,
-                        icon: Icons.notifications_outlined,
-                        activeIcon: Icons.notifications,
-                        title: 'Notifications',
-                        pageName: 'notifications',
-                        badge: '3',
-                        onTap: () => _showComingSoon(context, 'Notifications'),
-                      ),
                       _buildMenuItem(
                         context,
                         icon: Icons.chat_bubble_outline,

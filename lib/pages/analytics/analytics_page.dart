@@ -1,7 +1,6 @@
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/widgets/drawer.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class AnalyticsPage extends StatefulWidget {
@@ -31,7 +30,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
     try {
       final supabaseProvider = context.read<SupabaseProvider>();
-      final kpis = await supabaseProvider.getSellerKPIs(period: _selectedPeriod);
+      final kpis = await supabaseProvider.getSellerKPIs(
+        period: _selectedPeriod,
+      );
 
       setState(() {
         _kpis = kpis;
@@ -50,37 +51,35 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: _buildAppBar(context, colorScheme),
+      appBar: _buildAppBar(context),
       drawer: const AppDrawer(currentPage: 'analytics'),
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
           : _errorMessage != null
-              ? _buildErrorState(colorScheme)
-              : RefreshIndicator(
-                  onRefresh: _loadKPIs,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      _buildPeriodSelector(colorScheme),
-                      const SizedBox(height: 24),
-                      _buildKPICards(colorScheme),
-                      const SizedBox(height: 24),
-                      _buildTopCustomersCard(colorScheme),
-                      const SizedBox(height: 24),
-                      _buildInsightsCard(colorScheme),
-                    ],
-                  ),
-                ),
+          ? _buildErrorState(colorScheme)
+          : RefreshIndicator(
+              onRefresh: _loadKPIs,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _buildPeriodSelector(colorScheme),
+                  const SizedBox(height: 24),
+                  _buildKPICards(colorScheme),
+                  const SizedBox(height: 24),
+                  _buildTopCustomersCard(colorScheme),
+                  const SizedBox(height: 24),
+                  _buildInsightsCard(colorScheme),
+                ],
+              ),
+            ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, ColorScheme colorScheme) {
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       title: const Text('Analytics'),
       centerTitle: true,
-      backgroundColor: colorScheme.primary,
-      foregroundColor: colorScheme.onPrimary,
+      elevation: 0,
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh),
@@ -127,7 +126,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             child: Text(
               period,
               style: TextStyle(
-                color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
+                color: isSelected
+                    ? colorScheme.onPrimary
+                    : colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -142,67 +143,80 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       children: [
         Row(
           children: [
-            Expanded(child: _buildKPICard(
-              title: 'Revenue',
-              value: '\$${(_kpis['total_revenue'] ?? 0).toStringAsFixed(0)}',
-              icon: Icons.attach_money,
-              color: Colors.green,
-              subtitle: _getPeriodSubtitle(),
-              colorScheme: colorScheme,
-            )),
+            Expanded(
+              child: _buildKPICard(
+                title: 'Revenue',
+                value: '\$${(_kpis['total_revenue'] ?? 0).toStringAsFixed(0)}',
+                icon: Icons.attach_money,
+                color: Colors.green,
+                subtitle: _getPeriodSubtitle(),
+                colorScheme: colorScheme,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _buildKPICard(
-              title: 'Sales',
-              value: '${_kpis['total_sales'] ?? 0}',
-              icon: Icons.shopping_cart,
-              color: Colors.blue,
-              subtitle: 'transactions',
-              colorScheme: colorScheme,
-            )),
+            Expanded(
+              child: _buildKPICard(
+                title: 'Sales',
+                value: '${_kpis['total_sales'] ?? 0}',
+                icon: Icons.shopping_cart,
+                color: Colors.blue,
+                subtitle: 'transactions',
+                colorScheme: colorScheme,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _buildKPICard(
-              title: 'Items Sold',
-              value: '${_kpis['total_items_sold'] ?? 0}',
-              icon: Icons.inventory_2,
-              color: Colors.orange,
-              subtitle: 'products',
-              colorScheme: colorScheme,
-            )),
+            Expanded(
+              child: _buildKPICard(
+                title: 'Items Sold',
+                value: '${_kpis['total_items_sold'] ?? 0}',
+                icon: Icons.inventory_2,
+                color: Colors.orange,
+                subtitle: 'products',
+                colorScheme: colorScheme,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _buildKPICard(
-              title: 'Avg Order',
-              value: '\$${(_kpis['average_order_value'] ?? 0).toStringAsFixed(1)}',
-              icon: Icons.receipt_long,
-              color: Colors.purple,
-              subtitle: 'per sale',
-              colorScheme: colorScheme,
-            )),
+            Expanded(
+              child: _buildKPICard(
+                title: 'Avg Order',
+                value:
+                    '\$${(_kpis['average_order_value'] ?? 0).toStringAsFixed(1)}',
+                icon: Icons.receipt_long,
+                color: Colors.purple,
+                subtitle: 'per sale',
+                colorScheme: colorScheme,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _buildKPICard(
-              title: 'Customers',
-              value: '${_kpis['total_customers'] ?? 0}',
-              icon: Icons.people,
-              color: Colors.teal,
-              subtitle: 'total',
-              colorScheme: colorScheme,
-            )),
+            Expanded(
+              child: _buildKPICard(
+                title: 'Customers',
+                value: '${_kpis['total_customers'] ?? 0}',
+                icon: Icons.people,
+                color: Colors.teal,
+                subtitle: 'total',
+                colorScheme: colorScheme,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _buildKPICard(
-              title: 'Active',
-              value: '${_kpis['unique_customers_in_period'] ?? 0}',
-              icon: Icons.people_outline,
-              color: Colors.pink,
-              subtitle: 'this period',
-              colorScheme: colorScheme,
-            )),
+            Expanded(
+              child: _buildKPICard(
+                title: 'Active',
+                value: '${_kpis['unique_customers_in_period'] ?? 0}',
+                icon: Icons.people_outline,
+                color: Colors.pink,
+                subtitle: 'this period',
+                colorScheme: colorScheme,
+              ),
+            ),
           ],
         ),
       ],
@@ -281,7 +295,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   }
 
   Widget _buildTopCustomersCard(ColorScheme colorScheme) {
-    final topCustomers = List<Map<String, dynamic>>.from(_kpis['top_customers'] ?? []);
+    final topCustomers = List<Map<String, dynamic>>.from(
+      _kpis['top_customers'] ?? [],
+    );
 
     return Card(
       elevation: 2,
@@ -316,7 +332,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                   padding: const EdgeInsets.all(24),
                   child: Text(
                     'No customer data yet',
-                    style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5)),
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                    ),
                   ),
                 ),
               )
@@ -325,24 +343,37 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: topCustomers.length,
-                separatorBuilder: (context, index) => Divider(color: colorScheme.outlineVariant),
+                separatorBuilder: (context, index) =>
+                    Divider(color: colorScheme.outlineVariant),
                 itemBuilder: (context, index) {
                   final customer = topCustomers[index];
-                  final totalSpent = double.tryParse(customer['total_spent']?.toString() ?? '0') ?? 0;
+                  final totalSpent =
+                      double.tryParse(
+                        customer['total_spent']?.toString() ?? '0',
+                      ) ??
+                      0;
                   return Row(
                     children: [
                       Container(
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: index == 0 ? Colors.amber : index == 1 ? Colors.grey : index == 2 ? Colors.brown : colorScheme.surfaceContainerHighest,
+                          color: index == 0
+                              ? Colors.amber
+                              : index == 1
+                              ? Colors.grey
+                              : index == 2
+                              ? Colors.brown
+                              : colorScheme.surfaceContainerHighest,
                           shape: BoxShape.circle,
                         ),
                         child: Center(
                           child: Text(
                             '${index + 1}',
                             style: TextStyle(
-                              color: index < 3 ? Colors.white : colorScheme.onSurface,
+                              color: index < 3
+                                  ? Colors.white
+                                  : colorScheme.onSurface,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -406,7 +437,8 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     }
 
     if (totalCustomers > 0) {
-      final activePercentage = ((uniqueCustomers / totalCustomers) * 100).toInt();
+      final activePercentage = ((uniqueCustomers / totalCustomers) * 100)
+          .toInt();
       insights.add({
         'icon': Icons.people,
         'title': 'Customer Activity',
@@ -451,44 +483,50 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               ],
             ),
             const SizedBox(height: 16),
-            ...insights.map((insight) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: (insight['color'] as Color).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+            ...insights.map(
+              (insight) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: (insight['color'] as Color).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        insight['icon'] as IconData,
+                        color: insight['color'] as Color,
+                        size: 20,
+                      ),
                     ),
-                    child: Icon(insight['icon'] as IconData, color: insight['color'] as Color, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          insight['title'] as String,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            insight['title'] as String,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
                           ),
-                        ),
-                        Text(
-                          insight['description'] as String,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: colorScheme.onSurface.withOpacity(0.6),
+                          Text(
+                            insight['description'] as String,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colorScheme.onSurface.withOpacity(0.6),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            )),
+            ),
           ],
         ),
       ),
@@ -502,7 +540,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: colorScheme.error.withOpacity(0.5)),
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: colorScheme.error.withOpacity(0.5),
+            ),
             const SizedBox(height: 16),
             Text(
               _errorMessage!,

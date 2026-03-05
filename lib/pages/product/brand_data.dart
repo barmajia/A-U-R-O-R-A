@@ -74,9 +74,6 @@ const List<BrandOption> predefinedBrands = [
   BrandOption(id: 'under_armour', name: 'Under Armour', category: 'Sports & Outdoors'),
   BrandOption(id: 'columbia', name: 'Columbia', category: 'Sports & Outdoors'),
   BrandOption(id: 'north_face', name: 'The North Face', category: 'Sports & Outdoors'),
-
-  // Local Brand Option
-  BrandOption.localBrand,
 ];
 
 // Helper: Get emoji for brand based on category

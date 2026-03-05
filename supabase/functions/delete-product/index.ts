@@ -4,43 +4,51 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
+    // Initialize Supabase client with service role key
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { 
-        global: { 
-          headers: { 
-            Authorization: req.headers.get('Authorization')! 
-          } 
-        } 
+      {
+        global: {
+          headers: {
+            Authorization: req.headers.get('Authorization')!,
+          },
+        },
       }
     );
 
     const { asin, sellerId } = await req.json();
 
+    // Validate required fields
     if (!asin) {
       throw new Error('ASIN is required');
     }
-
     if (!sellerId) {
       throw new Error('sellerId is required');
     }
 
     // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new Error('Unauthorized: Missing authentication token');
+    }
+
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(
-      req.headers.get('Authorization')?.replace('Bearer ', '')
+      authHeader.replace('Bearer ', '')
     );
 
     if (userError || !user) {
-      throw new Error('Unauthorized: Invalid or missing authentication token');
+      throw new Error(`Unauthorized: ${userError?.message || 'Invalid authentication token'}`);
     }
 
     // Verify sellerId matches authenticated user
@@ -53,9 +61,13 @@ serve(async (req) => {
       .from('products')
       .select('seller_id, images, asin')
       .eq('asin', asin)
-      .single();
+      .maybeSingle();
 
-    if (fetchError || !product) {
+    if (fetchError) {
+      throw new Error(`Product lookup failed: ${fetchError.message}`);
+    }
+
+    if (!product) {
       throw new Error('Product not found');
     }
 
@@ -76,7 +88,7 @@ serve(async (req) => {
             const urlParts = img.url.split('/product-images/');
             if (urlParts.length > 1) {
               const imagePath = urlParts[1]; // seller_id/product_id/image.jpg
-              
+
               const { error: storageError } = await supabaseClient.storage
                 .from('product-images')
                 .remove([imagePath]);
@@ -105,17 +117,17 @@ serve(async (req) => {
 
     if (deleteError) {
       console.error('Database delete error:', deleteError);
-      throw deleteError;
+      throw new Error(`Database error: ${deleteError.message}`);
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: 'Product deleted successfully',
         deletedImages: deletedImages.length,
         failedImages: failedImages.length,
-        asin: asin
-      }), 
+        asin: asin,
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
@@ -125,14 +137,14 @@ serve(async (req) => {
   } catch (error: any) {
     console.error('delete-product error:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message,
-        code: error.code || 'UNKNOWN_ERROR' 
-      }), 
+      JSON.stringify({
+        success: false,
+        error: error.message || 'An unexpected error occurred',
+        code: error.code || 'UNKNOWN_ERROR',
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: error.message?.includes('Unauthorized') ? 401 : 400,
       }
     );
   }

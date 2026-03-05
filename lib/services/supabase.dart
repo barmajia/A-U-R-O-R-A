@@ -6,6 +6,7 @@ import 'package:aurora/backend/productsdb.dart';
 import 'package:aurora/models/product.dart';
 import 'package:aurora/models/customer.dart';
 import 'package:aurora/models/sale.dart';
+import 'package:aurora/services/queue_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -373,6 +374,9 @@ class SupabaseProvider extends ChangeNotifier {
   // Cache
   final CacheManager _cache = CacheManager();
 
+  // Queue Service for PGMQ
+  late final QueueService queue;
+
   // Push notification token
   String? _pushToken;
 
@@ -380,6 +384,7 @@ class SupabaseProvider extends ChangeNotifier {
   SupabaseProvider(this._client, [SellerDB? sellerDb, ProductsDB? productsDb])
     : _sellerDb = sellerDb,
       _productsDb = productsDb {
+    queue = QueueService(_client);
     _initProvider();
   }
 
@@ -2039,7 +2044,7 @@ class SupabaseProvider extends ChangeNotifier {
         if (productData != null && _productsDb != null) {
           try {
             final product = AmazonProduct.fromJson(productData);
-            await _productsDb!.updateProduct(product);
+            await _productsDb.updateProduct(product);
             if (kDebugMode) {
               print('✅ Product updated in local DB: ${product.asin}');
             }
@@ -2390,28 +2395,36 @@ class SupabaseProvider extends ChangeNotifier {
 
     try {
       final sellerId = currentUser!.id;
-      dynamic query = _client
+
+      // Build base query with required filters
+      var query = _client
           .from('sales')
           .select('''
             *,
             customers (id, name, phone, age_range),
             products (id, name, asin, image_url)
           ''')
-          .eq('seller_id', sellerId)
+          .eq('seller_id', sellerId);
+
+      // Apply optional filters - cast to dynamic to access filter methods
+      if (startDate != null) {
+        query = (query as dynamic).gte(
+          'sale_date',
+          startDate.toIso8601String(),
+        );
+      }
+      if (endDate != null) {
+        query = (query as dynamic).lte('sale_date', endDate.toIso8601String());
+      }
+      if (customerId != null) {
+        query = (query as dynamic).eq('customer_id', customerId);
+      }
+
+      // Apply order and limit, then execute
+      final response = await (query as dynamic)
           .order('sale_date', ascending: false)
           .limit(limit);
 
-      if (startDate != null) {
-        query = query.gte('sale_date', startDate.toIso8601String());
-      }
-      if (endDate != null) {
-        query = query.lte('sale_date', endDate.toIso8601String());
-      }
-      if (customerId != null) {
-        query = query.eq('customer_id', customerId);
-      }
-
-      final response = await query;
       return (response as List).map((json) => Sale.fromJson(json)).toList();
     } catch (e) {
       _errorHandler.handleError(e, 'Get Sales');
@@ -2448,7 +2461,7 @@ class SupabaseProvider extends ChangeNotifier {
 
       // Check cache
       final cached = await _cache.get<Map<String, dynamic>>(cacheKey);
-      if (cached != null) return cached!;
+      if (cached != null) return cached;
 
       // Calculate date range
       final now = DateTime.now();
@@ -2475,7 +2488,8 @@ class SupabaseProvider extends ChangeNotifier {
       final Set<String> uniqueCustomers = {};
 
       for (final sale in sales) {
-        totalRevenue += double.tryParse(sale['total_price']?.toString() ?? '0') ?? 0;
+        totalRevenue +=
+            double.tryParse(sale['total_price']?.toString() ?? '0') ?? 0;
         totalSales++;
         totalItems += sale['quantity'] as int? ?? 0;
         if (sale['customer_id'] != null) {
@@ -2486,8 +2500,10 @@ class SupabaseProvider extends ChangeNotifier {
       // Get top customers
       final customerList = customers as List;
       customerList.sort((a, b) {
-        final aSpent = double.tryParse(a['total_spent']?.toString() ?? '0') ?? 0;
-        final bSpent = double.tryParse(b['total_spent']?.toString() ?? '0') ?? 0;
+        final aSpent =
+            double.tryParse(a['total_spent']?.toString() ?? '0') ?? 0;
+        final bSpent =
+            double.tryParse(b['total_spent']?.toString() ?? '0') ?? 0;
         return bSpent.compareTo(aSpent);
       });
       final topCustomers = customerList.take(5).toList();
@@ -2537,7 +2553,9 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Get monthly sales data for charts
-  Future<List<Map<String, dynamic>>> getMonthlySalesData({int months = 12}) async {
+  Future<List<Map<String, dynamic>>> getMonthlySalesData({
+    int months = 12,
+  }) async {
     if (!isLoggedIn) return [];
 
     try {

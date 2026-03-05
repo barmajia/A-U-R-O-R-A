@@ -33,7 +33,11 @@ Future<void> main() async {
   await themeProvider.loadTheme();
 
   // Initialize providers
-  final supabaseProvider = SupabaseProvider(Supabase.instance.client, sellerDb, productsDb);
+  final supabaseProvider = SupabaseProvider(
+    Supabase.instance.client,
+    sellerDb,
+    productsDb,
+  );
   final chatProvider = ChatProvider(supabaseProvider);
 
   // Wait a bit for DBs to initialize
@@ -46,6 +50,7 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: chatProvider),
         ChangeNotifierProvider(create: (context) => sellerDb),
         Provider(create: (context) => productsDb),
+        Provider(create: (context) => supabaseProvider.queue),
         ChangeNotifierProvider.value(value: themeProvider),
       ],
       child: Aurora(),
@@ -135,20 +140,20 @@ class Aurora extends StatelessWidget {
     try {
       final biometricService = BiometricService();
       final isEnabled = await biometricService.isBiometricEnabled();
-      
+
       if (!isEnabled) return false;
-      
+
       // Try to authenticate
       final authenticated = await biometricService.authenticate(
         reason: 'Login to Aurora',
       );
-      
+
       if (!authenticated) return false;
-      
+
       // Get credentials and login
       final credentials = await biometricService.getStoredCredentials();
       if (credentials == null) return false;
-      
+
       // Note: Actual login will happen in BiometricLoginScreen
       // This just checks if biometric is available
       return true;

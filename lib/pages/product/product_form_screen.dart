@@ -9,6 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ============================================================================
 // UTILITIES: Description Generator & Category Data
@@ -501,6 +502,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     });
   }
 
+  /// Upload product images to Supabase Storage
+  ///
+  /// Uses the 'product-images' bucket with path format: {seller_id}/{product_id}/{filename}
+  /// This ensures RLS policies allow only the seller to manage their images
   Future<List<String>> _uploadImages(String sellerId, String productId) async {
     if (_productImages.isEmpty) return _uploadedImageUrls;
     try {
@@ -510,8 +515,23 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         images: _productImages,
         sellerId: sellerId,
         productId: productId,
+        bucket:
+            SupabaseStorage.defaultBucket, // ✅ Explicitly specify bucket name
       );
       return [..._uploadedImageUrls, ...newUrls];
+    } on StorageException catch (e) {
+      debugPrint(
+        'Storage error uploading images: ${e.message} (statusCode: ${e.statusCode})',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Image upload failed: ${e.message}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return _uploadedImageUrls;
     } catch (e) {
       debugPrint('Error uploading images: $e');
       return _uploadedImageUrls;
