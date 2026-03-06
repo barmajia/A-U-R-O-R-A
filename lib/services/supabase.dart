@@ -15,6 +15,9 @@ import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:image/image.dart' as img;
 
+// Factory Discovery Models
+import 'package:aurora/models/factory/factory_models.dart';
+
 // ============================================================================
 // Constants & Configuration
 // ============================================================================
@@ -48,6 +51,11 @@ class SupabaseConfig {
   static const String functionUpdateProduct = 'update-product';
   static const String functionDeleteProduct = 'delete-product';
   static const String functionSearchProducts = 'search-products';
+
+  // Factory Discovery Edge Functions
+  static const String functionFindNearbyFactories = 'find-nearby-factories';
+  static const String functionRequestFactoryConnection = 'request-factory-connection';
+  static const String functionRateFactory = 'rate-factory';
 
   // User Metadata Keys
   static const String keyAccountType = 'account_type';
@@ -2572,6 +2580,391 @@ class SupabaseProvider extends ChangeNotifier {
     } catch (e) {
       _errorHandler.handleError(e, 'Get Monthly Sales Data');
       return [];
+    }
+  }
+
+  // ==========================================================================
+  // FACTORY DISCOVERY & CONNECTION
+  // ==========================================================================
+
+  /// Find nearby factories using location
+  Future<DataResult<List<FactoryInfo>>> findNearbyFactories({
+    required double latitude,
+    required double longitude,
+    double radiusKm = 50,
+    int limit = 20,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return DataResult<List<FactoryInfo>>(
+          success: false,
+          message: 'User not authenticated',
+          data: [],
+          error: 'Not authenticated',
+        );
+      }
+
+      final response = await _client.functions.invoke(
+        SupabaseConfig.functionFindNearbyFactories,
+        body: {
+          'latitude': latitude,
+          'longitude': longitude,
+          'radius': radiusKm,
+          'limit': limit,
+        },
+      );
+
+      if (response.status == 200 && response.data?['success'] == true) {
+        final factoriesData = response.data?['factories'] as List? ?? [];
+        final factories = factoriesData
+            .map((json) => FactoryInfo.fromJson(json as Map<String, dynamic>))
+            .toList();
+        
+        return DataResult<List<FactoryInfo>>(
+          success: true,
+          message: 'Found ${factories.length} factories',
+          data: factories,
+          error: null,
+        );
+      } else {
+        return DataResult<List<FactoryInfo>>(
+          success: false,
+          message: response.data?['error'] ?? 'Search failed',
+          data: [],
+          error: response.data?['error'],
+        );
+      }
+    } catch (e) {
+      _errorHandler.handleError(e, 'Find Nearby Factories');
+      return DataResult<List<FactoryInfo>>(
+        success: false,
+        message: 'Search failed: $e',
+        data: [],
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// Request connection with a factory
+  Future<AuthResult> requestFactoryConnection({
+    required String factoryId,
+    String? notes,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return _failure('You must be logged in');
+      }
+
+      final response = await _client.functions.invoke(
+        SupabaseConfig.functionRequestFactoryConnection,
+        body: {
+          'factoryId': factoryId,
+          'notes': notes,
+        },
+      );
+
+      if (response.status == 201 && response.data?['success'] == true) {
+        return _success(
+          response.data?['message'] ?? 'Connection request sent',
+          response.data,
+        );
+      } else {
+        return _failure(response.data?['error'] ?? 'Failed to send request');
+      }
+    } catch (e) {
+      _errorHandler.handleError(e, 'Request Factory Connection');
+      return _failure('Failed to send request: $e');
+    }
+  }
+
+  /// Get seller's factory connections
+  Future<List<FactoryConnection>> getFactoryConnections({
+    String status = 'all',
+  }) async {
+    if (!isLoggedIn) return [];
+    
+    try {
+      final sellerId = currentUser!.id;
+      
+      dynamic query = _client
+          .from('factory_connections')
+          .select('''
+            *,
+            factory: sellers!factory_id (
+              user_id,
+              full_name,
+              location,
+              latitude,
+              longitude,
+              is_verified,
+              wholesale_discount,
+              min_order_quantity
+            )
+          ''')
+          .eq('seller_id', sellerId);
+      
+      if (status != 'all') {
+        query = (query as dynamic).eq('status', status);
+      }
+      
+      final response = await (query as dynamic)
+          .order('requested_at', ascending: false);
+      
+      return (response as List)
+          .map((json) => FactoryConnection.fromJson(json))
+          .toList();
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Factory Connections');
+      return [];
+    }
+  }
+
+  /// Get factory's connection requests (for factories to manage)
+  Future<List<FactoryConnection>> getFactoryConnectionRequests({
+    String status = 'pending',
+  }) async {
+    if (!isLoggedIn) return [];
+    
+    try {
+      final factoryId = currentUser!.id;
+      
+      dynamic query = _client
+          .from('factory_connections')
+          .select('''
+            *,
+            seller: sellers!seller_id (
+              user_id,
+              full_name,
+              location,
+              is_verified
+            )
+          ''')
+          .eq('factory_id', factoryId);
+      
+      if (status != 'all') {
+        query = (query as dynamic).eq('status', status);
+      }
+      
+      final response = await (query as dynamic)
+          .order('requested_at', ascending: false);
+      
+      return (response as List)
+          .map((json) => FactoryConnection.fromJson(json))
+          .toList();
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Factory Connection Requests');
+      return [];
+    }
+  }
+
+  /// Accept or reject a factory connection request (for factories)
+  Future<AuthResult> respondToConnectionRequest({
+    required String connectionId,
+    required bool accept,
+    String? notes,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return _failure('You must be logged in');
+      }
+
+      final factoryId = currentUser!.id;
+      final status = accept ? 'accepted' : 'rejected';
+      
+      final Map<String, dynamic> updates = {
+        'status': status,
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      
+      if (accept) {
+        updates['accepted_at'] = DateTime.now().toIso8601String();
+      } else {
+        updates['rejected_at'] = DateTime.now().toIso8601String();
+        if (notes != null) updates['notes'] = notes;
+      }
+
+      await _client
+          .from('factory_connections')
+          .update(updates)
+          .eq('id', connectionId)
+          .eq('factory_id', factoryId);
+
+      // Create notification for seller
+      final connection = await _client
+          .from('factory_connections')
+          .select('seller_id')
+          .eq('id', connectionId)
+          .single();
+      
+      if (connection != null) {
+        await _client.from('notifications').insert({
+          'user_id': connection['seller_id'],
+          'type': 'system',
+          'title': accept ? 'Factory Connection Accepted' : 'Factory Connection Declined',
+          'message': accept 
+              ? 'Your factory connection request has been accepted!' 
+              : 'Your factory connection request was declined',
+          'metadata': { 'connection_id': connectionId, 'status': status }
+        });
+      }
+
+      return _success(accept ? 'Connection accepted' : 'Connection declined');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Respond to Connection Request');
+      return _failure('Failed to respond: $e');
+    }
+  }
+
+  /// Rate a factory
+  Future<AuthResult> rateFactory({
+    required String factoryId,
+    required int rating,
+    required int deliveryRating,
+    required int qualityRating,
+    required int communicationRating,
+    String? review,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return _failure('You must be logged in');
+      }
+
+      final sellerId = currentUser!.id;
+
+      // Check if already rated
+      final existing = await _client
+          .from('factory_ratings')
+          .select()
+          .eq('factory_id', factoryId)
+          .eq('seller_id', sellerId)
+          .maybeSingle();
+
+      if (existing != null) {
+        // Update existing rating
+        await _client
+            .from('factory_ratings')
+            .update({
+              'rating': rating,
+              'review': review,
+              'delivery_rating': deliveryRating,
+              'quality_rating': qualityRating,
+              'communication_rating': communicationRating,
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('factory_id', factoryId)
+            .eq('seller_id', sellerId);
+      } else {
+        // Create new rating
+        await _client.from('factory_ratings').insert({
+          'factory_id': factoryId,
+          'seller_id': sellerId,
+          'rating': rating,
+          'review': review,
+          'delivery_rating': deliveryRating,
+          'quality_rating': qualityRating,
+          'communication_rating': communicationRating,
+        });
+      }
+
+      return _success('Rating submitted successfully');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Rate Factory');
+      return _failure('Failed to submit rating: $e');
+    }
+  }
+
+  /// Get factory rating details
+  Future<FactoryRatingSummary> getFactoryRating(String factoryId) async {
+    try {
+      final result = await _client.rpc(
+        'get_factory_rating',
+        params: {'p_factory_id': factoryId},
+      );
+      
+      if (result is List && result.isNotEmpty) {
+        return FactoryRatingSummary.fromJson(result[0]);
+      }
+      
+      return FactoryRatingSummary(
+        averageRating: 0,
+        totalReviews: 0,
+        deliveryRating: 0,
+        qualityRating: 0,
+        communicationRating: 0,
+      );
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Factory Rating');
+      return FactoryRatingSummary(
+        averageRating: 0,
+        totalReviews: 0,
+        deliveryRating: 0,
+        qualityRating: 0,
+        communicationRating: 0,
+      );
+    }
+  }
+
+  /// Get factory's products with wholesale pricing
+  /// Note: Returns AmazonProduct objects from factory_products view
+  Future<List<AmazonProduct>> getFactoryProducts(String factoryId) async {
+    if (!isLoggedIn) return [];
+    
+    try {
+      final response = await _client
+          .from('factory_products')
+          .select()
+          .eq('seller_id', factoryId)
+          .eq('status', 'active')
+          .eq('is_deleted', false);
+      
+      return (response as List)
+          .map((json) => AmazonProduct.fromJson(json))
+          .toList();
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Factory Products');
+      return [];
+    }
+  }
+
+  /// Update seller's factory settings
+  Future<AuthResult> updateFactorySettings({
+    bool? isFactory,
+    double? latitude,
+    double? longitude,
+    String? factoryLicenseUrl,
+    int? minOrderQuantity,
+    double? wholesaleDiscount,
+    bool? acceptsReturns,
+    String? productionCapacity,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return _failure('You must be logged in');
+      }
+
+      final sellerId = currentUser!.id;
+      
+      final Map<String, dynamic> updates = {};
+      if (isFactory != null) updates['is_factory'] = isFactory;
+      if (latitude != null) updates['latitude'] = latitude;
+      if (longitude != null) updates['longitude'] = longitude;
+      if (factoryLicenseUrl != null) updates['factory_license_url'] = factoryLicenseUrl;
+      if (minOrderQuantity != null) updates['min_order_quantity'] = minOrderQuantity;
+      if (wholesaleDiscount != null) updates['wholesale_discount'] = wholesaleDiscount;
+      if (acceptsReturns != null) updates['accepts_returns'] = acceptsReturns;
+      if (productionCapacity != null) updates['production_capacity'] = productionCapacity;
+
+      if (updates.isNotEmpty) {
+        await _client
+            .from('sellers')
+            .update(updates)
+            .eq('user_id', sellerId);
+      }
+
+      return _success('Factory settings updated successfully');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Update Factory Settings');
+      return _failure('Failed to update settings: $e');
     }
   }
 
