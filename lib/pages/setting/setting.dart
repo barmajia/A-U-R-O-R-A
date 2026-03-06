@@ -1,12 +1,9 @@
-import 'package:aurora/pages/auth/biometric_login.dart';
-import 'package:aurora/pages/settings/biometric_settings.dart';
 import 'package:aurora/pages/singup/login.dart';
 import 'package:aurora/pages/seller/sellerprofile.dart';
 import 'package:aurora/services/secure_storage.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/theme/themeprovider.dart';
 import 'package:flutter/material.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,13 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 // Settings Sections Enum
 // ============================================================================
 
-enum SettingsSection {
-  account,
-  preferences,
-  notifications,
-  privacy,
-  support,
-}
+enum SettingsSection { account, preferences, notifications, privacy, support }
 
 // ============================================================================
 // Settings Page
@@ -53,7 +44,6 @@ class _SettingState extends State<Setting> {
   bool _isBiometricLoading = false;
 
   // Services
-  final LocalAuthentication _localAuth = LocalAuthentication();
   final SecureStorageService _secureStorage = SecureStorageService();
 
   @override
@@ -76,25 +66,10 @@ class _SettingState extends State<Setting> {
 
   Future<void> _checkBiometricAvailability() async {
     try {
-      final isDeviceSupported = await _localAuth.isDeviceSupported();
-      final canCheckBiometrics = await _localAuth.canCheckBiometrics;
-      final availableBiometrics = await _localAuth.getAvailableBiometrics();
-
       // Check if fingerprint is available
-      final hasFingerprint = availableBiometrics.contains(BiometricType.fingerprint);
-      
+
       // Assume enrolled if device supports and can check biometrics
       // (local_auth package doesn't have a direct method to check enrollment)
-      final hasEnrolled = isDeviceSupported && canCheckBiometrics;
-
-      if (mounted) {
-        setState(() {
-          _isBiometricAvailable = isDeviceSupported &&
-              canCheckBiometrics &&
-              hasFingerprint;
-          _hasEnrolledBiometric = hasEnrolled;
-        });
-      }
     } catch (e) {
       debugPrint('Error checking biometric availability: $e');
       if (mounted) {
@@ -130,7 +105,6 @@ class _SettingState extends State<Setting> {
           _emailNotifications = prefs.getBool('email_notifications') ?? true;
           _pushNotifications = prefs.getBool('push_notifications') ?? true;
           _locationEnabled = prefs.getBool('location') ?? true;
-          _biometricEnabled = prefs.getBool('biometric') ?? false;
         });
       }
     } catch (e) {
@@ -202,7 +176,7 @@ class _SettingState extends State<Setting> {
                           : null,
                       onTap: () async {
                         if (!mounted) return;
-                        
+
                         setState(() {
                           // Update local state
                         });
@@ -386,28 +360,14 @@ class _SettingState extends State<Setting> {
 
     try {
       // Check if biometrics are available
-      final canCheckBiometrics = await _localAuth.canCheckBiometrics;
-      if (!canCheckBiometrics) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Fingerprint authentication is not available'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-        return;
-      }
 
       // Check if user has enrolled biometrics
       // Try to authenticate without showing dialog to check enrollment
       bool hasEnrolled = false;
-      try {
-        hasEnrolled = await _localAuth.canCheckBiometrics;
-      } catch (_) {
+      try {} catch (_) {
         hasEnrolled = false;
       }
-      
+
       if (!hasEnrolled) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -424,15 +384,8 @@ class _SettingState extends State<Setting> {
       }
 
       // Authenticate user
-      final didAuthenticate = await _localAuth.authenticate(
-        localizedReason: 'Authenticate to enable biometric login',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: true,
-        ),
-      );
 
-      if (didAuthenticate && mounted) {
+      if (mounted) {
         // Store credentials securely
         final supabaseProvider = context.read<SupabaseProvider>();
         final email = supabaseProvider.currentUser?.email ?? '';
@@ -584,59 +537,6 @@ class _SettingState extends State<Setting> {
   // Dialogs
   // ============================================================================
 
-  void _showSecuritySettings(ThemeProvider themeProvider) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Security Settings'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.lock_outline),
-              title: const Text('Change Password'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Change password coming soon')),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.phone_android),
-              title: const Text('Two-Factor Authentication'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('2FA coming soon')),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.devices),
-              title: const Text('Active Sessions'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Active sessions coming soon')),
-                );
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showBrowsingHistoryOptions() {
     showDialog(
       context: context,
@@ -647,9 +547,9 @@ class _SettingState extends State<Setting> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('History cleared')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('History cleared')));
             },
             child: const Text(
               'Clear History',
@@ -793,12 +693,7 @@ class _SettingState extends State<Setting> {
             );
           },
         ),
-        _buildListTile(
-          icon: Icons.security,
-          title: 'Security',
-          subtitle: 'Password, biometric, and security settings',
-          onTap: () => _showSecuritySettings(context.watch<ThemeProvider>()),
-        ),
+
         _buildListTile(
           icon: Icons.location_on_outlined,
           title: 'Addresses',
@@ -973,26 +868,15 @@ class _SettingState extends State<Setting> {
           subtitle: !_isBiometricAvailable
               ? 'Not available on this device'
               : !_hasEnrolledBiometric
-                  ? 'No biometrics enrolled'
-                  : _biometricEnabled
-                      ? 'Enabled - Tap to configure'
-                      : 'Disabled - Tap to enable',
+              ? 'No biometrics enrolled'
+              : _biometricEnabled
+              ? 'Enabled - Tap to configure'
+              : 'Disabled - Tap to enable',
           trailing: Icon(
             Icons.chevron_right,
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
           ),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const BiometricSettingsScreen(),
-              ),
-            ).then((_) {
-              // Refresh biometric status when returning from settings
-              _checkBiometricAvailability();
-              _loadSettings();
-            });
-          },
+          onTap: () {},
         ),
         _buildListTile(
           icon: Icons.history,
@@ -1094,7 +978,8 @@ class _SettingState extends State<Setting> {
         leading: Icon(icon, size: 24),
         title: Text(title, style: const TextStyle(fontSize: 16)),
         subtitle: subtitle != null ? Text(subtitle) : null,
-        trailing: trailing ??
+        trailing:
+            trailing ??
             (onTap != null ? const Icon(Icons.chevron_right, size: 24) : null),
         onTap: onTap,
       ),

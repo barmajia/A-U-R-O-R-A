@@ -9,10 +9,7 @@ import 'package:intl/intl.dart';
 class FactoryProfilePage extends StatefulWidget {
   final FactoryInfo factory;
 
-  const FactoryProfilePage({
-    super.key,
-    required this.factory,
-  });
+  const FactoryProfilePage({super.key, required this.factory});
 
   @override
   State<FactoryProfilePage> createState() => _FactoryProfilePageState();
@@ -33,11 +30,11 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
 
   Future<void> _loadConnectionStatus() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final supabase = Provider.of<SupabaseProvider>(context, listen: false);
       final connections = await supabase.getFactoryConnections();
-      
+
       setState(() {
         _connection = connections.firstWhere(
           (c) => c.factoryId == widget.factory.userId,
@@ -60,7 +57,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
     try {
       final supabase = Provider.of<SupabaseProvider>(context, listen: false);
       final ratings = await supabase.getFactoryRating(widget.factory.userId);
-      
+
       setState(() {
         _ratingSummary = ratings;
       });
@@ -204,9 +201,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
   Widget _buildHeaderCard(FactoryInfo factory) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -227,10 +222,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
             const SizedBox(height: 16),
             Text(
               factory.fullName,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             if (factory.location != null) ...[
@@ -246,10 +238,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
                   const SizedBox(width: 4),
                   Text(
                     factory.location!,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                 ],
               ),
@@ -263,9 +252,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
   Widget _buildStatsCard(FactoryInfo factory) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -292,8 +279,8 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
               valueColor: factory.averageRating >= 4
                   ? Colors.green
                   : factory.averageRating > 0
-                      ? Colors.orange
-                      : null,
+                  ? Colors.orange
+                  : null,
             ),
           ],
         ),
@@ -302,11 +289,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
   }
 
   Widget _buildDivider() {
-    return Container(
-      height: 40,
-      width: 1,
-      color: Colors.grey[300],
-    );
+    return Container(height: 40, width: 1, color: Colors.grey[300]);
   }
 
   Widget _buildStatItem({
@@ -328,13 +311,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
           ),
         ),
         const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
       ],
     );
   }
@@ -343,25 +320,16 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
     if (_ratingSummary == null || !_ratingSummary!.hasRatings) {
       return Card(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              Icon(
-                Icons.star_border,
-                size: 48,
-                color: Colors.grey[400],
-              ),
+              Icon(Icons.star_border, size: 48, color: Colors.grey[400]),
               const SizedBox(height: 12),
               Text(
                 'No ratings yet',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               ),
             ],
           ),
@@ -371,9 +339,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -384,10 +350,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
               children: [
                 const Text(
                   'Ratings & Reviews',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 TextButton(
                   onPressed: _showRatingDialog,
@@ -424,10 +387,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
                     const SizedBox(height: 4),
                     Text(
                       '${_ratingSummary!.totalReviews} reviews',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -438,7 +398,10 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
             const SizedBox(height: 8),
             _buildRatingBar('Quality', _ratingSummary!.qualityRating),
             const SizedBox(height: 8),
-            _buildRatingBar('Communication', _ratingSummary!.communicationRating),
+            _buildRatingBar(
+              'Communication',
+              _ratingSummary!.communicationRating,
+            ),
           ],
         ),
       ),
@@ -452,10 +415,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
           width: 100,
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[700],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
           ),
         ),
         Expanded(
@@ -474,10 +434,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
           width: 30,
           child: Text(
             rating.toStringAsFixed(1),
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             textAlign: TextAlign.right,
           ),
         ),
@@ -514,9 +471,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -563,10 +518,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
               const SizedBox(height: 8),
               Text(
                 'Requested on ${DateFormat('MMM d, yyyy').format(_connection!.requestedAt)}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
             ],
           ],
@@ -578,9 +530,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
   Widget _buildWholesaleInfoCard(FactoryInfo factory) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -588,22 +538,22 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
           children: [
             const Text(
               'Wholesale Information',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            if (factory.wholesaleDiscount != null && factory.wholesaleDiscount! > 0) ...[
+            if (factory.wholesaleDiscount != null &&
+                factory.wholesaleDiscount! > 0) ...[
               _buildInfoRow(
                 icon: Icons.discount,
                 label: 'Wholesale Discount',
-                value: '${(factory.wholesaleDiscount ?? 0).toStringAsFixed(0)}%',
+                value:
+                    '${(factory.wholesaleDiscount ?? 0).toStringAsFixed(0)}%',
                 valueColor: Colors.green,
               ),
               const SizedBox(height: 12),
             ],
-            if (factory.minOrderQuantity != null && factory.minOrderQuantity! > 1) ...[
+            if (factory.minOrderQuantity != null &&
+                factory.minOrderQuantity! > 1) ...[
               _buildInfoRow(
                 icon: Icons.shopping_cart,
                 label: 'Minimum Order',
@@ -646,10 +596,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
               Text(
                 value,
@@ -669,9 +616,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
   Widget _buildLocationCard(FactoryInfo factory) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -679,17 +624,11 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
           children: [
             const Text(
               'Location',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             ListTile(
-              leading: Icon(
-                Icons.location_on,
-                color: Colors.red[400],
-              ),
+              leading: Icon(Icons.location_on, color: Colors.red[400]),
               title: Text(
                 factory.location ?? 'Not specified',
                 style: const TextStyle(fontSize: 14),
@@ -704,7 +643,6 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
                   ? IconButton(
                       icon: const Icon(Icons.map, size: 20),
                       onPressed: () {
-                        // TODO: Open in maps app
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Opening in maps...')),
                         );
@@ -725,16 +663,12 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
         height: 56,
         child: ElevatedButton.icon(
           onPressed: () {
-            // TODO: Navigate to factory products/ordering
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Browse factory products')),
             );
           },
           icon: const Icon(Icons.shopping_cart, size: 24),
-          label: const Text(
-            'Browse Products',
-            style: TextStyle(fontSize: 16),
-          ),
+          label: const Text('Browse Products', style: TextStyle(fontSize: 16)),
           style: ElevatedButton.styleFrom(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -751,10 +685,7 @@ class _FactoryProfilePageState extends State<FactoryProfilePage> {
         child: OutlinedButton.icon(
           onPressed: null, // Disabled
           icon: const Icon(Icons.pending, size: 24),
-          label: const Text(
-            'Request Pending',
-            style: TextStyle(fontSize: 16),
-          ),
+          label: const Text('Request Pending', style: TextStyle(fontSize: 16)),
           style: OutlinedButton.styleFrom(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -797,10 +728,7 @@ class _RatingDialog extends StatefulWidget {
   final String factoryId;
   final VoidCallback onRated;
 
-  const _RatingDialog({
-    required this.factoryId,
-    required this.onRated,
-  });
+  const _RatingDialog({required this.factoryId, required this.onRated});
 
   @override
   State<_RatingDialog> createState() => _RatingDialogState();
@@ -847,10 +775,7 @@ class _RatingDialogState extends State<_RatingDialog> {
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.message),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(result.message), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
