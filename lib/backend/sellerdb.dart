@@ -42,12 +42,24 @@ class SellerDB extends ChangeNotifier {
         forthname TEXT NOT NULL,
         full_name TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
         location TEXT NOT NULL,
         phone TEXT NOT NULL,
         currency TEXT,
         account_type TEXT DEFAULT 'seller',
         is_verified INTEGER DEFAULT 0,
+        
+        -- Multi-Role System Fields
+        latitude REAL,
+        longitude REAL,
+        is_factory INTEGER DEFAULT 0,
+        company_name TEXT,
+        business_license TEXT,
+        min_order_quantity INTEGER,
+        wholesale_discount REAL,
+        accepts_returns INTEGER DEFAULT 0,
+        production_capacity TEXT,
+        verified_at TEXT,
+        
         created_at TEXT,
         updated_at TEXT
       );
@@ -68,9 +80,12 @@ class SellerDB extends ChangeNotifier {
       final stmt = db.prepare('''
         INSERT INTO $tableName (
           user_id, firstname, secoundname, thirdname, forthname,
-          full_name, email, password, location, phone,
-          currency, account_type, is_verified, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+          full_name, email, location, phone,
+          currency, account_type, is_verified,
+          latitude, longitude, is_factory, company_name, business_license,
+          min_order_quantity, wholesale_discount, accepts_returns, production_capacity,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
       ''');
 
       stmt.execute([
@@ -81,12 +96,20 @@ class SellerDB extends ChangeNotifier {
         seller['forthname'] ?? '',
         seller['full_name'] ?? '',
         seller['email'],
-        seller['password'],
         seller['location'],
         seller['phone'],
         seller['currency'] ?? 'EGP',
         seller['account_type'] ?? 'seller',
         seller['is_verified'] ?? 0,
+        seller['latitude'] as double?,
+        seller['longitude'] as double?,
+        seller['is_factory'] as int? ?? 0,
+        seller['company_name'] as String?,
+        seller['business_license'] as String?,
+        seller['min_order_quantity'] as int?,
+        seller['wholesale_discount'] as double?,
+        seller['accepts_returns'] as int? ?? 0,
+        seller['production_capacity'] as String?,
         seller['created_at'] ?? DateTime.now().toIso8601String(),
       ]);
       notifyListeners();
@@ -113,53 +136,18 @@ class SellerDB extends ChangeNotifier {
     }
   }
 
-  /// Get current seller credentials (email and password)
-  Future<Map<String, String>?> getCurrentSellerCredentials() async {
-    try {
-      // Get the first seller (current user)
-      final results = db.select(
-        'SELECT email, password FROM $tableName LIMIT 1;',
-      );
-
-      if (results.isNotEmpty) {
-        final row = results.first;
-        return {
-          'email': row['email'] as String,
-          'password': row['password'] as String,
-        };
-      }
-      return null;
-    } catch (e) {
-      debugPrint('Error getting seller credentials: $e');
-      return null;
-    }
-  }
-
-  /// Get seller by email
-  Future<Map<String, dynamic>?> getSellerByEmail(String email) async {
-    try {
-      final results = db.select('SELECT * FROM $tableName WHERE email = ?', [
-        email,
-      ]);
-
-      if (results.isNotEmpty) {
-        return results.first;
-      }
-      return null;
-    } catch (e) {
-      debugPrint('Error getting seller by email: $e');
-      return null;
-    }
-  }
-
   /// Update seller information
   Future<void> updateSeller(String userId, Map<String, dynamic> data) async {
     try {
       final stmt = db.prepare('''
-        UPDATE $tableName 
+        UPDATE $tableName
         SET firstname = ?, secoundname = ?, thirdname = ?, forthname = ?,
             full_name = ?, location = ?, phone = ?, currency = ?,
-            is_verified = ?, updated_at = ?
+            is_verified = ?, latitude = ?, longitude = ?,
+            is_factory = ?, company_name = ?, business_license = ?,
+            min_order_quantity = ?, wholesale_discount = ?,
+            accepts_returns = ?, production_capacity = ?,
+            updated_at = ?
         WHERE user_id = ?;
       ''');
 
@@ -173,12 +161,43 @@ class SellerDB extends ChangeNotifier {
         data['phone'] ?? '',
         data['currency'] ?? 'EGP',
         data['is_verified'] ?? 0,
+        data['latitude'] as double?,
+        data['longitude'] as double?,
+        data['is_factory'] as int? ?? 0,
+        data['company_name'] as String?,
+        data['business_license'] as String?,
+        data['min_order_quantity'] as int?,
+        data['wholesale_discount'] as double?,
+        data['accepts_returns'] as int? ?? 0,
+        data['production_capacity'] as String?,
         DateTime.now().toIso8601String(),
         userId,
       ]);
       notifyListeners();
     } catch (e) {
       debugPrint('Error updating seller: $e');
+      rethrow;
+    }
+  }
+
+  /// Update seller location
+  Future<void> updateSellerLocation(String userId, double latitude, double longitude) async {
+    try {
+      final stmt = db.prepare('''
+        UPDATE $tableName
+        SET latitude = ?, longitude = ?, updated_at = ?
+        WHERE user_id = ?;
+      ''');
+
+      stmt.execute([
+        latitude,
+        longitude,
+        DateTime.now().toIso8601String(),
+        userId,
+      ]);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating seller location: $e');
       rethrow;
     }
   }

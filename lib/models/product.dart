@@ -19,6 +19,13 @@ class AmazonProduct {
   final Map<String, dynamic>? attributes;
   final String? brandId; // Brand ID for predefined brands
   final bool? isLocalBrand; // Flag for custom/local brands
+  
+  // Multi-Role System Fields
+  final bool? allowChat; // Allow chat for this product
+  final String? qrData; // QR code data
+  final String? colorHex; // Product color
+  final String? category; // Product category
+  final String? subcategory; // Product subcategory
 
   AmazonProduct({
     this.asin,
@@ -38,6 +45,11 @@ class AmazonProduct {
     this.attributes,
     this.brandId,
     this.isLocalBrand,
+    this.allowChat,
+    this.qrData,
+    this.colorHex,
+    this.category,
+    this.subcategory,
   });
 
   // تحويل من JSON إلى Object
@@ -74,6 +86,12 @@ class AmazonProduct {
       attributes: json['attributes'] as Map<String, dynamic>?,
       brandId: json['brandId'] as String?,
       isLocalBrand: json['isLocalBrand'] as bool?,
+      // Multi-role system fields
+      allowChat: json['allow_chat'] as bool?,
+      qrData: json['qr_data'] as String?,
+      colorHex: json['color_hex'] as String?,
+      category: json['category'] as String?,
+      subcategory: json['subcategory'] as String?,
     );
   }
 
@@ -97,6 +115,12 @@ class AmazonProduct {
       'attributes': attributes,
       'brandId': brandId,
       'isLocalBrand': isLocalBrand,
+      // Multi-role system fields
+      'allow_chat': allowChat,
+      'qr_data': qrData,
+      'color_hex': colorHex,
+      'category': category,
+      'subcategory': subcategory,
     };
   }
 

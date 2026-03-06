@@ -18,6 +18,10 @@ import 'package:image/image.dart' as img;
 // Factory Discovery Models
 import 'package:aurora/models/factory/factory_models.dart';
 
+// New Multi-Role Models
+import 'package:aurora/models/middleman_profile.dart';
+import 'package:aurora/models/deal.dart';
+
 // ============================================================================
 // Constants & Configuration
 // ============================================================================
@@ -25,64 +29,98 @@ import 'package:aurora/models/factory/factory_models.dart';
 class SupabaseConfig {
   SupabaseConfig._();
 
-  // Table Names
-  static const String tableSellers = 'sellers';
-  static const String tableProducts = 'products';
-  static const String tableOrders = 'orders';
-  static const String tableOrderItems = 'order_items';
-  static const String tableReviews = 'reviews';
-  static const String tableWishlist = 'wishlist';
-  static const String tableCategories = 'categories';
-  static const String tableShippingAddresses = 'shipping_addresses';
-  static const String tableNotifications = 'notifications';
-  static const String tableAnalytics = 'analytics';
-  static const String tableCart = 'cart';
-
-  // Edge Functions
-  static const String functionProcessSignup = 'process-signup';
-  static const String functionProcessLogin = 'process-login';
-  static const String functionManageProduct = 'manage-product';
-  static const String functionListProducts = 'list-products';
-  static const String functionCreateOrder = 'create-order';
-  static const String functionProcessNotification = 'process-notification';
-
-  // New Edge Functions for Products
-  static const String functionCreateProduct = 'create-product';
-  static const String functionUpdateProduct = 'update-product';
-  static const String functionDeleteProduct = 'delete-product';
-  static const String functionSearchProducts = 'search-products';
-
-  // Factory Discovery Edge Functions
-  static const String functionFindNearbyFactories = 'find-nearby-factories';
-  static const String functionRequestFactoryConnection = 'request-factory-connection';
-  static const String functionRateFactory = 'rate-factory';
-
-  // User Metadata Keys
-  static const String keyAccountType = 'account_type';
-  static const String keyFullName = 'full_name';
-  static const String keyCurrency = 'currency';
-  static const String keyPhone = 'phone';
-  static const String keyLocation = 'location';
-  static const String keyLanguage = 'language';
-
-  // Cache Keys
-  static const String cacheProducts = 'cache_products';
-  static const String cacheCategories = 'cache_categories';
-  static const String cacheSellerProfile = 'cache_seller_profile';
+  static const Duration analyticsCacheDuration = Duration(minutes: 15);
   static const String cacheAnalytics = 'cache_analytics';
-  static const String cacheExpiry = 'cache_expiry';
-
+  static const String cacheCategories = 'cache_categories';
+  static const String cacheCustomerProfile = 'cache_customer_profile';
+  static const String cacheDeals = 'cache_deals';
   // Cache Duration
   static const Duration cacheDuration = Duration(minutes: 5);
-  static const Duration analyticsCacheDuration = Duration(minutes: 15);
+
+  static const String cacheExpiry = 'cache_expiry';
+  // Cache Keys - Multi-Role System
+  static const String cacheFactoryProfile = 'cache_factory_profile';
+
+  static const String cacheMiddlemanProfile = 'cache_middleman_profile';
+  // Cache Keys - Core
+  static const String cacheProducts = 'cache_products';
+
+  static const String cacheSellerProfile = 'cache_seller_profile';
+  static const String functionCreateDeal = 'create-deal';
+  // Edge Functions - Orders & Deals
+  static const String functionCreateOrder = 'create-order';
+
+  static const String functionCreateProduct = 'create-product';
+  static const String functionDeleteProduct = 'delete-product';
+  // Edge Functions - Factory Discovery
+  static const String functionFindNearbyFactories = 'find-nearby-factories';
+
+  // Edge Functions - Chat System
+  static const String functionGetOrCreateConversation =
+      'get-or-create-conversation';
+
+  static const String functionListProducts = 'list-products';
+  // Edge Functions - Products
+  static const String functionManageProduct = 'manage-product';
+
+  static const String functionProcessLogin = 'process-login';
+  // Edge Functions - Notifications
+  static const String functionProcessNotification = 'process-notification';
+
+  // Edge Functions - Auth
+  static const String functionProcessSignup = 'process-signup';
+
+  static const String functionRateFactory = 'rate-factory';
+  static const String functionRequestFactoryConnection =
+      'request-factory-connection';
+
+  static const String functionSearchProducts = 'search-products';
+  static const String functionUpdateProduct = 'update-product';
+  // User Metadata Keys
+  static const String keyAccountType = 'account_type';
+
+  static const String keyCurrency = 'currency';
+  static const String keyFullName = 'full_name';
+  static const String keyLanguage = 'language';
+  static const String keyLocation = 'location';
+  static const String keyPhone = 'phone';
+  static const String tableAnalytics = 'analytics';
+  static const String tableCart = 'cart';
+  static const String tableCategories = 'categories';
+  static const String tableConversations = 'conversations';
+  static const String tableCustomers = 'customers';
+  static const String tableDeals = 'deals';
+  static const String tableFactoryConnections = 'factory_connections';
+  // Table Names - Multi-Role System
+  static const String tableFactoryProfiles = 'factory_profiles';
+
+  static const String tableFactoryRatings = 'factory_ratings';
+  static const String tableMessages = 'messages';
+  static const String tableMiddlemanProfiles = 'middleman_profiles';
+  static const String tableNotifications = 'notifications';
+  static const String tableOrderItems = 'order_items';
+  static const String tableOrders = 'orders';
+  static const String tableProducts = 'products';
+  static const String tableReviews = 'reviews';
+  // Table Names - Core
+  static const String tableSellers = 'sellers';
+
+  static const String tableShippingAddresses = 'shipping_addresses';
+  static const String tableWishlist = 'wishlist';
 }
 
 // ============================================================================
 // Type Definitions
 // ============================================================================
 
-/// Represents the type of user account
-enum AccountType { user, seller, admin }
+/// Represents the type of user account in the Aurora multi-role system
+enum AccountType {
+  user, // General user
+  seller, // Seller/merchant
+  factory, // Factory/manufacturer
+  middleman, // Middleman/commission agent
+  customer, // Customer (B2B buyer)
+}
 
 /// Order Status
 enum OrderStatus {
@@ -108,17 +146,17 @@ typedef AuthResult = ({
 
 /// Standardized result for data operations
 class DataResult<T> {
-  final bool success;
-  final String message;
-  final T? data;
-  final String? error;
-
   DataResult({
     required this.success,
     required this.message,
     required this.data,
     this.error,
   });
+
+  final T? data;
+  final String? error;
+  final String message;
+  final bool success;
 
   Map<String, dynamic> toJson() => {
     'success': success,
@@ -130,14 +168,6 @@ class DataResult<T> {
 
 /// Pagination Result
 class PaginationResult<T> {
-  final bool success;
-  final String message;
-  final List<T> items;
-  final int page;
-  final int limit;
-  final int total;
-  final int totalPages;
-
   PaginationResult({
     required this.success,
     required this.message,
@@ -147,6 +177,14 @@ class PaginationResult<T> {
     required this.total,
     required this.totalPages,
   });
+
+  final List<T> items;
+  final int limit;
+  final String message;
+  final int page;
+  final bool success;
+  final int total;
+  final int totalPages;
 
   Map<String, dynamic> toJson() => {
     'success': success,
@@ -165,9 +203,11 @@ class PaginationResult<T> {
 
 /// Global error handler for consistent error management
 class GlobalErrorHandler {
-  static final GlobalErrorHandler _instance = GlobalErrorHandler._internal();
   factory GlobalErrorHandler() => _instance;
+
   GlobalErrorHandler._internal();
+
+  static final GlobalErrorHandler _instance = GlobalErrorHandler._internal();
 
   final StreamController<AppError> _errorController =
       StreamController<AppError>.broadcast();
@@ -197,11 +237,11 @@ class GlobalErrorHandler {
 
 /// Application Error Model
 class AppError {
-  final Object error;
-  final String? context;
-  final DateTime timestamp;
-
   AppError({required this.error, this.context, required this.timestamp});
+
+  final String? context;
+  final Object error;
+  final DateTime timestamp;
 
   String get message => error.toString();
 
@@ -221,12 +261,14 @@ class AppError {
 
 /// Manages local caching for improved performance
 class CacheManager {
-  static final CacheManager _instance = CacheManager._internal();
   factory CacheManager() => _instance;
+
   CacheManager._internal();
 
-  SharedPreferences? _prefs;
+  static final CacheManager _instance = CacheManager._internal();
+
   final Map<String, _CacheEntry> _memoryCache = {};
+  SharedPreferences? _prefs;
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -301,10 +343,10 @@ class CacheManager {
 }
 
 class _CacheEntry {
+  _CacheEntry({required this.data, this.expiry});
+
   final dynamic data;
   final int? expiry;
-
-  _CacheEntry({required this.data, this.expiry});
 
   bool get isExpired =>
       expiry != null && DateTime.now().millisecondsSinceEpoch > expiry!;
@@ -316,10 +358,11 @@ class _CacheEntry {
 
 /// Rate limiter for API calls
 class RateLimiter {
-  final Map<String, _RateLimitEntry> _limits = {};
+  RateLimiter({this.defaultLimit = const Duration(seconds: 1)});
+
   final Duration defaultLimit;
 
-  RateLimiter({this.defaultLimit = const Duration(seconds: 1)});
+  final Map<String, _RateLimitEntry> _limits = {};
 
   Future<T> execute<T>(
     String key,
@@ -344,10 +387,11 @@ class RateLimiter {
 }
 
 class _RateLimitEntry {
-  final Duration limit;
-  DateTime? _lastCall;
-
   _RateLimitEntry({required this.limit});
+
+  final Duration limit;
+
+  DateTime? _lastCall;
 
   Future<void> wait() async {
     final now = DateTime.now();
@@ -370,24 +414,6 @@ class _RateLimitEntry {
 ///
 /// Extends [ChangeNotifier] to support reactive UI updates via Provider.
 class SupabaseProvider extends ChangeNotifier {
-  final SupabaseClient _client;
-  final SellerDB? _sellerDb;
-  final ProductsDB? _productsDb;
-  bool _isCheckingSession = true;
-
-  // Error handling
-  final GlobalErrorHandler _errorHandler = GlobalErrorHandler();
-  final RateLimiter _rateLimiter = RateLimiter();
-
-  // Cache
-  final CacheManager _cache = CacheManager();
-
-  // Queue Service for PGMQ
-  late final QueueService queue;
-
-  // Push notification token
-  String? _pushToken;
-
   /// Creates a new instance with the provided Supabase client and seller database.
   SupabaseProvider(this._client, [SellerDB? sellerDb, ProductsDB? productsDb])
     : _sellerDb = sellerDb,
@@ -396,31 +422,28 @@ class SupabaseProvider extends ChangeNotifier {
     _initProvider();
   }
 
-  void _initProvider() {
-    // Listen to auth state changes
-    _client.auth.onAuthStateChange.listen((data) {
-      _isCheckingSession = false;
-      notifyListeners();
-    });
+  // Queue Service for PGMQ
+  late final QueueService queue;
 
-    // Mark session check as complete after a short delay
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _isCheckingSession = false;
-      notifyListeners();
-    });
+  // Cache
+  final CacheManager _cache = CacheManager();
 
-    // Initialize cache
-    _cache.init();
+  final SupabaseClient _client;
+  // Error handling
+  final GlobalErrorHandler _errorHandler = GlobalErrorHandler();
 
-    // Start cache cleanup
-    _startCacheCleanup();
-  }
+  bool _isCheckingSession = true;
+  final ProductsDB? _productsDb;
+  // Push notification token
+  String? _pushToken;
 
-  void _startCacheCleanup() {
-    // Clean expired cache every 10 minutes
-    Timer.periodic(const Duration(minutes: 10), (_) {
-      _cache.clearExpired();
-    });
+  final RateLimiter _rateLimiter = RateLimiter();
+  final SellerDB? _sellerDb;
+
+  @override
+  void dispose() {
+    _errorHandler.dispose();
+    super.dispose();
   }
 
   /// The underlying Supabase client for direct API access.
@@ -461,33 +484,11 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   // --------------------------------------------------------------------------
-  // Security Helpers
-  // --------------------------------------------------------------------------
-
-  /// Sanitize user input to prevent XSS attacks
-  String _sanitizeInput(String input) {
-    return input
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;')
-        .trim();
-  }
-
-  /// Generate user-specific cache key to prevent data leakage
-  String _getUserCacheKey(String baseKey) {
-    if (!isLoggedIn) {
-      throw StateError('User must be logged in to generate cache key');
-    }
-    return '$baseKey-${currentUser!.id}';
-  }
-
-  // --------------------------------------------------------------------------
   // Authentication: Login
   // --------------------------------------------------------------------------
 
   /// Signs in a user with email and password.
+  /// After authentication, loads the role-specific profile.
   Future<AuthResult> login({
     required String email,
     required String password,
@@ -506,14 +507,39 @@ class SupabaseProvider extends ChangeNotifier {
         return _failure('Invalid email or password.');
       }
 
-      // Cache seller profile if seller
-      if (response.user?.userMetadata?[SupabaseConfig.keyAccountType] ==
-          'seller') {
+      // Determine account type and load role-specific profile
+      final accountType =
+          response.user?.userMetadata?[SupabaseConfig.keyAccountType]
+              as String?;
+
+      if (accountType == 'seller') {
         await _cache.set(
           SupabaseConfig.cacheSellerProfile,
           response.user!.id,
           SupabaseConfig.cacheDuration,
         );
+        await getCurrentSellerProfile();
+      } else if (accountType == 'factory') {
+        await _cache.set(
+          SupabaseConfig.cacheFactoryProfile,
+          response.user!.id,
+          SupabaseConfig.cacheDuration,
+        );
+        await getCurrentFactoryProfile();
+      } else if (accountType == 'middleman') {
+        await _cache.set(
+          SupabaseConfig.cacheMiddlemanProfile,
+          response.user!.id,
+          SupabaseConfig.cacheDuration,
+        );
+        await getCurrentMiddlemanProfile();
+      } else if (accountType == 'customer') {
+        await _cache.set(
+          SupabaseConfig.cacheCustomerProfile,
+          response.user!.id,
+          SupabaseConfig.cacheDuration,
+        );
+        await getCurrentCustomerProfile();
       }
 
       notifyListeners();
@@ -521,9 +547,7 @@ class SupabaseProvider extends ChangeNotifier {
       return _success('Login successful!', {
         'user': response.user,
         'session': response.session,
-        'accountType':
-            response.user?.userMetadata?[SupabaseConfig.keyAccountType] ??
-            'user',
+        'accountType': accountType ?? 'user',
       });
     } on AuthException catch (e) {
       _errorHandler.handleError(e, 'Login');
@@ -590,7 +614,9 @@ class SupabaseProvider extends ChangeNotifier {
   // Authentication: Signup
   // --------------------------------------------------------------------------
 
-  /// Registers a new user with Supabase Auth and optionally creates a seller record.
+  /// Registers a new user with Supabase Auth and creates role-specific profile.
+  ///
+  /// Supports all Aurora roles: seller, factory, middleman, customer.
   Future<AuthResult> signup({
     required String fullName,
     required AccountType accountType,
@@ -600,6 +626,14 @@ class SupabaseProvider extends ChangeNotifier {
     required String email,
     required String password,
     String? language,
+    // Factory-specific fields
+    String? companyName,
+    String? businessLicense,
+    double? latitude,
+    double? longitude,
+    // Middleman-specific fields
+    double? commissionRate,
+    String? specialization,
   }) async {
     try {
       // Step 1: Create auth user
@@ -620,7 +654,7 @@ class SupabaseProvider extends ChangeNotifier {
         return _failure('Signup failed. Please try again.');
       }
 
-      // Step 2: Create seller profile if applicable
+      // Step 2: Create role-specific profile
       if (accountType == AccountType.seller) {
         await _createSellerRecord(
           userId: authResponse.user!.id,
@@ -630,6 +664,43 @@ class SupabaseProvider extends ChangeNotifier {
           location: location,
           currency: currency,
           password: password,
+        );
+      } else if (accountType == AccountType.factory) {
+        await _createFactoryRecord(
+          userId: authResponse.user!.id,
+          email: email,
+          fullName: fullName,
+          phone: phone,
+          location: location,
+          currency: currency,
+          companyName: companyName,
+          businessLicense: businessLicense,
+          latitude: latitude,
+          longitude: longitude,
+          password: password,
+        );
+      } else if (accountType == AccountType.middleman) {
+        await _createMiddlemanRecord(
+          userId: authResponse.user!.id,
+          email: email,
+          fullName: fullName,
+          phone: phone,
+          location: location,
+          currency: currency,
+          companyName: companyName,
+          commissionRate: commissionRate,
+          specialization: specialization,
+          password: password,
+        );
+      } else if (accountType == AccountType.customer) {
+        // For customers, we create a basic record in customers table
+        // They may be upgraded to B2B customers later
+        await _createCustomerRecord(
+          userId: authResponse.user!.id,
+          email: email,
+          fullName: fullName,
+          phone: phone,
+          location: location,
         );
       }
 
@@ -759,6 +830,257 @@ class SupabaseProvider extends ChangeNotifier {
     } catch (e) {
       _errorHandler.handleError(e, 'Update Seller Profile');
       return _failure('Failed to update profile: $e');
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Factory Profile Operations
+  // --------------------------------------------------------------------------
+
+  /// Fetches the current authenticated factory's profile.
+  Future<MiddlemanProfile?> getCurrentFactoryProfile() async {
+    if (!isLoggedIn) return null;
+
+    // Check cache first
+    final cached = await _cache.get<MiddlemanProfile>(
+      SupabaseConfig.cacheFactoryProfile,
+    );
+    if (cached != null) return cached;
+
+    final userId = currentUser!.id;
+    try {
+      final response = await _client
+          .from(SupabaseConfig.tableSellers)
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      // Convert seller record to MiddlemanProfile for factories
+      final profile = MiddlemanProfile(
+        userId: response['user_id'] as String,
+        fullName: response['full_name'] as String,
+        email: response['email'] as String?,
+        phone: response['phone'] as String,
+        location: response['location'] as String?,
+        latitude: (response['latitude'] as num?)?.toDouble(),
+        longitude: (response['longitude'] as num?)?.toDouble(),
+        companyName: response['company_name'] as String?,
+        businessLicense: response['business_license'] as String?,
+        commissionRate: 0, // Factories don't have commission rates
+        isVerified: response['is_verified'] as bool? ?? false,
+        totalDeals: 0,
+        totalCommissionEarned: 0,
+        averageRating: 0,
+        createdAt: DateTime.now(),
+      );
+
+      await _cache.set(
+        SupabaseConfig.cacheFactoryProfile,
+        profile,
+        SupabaseConfig.cacheDuration,
+      );
+      return profile;
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Factory Profile');
+      return null;
+    }
+  }
+
+  /// Updates the factory profile settings.
+  Future<AuthResult> updateFactoryProfile({
+    String? companyName,
+    String? businessLicense,
+    double? latitude,
+    double? longitude,
+    int? minOrderQuantity,
+    double? wholesaleDiscount,
+    String? productionCapacity,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return _failure('You must be logged in');
+      }
+
+      final userId = currentUser!.id;
+      final Map<String, dynamic> updates = {};
+
+      if (companyName != null) updates['company_name'] = companyName;
+      if (businessLicense != null)
+        updates['business_license'] = businessLicense;
+      if (latitude != null) updates['latitude'] = latitude;
+      if (longitude != null) updates['longitude'] = longitude;
+      if (minOrderQuantity != null)
+        updates['min_order_quantity'] = minOrderQuantity;
+      if (wholesaleDiscount != null)
+        updates['wholesale_discount'] = wholesaleDiscount;
+      if (productionCapacity != null)
+        updates['production_capacity'] = productionCapacity;
+      updates['updated_at'] = DateTime.now().toIso8601String();
+
+      await _client
+          .from(SupabaseConfig.tableSellers)
+          .update(updates)
+          .eq('user_id', userId);
+
+      // Invalidate cache
+      await _cache.remove(SupabaseConfig.cacheFactoryProfile);
+
+      return _success('Factory profile updated successfully');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Update Factory Profile');
+      return _failure('Failed to update factory profile: $e');
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Middleman Profile Operations
+  // --------------------------------------------------------------------------
+
+  /// Fetches the current authenticated middleman's profile.
+  Future<MiddlemanProfile?> getCurrentMiddlemanProfile() async {
+    if (!isLoggedIn) return null;
+
+    // Check cache first
+    final cached = await _cache.get<MiddlemanProfile>(
+      SupabaseConfig.cacheMiddlemanProfile,
+    );
+    if (cached != null) return cached;
+
+    final userId = currentUser!.id;
+    try {
+      final response = await _client
+          .from(SupabaseConfig.tableMiddlemanProfiles)
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      final profile = MiddlemanProfile.fromJson(response);
+
+      await _cache.set(
+        SupabaseConfig.cacheMiddlemanProfile,
+        profile,
+        SupabaseConfig.cacheDuration,
+      );
+      return profile;
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Middleman Profile');
+      return null;
+    }
+  }
+
+  /// Updates the middleman profile.
+  Future<AuthResult> updateMiddlemanProfile({
+    String? companyName,
+    double? commissionRate,
+    String? specialization,
+    double? latitude,
+    double? longitude,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return _failure('You must be logged in');
+      }
+
+      final userId = currentUser!.id;
+      final Map<String, dynamic> updates = {};
+
+      if (companyName != null) updates['company_name'] = companyName;
+      if (commissionRate != null) updates['commission_rate'] = commissionRate;
+      if (specialization != null) updates['specialization'] = specialization;
+      if (latitude != null) updates['latitude'] = latitude;
+      if (longitude != null) updates['longitude'] = longitude;
+      updates['updated_at'] = DateTime.now().toIso8601String();
+
+      await _client
+          .from(SupabaseConfig.tableMiddlemanProfiles)
+          .update(updates)
+          .eq('user_id', userId);
+
+      // Invalidate cache
+      await _cache.remove(SupabaseConfig.cacheMiddlemanProfile);
+
+      return _success('Middleman profile updated successfully');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Update Middleman Profile');
+      return _failure('Failed to update middleman profile: $e');
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Customer Profile Operations
+  // --------------------------------------------------------------------------
+
+  /// Fetches the current authenticated customer's profile.
+  Future<Customer?> getCurrentCustomerProfile() async {
+    if (!isLoggedIn) return null;
+
+    // Check cache first
+    final cached = await _cache.get<Customer>(
+      SupabaseConfig.cacheCustomerProfile,
+    );
+    if (cached != null) return cached;
+
+    final userId = currentUser!.id;
+    try {
+      final response = await _client
+          .from(SupabaseConfig.tableCustomers)
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      final customer = Customer.fromJson(response);
+
+      await _cache.set(
+        SupabaseConfig.cacheCustomerProfile,
+        customer,
+        SupabaseConfig.cacheDuration,
+      );
+      return customer;
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Customer Profile');
+      return null;
+    }
+  }
+
+  /// Updates the customer profile.
+  Future<AuthResult> updateCustomerProfile({
+    String? name,
+    String? email,
+    String? ageRange,
+    String? notes,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return _failure('You must be logged in');
+      }
+
+      final userId = currentUser!.id;
+      final Map<String, dynamic> updates = {};
+
+      if (name != null) updates['name'] = name;
+      if (email != null) updates['email'] = email;
+      if (ageRange != null) updates['age_range'] = ageRange;
+      if (notes != null) updates['notes'] = notes;
+      updates['updated_at'] = DateTime.now().toIso8601String();
+
+      await _client
+          .from(SupabaseConfig.tableCustomers)
+          .update(updates)
+          .eq('user_id', userId);
+
+      // Invalidate cache
+      await _cache.remove(SupabaseConfig.cacheCustomerProfile);
+
+      return _success('Customer profile updated successfully');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Update Customer Profile');
+      return _failure('Failed to update customer profile: $e');
     }
   }
 
@@ -1293,23 +1615,6 @@ class SupabaseProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _updateProductRating(String asin) async {
-    try {
-      final reviews = await getProductReviews(asin);
-      if (reviews.isEmpty) return;
-
-      final ratings = reviews.map((r) => r['rating'] as int).toList();
-      final average = ratings.reduce((a, b) => a + b) / ratings.length;
-
-      await _client
-          .from('products')
-          .update({'average_rating': average, 'review_count': ratings.length})
-          .eq('asin', asin);
-    } catch (e) {
-      _errorHandler.handleError(e, 'Update Product Rating');
-    }
-  }
-
   // --------------------------------------------------------------------------
   // Notifications
   // --------------------------------------------------------------------------
@@ -1767,143 +2072,6 @@ class SupabaseProvider extends ChangeNotifier {
       if (kDebugMode) print('Edge Function "$functionName" error: $e');
       rethrow;
     }
-  }
-
-  // --------------------------------------------------------------------------
-  // Private Helpers
-  // --------------------------------------------------------------------------
-
-  /// Fetches a seller record by user_id, returns null if not found.
-  Future<Map<String, dynamic>?> _fetchSeller(String userId) async {
-    try {
-      return await _client
-          .from(SupabaseConfig.tableSellers)
-          .select()
-          .eq('user_id', userId)
-          .maybeSingle();
-    } on PostgrestException catch (e) {
-      if (e.code == 'PGRST116') return null;
-      rethrow;
-    }
-  }
-
-  /// Creates a new seller record in the database.
-  Future<void> _createSellerRecord({
-    required String userId,
-    required String email,
-    required String fullName,
-    required String phone,
-    required String location,
-    required String currency,
-    required String password,
-  }) async {
-    final nameParts = fullName.split(' ');
-    final firstname = nameParts.isNotEmpty ? nameParts[0] : '';
-    final secoundname = nameParts.length > 1 ? nameParts[1] : '';
-    final thirdname = nameParts.length > 2 ? nameParts[2] : '';
-    final forthname = nameParts.length > 3 ? nameParts[3] : '';
-
-    try {
-      await _client.from(SupabaseConfig.tableSellers).insert({
-        'user_id': userId,
-        'email': email,
-        'full_name': fullName,
-        'firstname': firstname,
-        'secoundname': secoundname,
-        'thirdname': thirdname,
-        'forthname': forthname,
-        'phone': phone,
-        'location': location,
-        'currency': currency,
-        SupabaseConfig.keyAccountType: 'seller',
-        'is_verified': false,
-        'created_at': DateTime.now().toIso8601String(),
-      }).select();
-
-      if (kDebugMode) print('Seller created in Supabase');
-    } catch (e) {
-      if (kDebugMode) print('Failed to create seller in Supabase: $e');
-    }
-
-    try {
-      if (_sellerDb != null) {
-        await _sellerDb.addSeller({
-          'user_id': userId,
-          'firstname': firstname,
-          'secoundname': secoundname,
-          'thirdname': thirdname,
-          'forthname': forthname,
-          'full_name': fullName,
-          'email': email,
-          'password': password,
-          'location': location,
-          'phone': phone,
-          'currency': currency,
-          'account_type': 'seller',
-          'is_verified': 0,
-          'created_at': DateTime.now().toIso8601String(),
-        });
-        if (kDebugMode) print('Seller created in local SQLite');
-      }
-    } catch (e) {
-      if (kDebugMode) print('Failed to create seller in local DB: $e');
-    }
-  }
-
-  /// Invokes the signup edge function.
-  Future<void> _invokeSignupFunction({
-    required String userId,
-    required String email,
-    required String fullName,
-    required String accountType,
-    required String phone,
-    required String location,
-    required String currency,
-  }) async {
-    try {
-      await _client.functions.invoke(
-        SupabaseConfig.functionProcessSignup,
-        body: {
-          'userId': userId,
-          'email': email,
-          'fullName': fullName,
-          'accountType': accountType,
-          'phone': phone,
-          'location': location,
-          'currency': currency,
-        },
-      );
-    } catch (e) {
-      if (kDebugMode) print('Edge Function error (user still created): $e');
-    }
-  }
-
-  /// Returns a standardized success result.
-  AuthResult _success(String message, [Map<String, dynamic>? data]) {
-    return (success: true, message: message, data: data);
-  }
-
-  /// Returns a standardized failure result.
-  AuthResult _failure(String message) {
-    return (success: false, message: message, data: null);
-  }
-
-  /// Converts Supabase auth error messages to user-friendly strings.
-  String _mapAuthError(String message) {
-    return switch (message) {
-      String m when m.contains('Invalid login credentials') =>
-        'Invalid email or password.',
-      String m when m.contains('User already registered') =>
-        'This email is already registered.',
-      String m when m.contains('Weak password') =>
-        'Password must be at least 6 characters.',
-      String m when m.contains('Invalid email') =>
-        'Please enter a valid email address.',
-      String m when m.contains('Email not confirmed') =>
-        'Please verify your email address.',
-      String m when m.contains('Phone number') => 'Invalid phone number.',
-      _ => message,
-    };
   }
 
   /// Call manage-product edge function
@@ -2584,6 +2752,491 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   // ==========================================================================
+  // CHAT SYSTEM
+  // ==========================================================================
+
+  /// Get or create a conversation with another user
+  Future<String> getOrCreateConversation({
+    required String otherUserId,
+    String? productId,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        throw Exception('User not authenticated');
+      }
+
+      final response = await _client.functions.invoke(
+        SupabaseConfig.functionGetOrCreateConversation,
+        body: {'otherUserId': otherUserId, 'productId': productId},
+      );
+
+      if (response.status == 200 && response.data?['success'] == true) {
+        return response.data!['conversationId'] as String;
+      } else {
+        throw Exception(
+          response.data?['error'] ?? 'Failed to create conversation',
+        );
+      }
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get or Create Conversation');
+      rethrow;
+    }
+  }
+
+  /// Send a message in a conversation
+  Future<AuthResult> sendMessage({
+    required String conversationId,
+    required String content,
+    String messageType = 'text',
+    String? attachmentUrl,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return _failure('You must be logged in');
+      }
+
+      final userId = currentUser!.id;
+      final messageId = const Uuid().v4();
+
+      await _client.from(SupabaseConfig.tableMessages).insert({
+        'id': messageId,
+        'conversation_id': conversationId,
+        'sender_id': userId,
+        'content': content,
+        'message_type': messageType,
+        'attachment_url': attachmentUrl,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      // Update conversation last message
+      await _client
+          .from(SupabaseConfig.tableConversations)
+          .update({
+            'last_message': content,
+            'last_message_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', conversationId);
+
+      return _success('Message sent');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Send Message');
+      return _failure('Failed to send message: $e');
+    }
+  }
+
+  /// Get messages for a conversation
+  Future<List<Map<String, dynamic>>> getMessages({
+    required String conversationId,
+    int limit = 50,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return [];
+      }
+
+      final response = await _client
+          .from(SupabaseConfig.tableMessages)
+          .select('''
+            *,
+            sender:sender_id (full_name, avatar_url)
+          ''')
+          .eq('conversation_id', conversationId)
+          .order('created_at', ascending: false)
+          .limit(limit);
+
+      // Verify that response is a List (successful query)
+      if (response is List) {
+        // Return messages in chronological order (oldest first)
+        return response.reversed.toList();
+      } else {
+        // Log unexpected response type for debugging
+        _errorHandler.handleError(
+          Exception('Unexpected response type: ${response.runtimeType}'),
+          'Get Messages',
+        );
+        return [];
+      }
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Messages');
+      return [];
+    }
+  }
+
+  /// Get user's conversations
+  Future<List<Map<String, dynamic>>> getConversations() async {
+    try {
+      if (!isLoggedIn) {
+        return [];
+      }
+
+      final userId = currentUser!.id;
+
+      final response = await _client
+          .from(SupabaseConfig.tableConversations)
+          .select('''
+            *,
+            participant_a_data:participant_a (id, full_name, avatar_url),
+            participant_b_data:participant_b (id, full_name, avatar_url),
+            product (title, image_url)
+          ''')
+          .filter('participant_a', 'eq', userId)
+          .order('last_message_at', ascending: false);
+
+      final response2 = await _client
+          .from(SupabaseConfig.tableConversations)
+          .select('''
+            *,
+            participant_a_data:participant_a (id, full_name, avatar_url),
+            participant_b_data:participant_b (id, full_name, avatar_url),
+            product (title, image_url)
+          ''')
+          .filter('participant_b', 'eq', userId)
+          .order('last_message_at', ascending: false);
+
+      // Combine both results and remove duplicates
+      final allConversations = [...(response as List), ...(response2 as List)];
+
+      // Remove duplicates by conversation ID
+      final uniqueMap = <String, Map<String, dynamic>>{};
+      for (var conv in allConversations) {
+        final id = conv['id'] as String;
+        if (!uniqueMap.containsKey(id)) {
+          uniqueMap[id] = conv;
+        }
+      }
+
+      // Sort by last_message_at
+      final sorted = uniqueMap.values.toList();
+      sorted.sort((a, b) {
+        final aTime = a['last_message_at'] != null
+            ? DateTime.parse(a['last_message_at'] as String)
+            : DateTime(0);
+        final bTime = b['last_message_at'] != null
+            ? DateTime.parse(b['last_message_at'] as String)
+            : DateTime(0);
+        return bTime.compareTo(aTime);
+      });
+
+      return sorted;
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Conversations');
+      return [];
+    }
+  }
+
+  /// Subscribe to messages in a conversation (realtime)
+  Stream<List<Map<String, dynamic>>> getMessagesStream(String conversationId) {
+    return _client
+        .from(SupabaseConfig.tableMessages)
+        .stream(primaryKey: ['id'])
+        .eq('conversation_id', conversationId)
+        .order('created_at');
+  }
+
+  /// Mark messages as read
+  Future<AuthResult> markMessagesAsRead({
+    required String conversationId,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return _failure('You must be logged in');
+      }
+
+      final userId = currentUser!.id;
+
+      await _client
+          .from(SupabaseConfig.tableMessages)
+          .update({
+            'is_read': true,
+            'read_at': DateTime.now().toIso8601String(),
+          })
+          .eq('conversation_id', conversationId)
+          .neq('sender_id', userId)
+          .eq('is_read', false);
+
+      return _success('Messages marked as read');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Mark Messages as Read');
+      return _failure('Failed to mark messages as read: $e');
+    }
+  }
+
+  // ==========================================================================
+  // DEAL MANAGEMENT (For Middlemen)
+  // ==========================================================================
+
+  /// Create a new deal
+  Future<AuthResult> createDeal({
+    required String partyAId,
+    required String partyBId,
+    String? productId,
+    required double commissionRate,
+    String? terms,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return _failure('You must be logged in');
+      }
+
+      final middlemanId = currentUser!.id;
+      final dealId = const Uuid().v4();
+
+      // Call edge function for deal creation
+      final response = await _client.functions.invoke(
+        SupabaseConfig.functionCreateDeal,
+        body: {
+          'id': dealId,
+          'middlemanId': middlemanId,
+          'partyAId': partyAId,
+          'partyBId': partyBId,
+          'productId': productId,
+          'commissionRate': commissionRate,
+          'terms': terms,
+        },
+      );
+
+      if (response.status == 201 && response.data?['success'] == true) {
+        return _success(
+          response.data?['message'] ?? 'Deal created successfully',
+          response.data,
+        );
+      } else {
+        return _failure(response.data?['error'] ?? 'Failed to create deal');
+      }
+    } catch (e) {
+      _errorHandler.handleError(e, 'Create Deal');
+      return _failure('Failed to create deal: $e');
+    }
+  }
+
+  /// Get deals for current middleman
+  Future<List<Deal>> getMyDeals({String? status}) async {
+    if (!isLoggedIn) return [];
+
+    try {
+      final middlemanId = currentUser!.id;
+
+      dynamic query = _client
+          .from(SupabaseConfig.tableDeals)
+          .select('''
+            *,
+            partyA: party_a_id (full_name, email),
+            partyB: party_b_id (full_name, email),
+            product (title, image_url)
+          ''')
+          .eq('middleman_id', middlemanId);
+
+      if (status != null && status.isNotEmpty) {
+        query = (query as dynamic).eq('status', status);
+      }
+
+      final response = await (query as dynamic).order(
+        'created_at',
+        ascending: false,
+      );
+
+      return (response as List).map((json) => Deal.fromJson(json)).toList();
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get My Deals');
+      return [];
+    }
+  }
+
+  /// Get deals where user is a party (A or B)
+  Future<List<Deal>> getDealsAsParty() async {
+    if (!isLoggedIn) return [];
+
+    try {
+      final userId = currentUser!.id;
+
+      // Query as party A
+      final responseA = await _client
+          .from(SupabaseConfig.tableDeals)
+          .select('''
+            *,
+            middleman: middleman_id (full_name, email),
+            partyA: party_a_id (full_name, email),
+            partyB: party_b_id (full_name, email),
+            product (title, image_url)
+          ''')
+          .eq('party_a_id', userId)
+          .order('created_at', ascending: false);
+
+      // Query as party B
+      final responseB = await _client
+          .from(SupabaseConfig.tableDeals)
+          .select('''
+            *,
+            middleman: middleman_id (full_name, email),
+            partyA: party_a_id (full_name, email),
+            partyB: party_b_id (full_name, email),
+            product (title, image_url)
+          ''')
+          .eq('party_b_id', userId)
+          .order('created_at', ascending: false);
+
+      // Combine both results
+      final allDeals = [...(responseA as List), ...(responseB as List)];
+
+      // Remove duplicates by deal ID
+      final uniqueMap = <String, Map<String, dynamic>>{};
+      for (var deal in allDeals) {
+        final id = deal['id'] as String;
+        if (!uniqueMap.containsKey(id)) {
+          uniqueMap[id] = deal;
+        }
+      }
+
+      // Sort by created_at
+      final sorted = uniqueMap.values.toList();
+      sorted.sort((a, b) {
+        final aTime = DateTime.parse(a['created_at'] as String);
+        final bTime = DateTime.parse(b['created_at'] as String);
+        return bTime.compareTo(aTime);
+      });
+
+      return sorted.map((json) => Deal.fromJson(json)).toList();
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Deals as Party');
+      return [];
+    }
+  }
+
+  /// Update deal status
+  Future<AuthResult> updateDealStatus({
+    required String dealId,
+    required String status,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return _failure('You must be logged in');
+      }
+
+      final updates = <String, dynamic>{
+        'status': status,
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      if (status == 'completed') {
+        updates['completed_at'] = DateTime.now().toIso8601String();
+      }
+
+      await _client
+          .from(SupabaseConfig.tableDeals)
+          .update(updates)
+          .eq('id', dealId);
+
+      // Invalidate cache
+      await _cache.remove(_getUserCacheKey(SupabaseConfig.cacheDeals));
+
+      return _success('Deal status updated');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Update Deal Status');
+      return _failure('Failed to update deal status: $e');
+    }
+  }
+
+  /// Get deal by ID
+  Future<Deal?> getDealById(String dealId) async {
+    try {
+      final response = await _client
+          .from(SupabaseConfig.tableDeals)
+          .select('''
+            *,
+            middleman: middleman_id (full_name, email),
+            partyA: party_a_id (full_name, email),
+            partyB: party_b_id (full_name, email),
+            product (title, image_url)
+          ''')
+          .eq('id', dealId)
+          .single();
+
+      return Deal.fromJson(response);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ==========================================================================
+  // LOCATION MANAGEMENT
+  // ==========================================================================
+
+  /// Update user's location (supports all roles)
+  Future<AuthResult> updateLocation({
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return _failure('You must be logged in');
+      }
+
+      final userId = currentUser!.id;
+      final role = accountType;
+
+      // Determine table based on role
+      String table;
+      switch (role) {
+        case AccountType.seller:
+        case AccountType.factory:
+          table = SupabaseConfig.tableSellers;
+          break;
+        case AccountType.middleman:
+          table = SupabaseConfig.tableMiddlemanProfiles;
+          break;
+        default:
+          return _failure('Your role does not support location updates');
+      }
+
+      await _client
+          .from(table)
+          .update({
+            'latitude': latitude,
+            'longitude': longitude,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('user_id', userId);
+
+      // Invalidate profile cache
+      if (role == AccountType.seller || role == AccountType.factory) {
+        await _cache.remove(SupabaseConfig.cacheFactoryProfile);
+      } else if (role == AccountType.middleman) {
+        await _cache.remove(SupabaseConfig.cacheMiddlemanProfile);
+      }
+
+      return _success('Location updated successfully');
+    } catch (e) {
+      _errorHandler.handleError(e, 'Update Location');
+      return _failure('Failed to update location: $e');
+    }
+  }
+
+  // ==========================================================================
+  // ROLE CHECK HELPERS
+  // ==========================================================================
+
+  /// Check if current user is a seller
+  bool get isSeller => accountType == AccountType.seller;
+
+  /// Check if current user is a factory
+  bool get isFactory => accountType == AccountType.factory;
+
+  /// Check if current user is a middleman
+  bool get isMiddleman => accountType == AccountType.middleman;
+
+  /// Check if current user is a customer
+  bool get isCustomer => accountType == AccountType.customer;
+
+  /// Check if current user can sell products (seller or factory)
+  bool get canSell => isSeller || isFactory;
+
+  /// Check if current user can create deals (middleman only)
+  bool get canCreateDeals => isMiddleman;
+
+  /// Check if current user can manage factory connections
+  bool get canManageFactoryConnections => isSeller || isFactory;
+
+  // ==========================================================================
   // FACTORY DISCOVERY & CONNECTION
   // ==========================================================================
 
@@ -2619,7 +3272,7 @@ class SupabaseProvider extends ChangeNotifier {
         final factories = factoriesData
             .map((json) => FactoryInfo.fromJson(json as Map<String, dynamic>))
             .toList();
-        
+
         return DataResult<List<FactoryInfo>>(
           success: true,
           message: 'Found ${factories.length} factories',
@@ -2657,10 +3310,7 @@ class SupabaseProvider extends ChangeNotifier {
 
       final response = await _client.functions.invoke(
         SupabaseConfig.functionRequestFactoryConnection,
-        body: {
-          'factoryId': factoryId,
-          'notes': notes,
-        },
+        body: {'factoryId': factoryId, 'notes': notes},
       );
 
       if (response.status == 201 && response.data?['success'] == true) {
@@ -2682,10 +3332,10 @@ class SupabaseProvider extends ChangeNotifier {
     String status = 'all',
   }) async {
     if (!isLoggedIn) return [];
-    
+
     try {
       final sellerId = currentUser!.id;
-      
+
       dynamic query = _client
           .from('factory_connections')
           .select('''
@@ -2702,14 +3352,16 @@ class SupabaseProvider extends ChangeNotifier {
             )
           ''')
           .eq('seller_id', sellerId);
-      
+
       if (status != 'all') {
         query = (query as dynamic).eq('status', status);
       }
-      
-      final response = await (query as dynamic)
-          .order('requested_at', ascending: false);
-      
+
+      final response = await (query as dynamic).order(
+        'requested_at',
+        ascending: false,
+      );
+
       return (response as List)
           .map((json) => FactoryConnection.fromJson(json))
           .toList();
@@ -2724,10 +3376,10 @@ class SupabaseProvider extends ChangeNotifier {
     String status = 'pending',
   }) async {
     if (!isLoggedIn) return [];
-    
+
     try {
       final factoryId = currentUser!.id;
-      
+
       dynamic query = _client
           .from('factory_connections')
           .select('''
@@ -2740,14 +3392,16 @@ class SupabaseProvider extends ChangeNotifier {
             )
           ''')
           .eq('factory_id', factoryId);
-      
+
       if (status != 'all') {
         query = (query as dynamic).eq('status', status);
       }
-      
-      final response = await (query as dynamic)
-          .order('requested_at', ascending: false);
-      
+
+      final response = await (query as dynamic).order(
+        'requested_at',
+        ascending: false,
+      );
+
       return (response as List)
           .map((json) => FactoryConnection.fromJson(json))
           .toList();
@@ -2770,12 +3424,12 @@ class SupabaseProvider extends ChangeNotifier {
 
       final factoryId = currentUser!.id;
       final status = accept ? 'accepted' : 'rejected';
-      
+
       final Map<String, dynamic> updates = {
         'status': status,
         'updated_at': DateTime.now().toIso8601String(),
       };
-      
+
       if (accept) {
         updates['accepted_at'] = DateTime.now().toIso8601String();
       } else {
@@ -2795,16 +3449,18 @@ class SupabaseProvider extends ChangeNotifier {
           .select('seller_id')
           .eq('id', connectionId)
           .single();
-      
+
       if (connection != null) {
         await _client.from('notifications').insert({
           'user_id': connection['seller_id'],
           'type': 'system',
-          'title': accept ? 'Factory Connection Accepted' : 'Factory Connection Declined',
-          'message': accept 
-              ? 'Your factory connection request has been accepted!' 
+          'title': accept
+              ? 'Factory Connection Accepted'
+              : 'Factory Connection Declined',
+          'message': accept
+              ? 'Your factory connection request has been accepted!'
               : 'Your factory connection request was declined',
-          'metadata': { 'connection_id': connectionId, 'status': status }
+          'metadata': {'connection_id': connectionId, 'status': status},
         });
       }
 
@@ -2880,11 +3536,11 @@ class SupabaseProvider extends ChangeNotifier {
         'get_factory_rating',
         params: {'p_factory_id': factoryId},
       );
-      
+
       if (result is List && result.isNotEmpty) {
         return FactoryRatingSummary.fromJson(result[0]);
       }
-      
+
       return FactoryRatingSummary(
         averageRating: 0,
         totalReviews: 0,
@@ -2908,7 +3564,7 @@ class SupabaseProvider extends ChangeNotifier {
   /// Note: Returns AmazonProduct objects from factory_products view
   Future<List<AmazonProduct>> getFactoryProducts(String factoryId) async {
     if (!isLoggedIn) return [];
-    
+
     try {
       final response = await _client
           .from('factory_products')
@@ -2916,7 +3572,7 @@ class SupabaseProvider extends ChangeNotifier {
           .eq('seller_id', factoryId)
           .eq('status', 'active')
           .eq('is_deleted', false);
-      
+
       return (response as List)
           .map((json) => AmazonProduct.fromJson(json))
           .toList();
@@ -2943,22 +3599,23 @@ class SupabaseProvider extends ChangeNotifier {
       }
 
       final sellerId = currentUser!.id;
-      
+
       final Map<String, dynamic> updates = {};
       if (isFactory != null) updates['is_factory'] = isFactory;
       if (latitude != null) updates['latitude'] = latitude;
       if (longitude != null) updates['longitude'] = longitude;
-      if (factoryLicenseUrl != null) updates['factory_license_url'] = factoryLicenseUrl;
-      if (minOrderQuantity != null) updates['min_order_quantity'] = minOrderQuantity;
-      if (wholesaleDiscount != null) updates['wholesale_discount'] = wholesaleDiscount;
+      if (factoryLicenseUrl != null)
+        updates['factory_license_url'] = factoryLicenseUrl;
+      if (minOrderQuantity != null)
+        updates['min_order_quantity'] = minOrderQuantity;
+      if (wholesaleDiscount != null)
+        updates['wholesale_discount'] = wholesaleDiscount;
       if (acceptsReturns != null) updates['accepts_returns'] = acceptsReturns;
-      if (productionCapacity != null) updates['production_capacity'] = productionCapacity;
+      if (productionCapacity != null)
+        updates['production_capacity'] = productionCapacity;
 
       if (updates.isNotEmpty) {
-        await _client
-            .from('sellers')
-            .update(updates)
-            .eq('user_id', sellerId);
+        await _client.from('sellers').update(updates).eq('user_id', sellerId);
       }
 
       return _success('Factory settings updated successfully');
@@ -2968,9 +3625,333 @@ class SupabaseProvider extends ChangeNotifier {
     }
   }
 
-  @override
-  void dispose() {
-    _errorHandler.dispose();
-    super.dispose();
+  void _initProvider() {
+    // Listen to auth state changes
+    _client.auth.onAuthStateChange.listen((data) {
+      _isCheckingSession = false;
+      notifyListeners();
+    });
+
+    // Mark session check as complete after a short delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _isCheckingSession = false;
+      notifyListeners();
+    });
+
+    // Initialize cache
+    _cache.init();
+
+    // Start cache cleanup
+    _startCacheCleanup();
+  }
+
+  void _startCacheCleanup() {
+    // Clean expired cache every 10 minutes
+    Timer.periodic(const Duration(minutes: 10), (_) {
+      _cache.clearExpired();
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Security Helpers
+  // --------------------------------------------------------------------------
+
+  /// Sanitize user input to prevent XSS attacks
+  String _sanitizeInput(String input) {
+    return input
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;')
+        .trim();
+  }
+
+  /// Generate user-specific cache key to prevent data leakage
+  String _getUserCacheKey(String baseKey) {
+    if (!isLoggedIn) {
+      throw StateError('User must be logged in to generate cache key');
+    }
+    return '$baseKey-${currentUser!.id}';
+  }
+
+  Future<void> _updateProductRating(String asin) async {
+    try {
+      final reviews = await getProductReviews(asin);
+      if (reviews.isEmpty) return;
+
+      final ratings = reviews.map((r) => r['rating'] as int).toList();
+      final average = ratings.reduce((a, b) => a + b) / ratings.length;
+
+      await _client
+          .from('products')
+          .update({'average_rating': average, 'review_count': ratings.length})
+          .eq('asin', asin);
+    } catch (e) {
+      _errorHandler.handleError(e, 'Update Product Rating');
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Private Helpers
+  // --------------------------------------------------------------------------
+
+  /// Fetches a seller record by user_id, returns null if not found.
+  Future<Map<String, dynamic>?> _fetchSeller(String userId) async {
+    try {
+      return await _client
+          .from(SupabaseConfig.tableSellers)
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+    } on PostgrestException catch (e) {
+      if (e.code == 'PGRST116') return null;
+      rethrow;
+    }
+  }
+
+  /// Creates a new seller record in the database.
+  Future<void> _createSellerRecord({
+    required String userId,
+    required String email,
+    required String fullName,
+    required String phone,
+    required String location,
+    required String currency,
+    required String password,
+  }) async {
+    final nameParts = fullName.split(' ');
+    final firstname = nameParts.isNotEmpty ? nameParts[0] : '';
+    final secoundname = nameParts.length > 1 ? nameParts[1] : '';
+    final thirdname = nameParts.length > 2 ? nameParts[2] : '';
+    final forthname = nameParts.length > 3 ? nameParts[3] : '';
+
+    try {
+      await _client.from(SupabaseConfig.tableSellers).insert({
+        'user_id': userId,
+        'email': email,
+        'full_name': fullName,
+        'firstname': firstname,
+        'secoundname': secoundname,
+        'thirdname': thirdname,
+        'forthname': forthname,
+        'phone': phone,
+        'location': location,
+        'currency': currency,
+        SupabaseConfig.keyAccountType: 'seller',
+        'is_verified': false,
+        'created_at': DateTime.now().toIso8601String(),
+      }).select();
+
+      if (kDebugMode) print('Seller created in Supabase');
+    } catch (e) {
+      if (kDebugMode) print('Failed to create seller in Supabase: $e');
+    }
+
+    try {
+      if (_sellerDb != null) {
+        await _sellerDb.addSeller({
+          'user_id': userId,
+          'firstname': firstname,
+          'secoundname': secoundname,
+          'thirdname': thirdname,
+          'forthname': forthname,
+          'full_name': fullName,
+          'email': email,
+          'password': password,
+          'location': location,
+          'phone': phone,
+          'currency': currency,
+          'account_type': 'seller',
+          'is_verified': 0,
+          'created_at': DateTime.now().toIso8601String(),
+        });
+        if (kDebugMode) print('Seller created in local SQLite');
+      }
+    } catch (e) {
+      if (kDebugMode) print('Failed to create seller in local DB: $e');
+    }
+  }
+
+  /// Creates a new factory record in the database.
+  Future<void> _createFactoryRecord({
+    required String userId,
+    required String email,
+    required String fullName,
+    required String phone,
+    required String location,
+    required String currency,
+    String? companyName,
+    String? businessLicense,
+    double? latitude,
+    double? longitude,
+    required String password,
+  }) async {
+    final nameParts = fullName.split(' ');
+    final firstname = nameParts.isNotEmpty ? nameParts[0] : '';
+    final secoundname = nameParts.length > 1 ? nameParts[1] : '';
+    final thirdname = nameParts.length > 2 ? nameParts[2] : '';
+    final forthname = nameParts.length > 3 ? nameParts[3] : '';
+
+    try {
+      await _client.from(SupabaseConfig.tableSellers).insert({
+        'user_id': userId,
+        'email': email,
+        'full_name': fullName,
+        'firstname': firstname,
+        'secoundname': secoundname,
+        'thirdname': thirdname,
+        'forthname': forthname,
+        'phone': phone,
+        'location': location,
+        'currency': currency,
+        SupabaseConfig.keyAccountType: 'factory',
+        'is_verified': false,
+        'company_name': companyName,
+        'business_license': businessLicense,
+        'latitude': latitude,
+        'longitude': longitude,
+        'created_at': DateTime.now().toIso8601String(),
+      }).select();
+
+      if (kDebugMode) print('Factory created in Supabase');
+    } catch (e) {
+      if (kDebugMode) print('Failed to create factory in Supabase: $e');
+    }
+  }
+
+  /// Creates a new middleman record in the database.
+  Future<void> _createMiddlemanRecord({
+    required String userId,
+    required String email,
+    required String fullName,
+    required String phone,
+    required String location,
+    required String currency,
+    String? companyName,
+    double? commissionRate,
+    String? specialization,
+    required String password,
+  }) async {
+    try {
+      await _client.from(SupabaseConfig.tableMiddlemanProfiles).insert({
+        'user_id': userId,
+        'full_name': fullName,
+        'email': email,
+        'phone': phone,
+        'location': location,
+        'currency': currency,
+        'company_name': companyName,
+        'commission_rate': commissionRate ?? 0.0,
+        'specialization': specialization,
+        'is_verified': false,
+        'total_deals': 0,
+        'total_commission_earned': 0,
+        'average_rating': 0,
+        'created_at': DateTime.now().toIso8601String(),
+      }).select();
+
+      if (kDebugMode) print('Middleman created in Supabase');
+    } catch (e) {
+      if (kDebugMode) print('Failed to create middleman in Supabase: $e');
+    }
+  }
+
+  /// Creates a new customer record in the database.
+  Future<void> _createCustomerRecord({
+    required String userId,
+    required String email,
+    required String fullName,
+    required String phone,
+    String? location,
+  }) async {
+    try {
+      await _client.from(SupabaseConfig.tableCustomers).insert({
+        'user_id': userId,
+        'name': fullName,
+        'email': email,
+        'phone': phone,
+        'location': location,
+        'total_orders': 0,
+        'total_spent': 0,
+        'created_at': DateTime.now().toIso8601String(),
+      }).select();
+
+      if (kDebugMode) print('Customer created in Supabase');
+    } catch (e) {
+      if (kDebugMode) print('Failed to create customer in Supabase: $e');
+    }
+  }
+
+  /// Invokes the signup edge function.
+  Future<void> _invokeSignupFunction({
+    required String userId,
+    required String email,
+    required String fullName,
+    required String accountType,
+    required String phone,
+    required String location,
+    required String currency,
+  }) async {
+    try {
+      await _client.functions.invoke(
+        SupabaseConfig.functionProcessSignup,
+        body: {
+          'userId': userId,
+          'email': email,
+          'fullName': fullName,
+          'accountType': accountType,
+          'phone': phone,
+          'location': location,
+          'currency': currency,
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) print('Edge Function error (user still created): $e');
+    }
+  }
+
+  /// Returns a standardized success result.
+  AuthResult _success(String message, [Map<String, dynamic>? data]) {
+    return (success: true, message: message, data: data);
+  }
+
+  /// Returns a standardized failure result.
+  AuthResult _failure(String message) {
+    return (success: false, message: message, data: null);
+  }
+
+  /// Converts Supabase auth error messages to user-friendly strings.
+  String _mapAuthError(String message) {
+    return switch (message) {
+      String m when m.contains('Invalid login credentials') =>
+        'Invalid email or password.',
+      String m when m.contains('User already registered') =>
+        'This email is already registered.',
+      String m when m.contains('Weak password') =>
+        'Password must be at least 6 characters.',
+      String m when m.contains('Invalid email') =>
+        'Please enter a valid email address.',
+      String m when m.contains('Email not confirmed') =>
+        'Please verify your email address.',
+      String m when m.contains('Phone number') => 'Invalid phone number.',
+      _ => message,
+    };
+  }
+
+  /// Helper to check if user is seller or factory
+  bool _isSellerOrFactory() {
+    return isSeller || isFactory;
+  }
+
+  /// Validate role for protected operations
+  AuthResult _validateRole(AccountType requiredRole) {
+    if (!isLoggedIn) {
+      return _failure('You must be logged in');
+    }
+    if (accountType != requiredRole) {
+      return _failure('This action requires a ${requiredRole.name} account');
+    }
+    return _success('Validated');
   }
 }
