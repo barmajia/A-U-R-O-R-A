@@ -1,3 +1,4 @@
+import 'package:aurora/models/aurora_product.dart'; // Changed from product.dart
 import 'package:aurora/models/product.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/widgets/drawer.dart';
@@ -17,44 +18,40 @@ class ProductPage extends StatefulWidget {
 }
 
 class _ProductPageState extends State<ProductPage> {
-  List<AmazonProduct> _products = [];
-  bool _isLoading = false; // Start as false - don't show loading on first open
+  List<AuroraProduct> _products =
+      []; // Changed from AmazonProduct to AuroraProduct
+  bool _isLoading = false;
   String? _errorMessage;
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'all'; // all, instock, lowstock, draft
-  
-  // ✅ Cache to prevent repeated loading
+
+  // Cache to prevent repeated loading
   DateTime? _lastLoadedTime;
-  static const _cacheDuration = Duration(minutes: 5); // Cache for 5 minutes
-  bool _hasLoadedOnce = false; // Track if we've loaded at least once
+  static const _cacheDuration = Duration(minutes: 5);
+  bool _hasLoadedOnce = false;
 
   @override
   void initState() {
     super.initState();
-    // ✅ Load only if not cached or cache expired
     _loadProductsIfNeeded();
   }
-  
-  /// ✅ Smart loading: Only load if necessary
+
   Future<void> _loadProductsIfNeeded() async {
     final now = DateTime.now();
-    
-    // Don't load if we have recent data
-    if (_hasLoadedOnce && 
-        _lastLoadedTime != null && 
+
+    if (_hasLoadedOnce &&
+        _lastLoadedTime != null &&
         now.difference(_lastLoadedTime!) < _cacheDuration &&
         _products.isNotEmpty) {
-      return; // Use cached data
+      return;
     }
-    
+
     await _loadProducts();
   }
 
-  /// ✅ Force reload from server (used by refresh button)
   Future<void> _loadProducts() async {
-    // Don't reload if already loading
     if (_isLoading) return;
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -63,7 +60,6 @@ class _ProductPageState extends State<ProductPage> {
     try {
       final supabaseProvider = context.read<SupabaseProvider>();
 
-      // ✅ Check if user is logged in
       if (!supabaseProvider.isLoggedIn) {
         setState(() {
           _products = [];
@@ -72,60 +68,63 @@ class _ProductPageState extends State<ProductPage> {
         return;
       }
 
-      List<AmazonProduct> products;
+      List<AuroraProduct> products = []; // Changed type
 
       if (_selectedFilter == 'instock') {
-        // ✅ Use Edge Function for in-stock products (seller-only)
         final result = await supabaseProvider.searchProductsWithEdgeFunction(
           query: '',
           status: 'active',
           limit: 100,
           offset: 0,
         );
-        products = result.success ? result.data! : [];
+        if (result.success && result.data != null) {
+          products = result.data!;
+        }
       } else if (_selectedFilter == 'lowstock') {
-        // ✅ Fetch all active products, then filter low stock locally
         final result = await supabaseProvider.searchProductsWithEdgeFunction(
           query: '',
           status: 'active',
           limit: 200,
           offset: 0,
         );
-        products = result.success ? result.data! : [];
-        products = products.where((p) => (p.quantity ?? 0) <= 10).toList();
+        if (result.success && result.data != null) {
+          products = result.data!
+              .where((p) => (p.quantity ?? 0) <= 10)
+              .toList();
+        }
       } else if (_selectedFilter == 'draft') {
-        // ✅ Fetch draft products only
         final result = await supabaseProvider.searchProductsWithEdgeFunction(
           query: '',
           status: 'draft',
           limit: 100,
           offset: 0,
         );
-        products = result.success ? result.data! : [];
+        if (result.success && result.data != null) {
+          products = result.data!;
+        }
       } else {
-        // ✅ Fetch ALL products for current seller (no status filter)
         final result = await supabaseProvider.searchProductsWithEdgeFunction(
           query: '',
-          status: null, // null = all statuses
+          status: null,
           limit: 100,
           offset: 0,
         );
-        products = result.success ? result.data! : [];
+        if (result.success && result.data != null) {
+          products = result.data!;
+        }
       }
 
       setState(() {
         _products = products;
         _isLoading = false;
-        _lastLoadedTime = DateTime.now(); // ✅ Update cache timestamp
-        _hasLoadedOnce = true; // ✅ Mark as loaded
+        _lastLoadedTime = DateTime.now();
+        _hasLoadedOnce = true;
       });
     } catch (e) {
       setState(() {
         _errorMessage = 'Failed to load products: $e';
         _isLoading = false;
       });
-
-      // Log error for debugging
       debugPrint('Error loading products: $e');
     }
   }
@@ -141,16 +140,15 @@ class _ProductPageState extends State<ProductPage> {
     try {
       final supabaseProvider = context.read<SupabaseProvider>();
 
-      // ✅ Use Edge Function for server-side search (seller-only)
       final result = await supabaseProvider.searchProductsWithEdgeFunction(
         query: query,
-        status: null, // Search all statuses
+        status: null,
         limit: 50,
         offset: 0,
       );
 
       setState(() {
-        _products = result.success ? result.data! : [];
+        _products = result.success && result.data != null ? result.data! : [];
         _isLoading = false;
       });
     } catch (e) {
@@ -162,7 +160,6 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   Future<void> _deleteProduct(String asin) async {
-    // Validate ASIN before proceeding
     if (asin.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -221,9 +218,8 @@ class _ProductPageState extends State<ProductPage> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Show cached data immediately, load in background if needed
     final showLoading = _isLoading && _products.isEmpty;
-    
+
     return Scaffold(
       drawerEdgeDragWidth: double.infinity,
       drawerEnableOpenDragGesture: true,
@@ -239,10 +235,11 @@ class _ProductPageState extends State<ProductPage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.refresh),
-            onPressed: _isLoading ? null : () async {
-              // ✅ Force refresh ignoring cache
-              await _loadProducts();
-            },
+            onPressed: _isLoading
+                ? null
+                : () async {
+                    await _loadProducts();
+                  },
             tooltip: 'Refresh from server',
           ),
         ],
@@ -253,15 +250,15 @@ class _ProductPageState extends State<ProductPage> {
         child: showLoading
             ? const Center(child: CircularProgressIndicator())
             : _errorMessage != null
-                ? _buildErrorState()
-                : Column(
-                    children: [
-                      _buildSearchBar(),
-                      _buildFilterChips(),
-                      _buildProductCount(),
-                      Expanded(child: _buildProductList()),
-                    ],
-                  ),
+            ? _buildErrorState()
+            : Column(
+                children: [
+                  _buildSearchBar(),
+                  _buildFilterChips(),
+                  _buildProductCount(),
+                  Expanded(child: _buildProductList()),
+                ],
+              ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToProductForm(),
@@ -378,7 +375,8 @@ class _ProductPageState extends State<ProductPage> {
     );
   }
 
-  Widget _buildProductCard(AmazonProduct product) {
+  Widget _buildProductCard(AuroraProduct product) {
+    // Changed parameter type
     final currencyFormat = NumberFormat.currency(
       symbol: product.currency ?? '\$',
       decimalDigits: 2,
@@ -421,7 +419,7 @@ class _ProductPageState extends State<ProductPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      product.title,
+                      product.title ?? 'Untitled',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -544,18 +542,20 @@ class _ProductPageState extends State<ProductPage> {
     );
   }
 
-  void _navigateToProductForm([AmazonProduct? product]) {
+  void _navigateToProductForm([AuroraProduct? product]) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ProductFormScreen(product: product),
+        builder: (context) =>
+            ProductFormScreen(product: product), // Pass null for new product
       ),
     ).then((result) {
       if (result == true) _loadProducts();
     });
   }
 
-  void _navigateToProductDetails(AmazonProduct product) {
+  void _navigateToProductDetails(AuroraProduct product) {
+    // Changed parameter type
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -566,11 +566,11 @@ class _ProductPageState extends State<ProductPage> {
 }
 
 // ============================================================================
-// Product Details Screen
+// Product Details Screen (Updated)
 // ============================================================================
 
 class ProductDetailsScreen extends StatelessWidget {
-  final AmazonProduct product;
+  final AuroraProduct product; // Changed type
 
   const ProductDetailsScreen({super.key, required this.product});
 
@@ -629,7 +629,7 @@ class ProductDetailsScreen extends StatelessWidget {
 
           // Title
           Text(
-            product.title,
+            product.title ?? 'Untitled',
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
 
@@ -724,9 +724,9 @@ class ProductDetailsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            product.description.isEmpty
+            product.description?.isEmpty ?? true
                 ? 'No description available'
-                : product.description,
+                : product.description!,
             style: const TextStyle(fontSize: 16),
           ),
         ],
@@ -742,7 +742,6 @@ class ProductDetailsScreen extends StatelessWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // QR Code
             QrImageView(
               data: qrData,
               version: QrVersions.auto,
@@ -750,7 +749,6 @@ class ProductDetailsScreen extends StatelessWidget {
               backgroundColor: Colors.white,
             ),
             const SizedBox(height: 16),
-            // SKU
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(

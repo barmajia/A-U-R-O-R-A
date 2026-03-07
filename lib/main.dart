@@ -1,5 +1,5 @@
 import 'package:aurora/backend/sellerdb.dart';
-import 'package:aurora/backend/productsdb.dart';
+import 'package:aurora/backend/products_db.dart';
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/login.dart';
 import 'package:aurora/services/supabase.dart';
@@ -24,7 +24,7 @@ Future<void> main() async {
 
   // Initialize databases
   final sellerDb = SellerDB();
-  final productsDb = ProductsDB(supabaseClient: Supabase.instance.client);
+  final productsDb = ProductsDB();
 
   // Initialize theme provider and load saved theme
   final themeProvider = ThemeProvider();
@@ -51,7 +51,7 @@ Future<void> main() async {
         Provider(create: (context) => supabaseProvider.queue),
         ChangeNotifierProvider.value(value: themeProvider),
       ],
-      child: Aurora(),
+      child: const Aurora(),
     ),
   );
 }
@@ -80,10 +80,10 @@ class Aurora extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             title: 'Aurora E-commerce',
             theme: themeProvider.themeData,
-            home: Homepage(),
+            home: const Homepage(),
             routes: {
               '/login': (context) => const Login(),
-              '/home': (context) => Homepage(),
+              '/home': (context) => const Homepage(),
             },
           );
         } else {
@@ -94,7 +94,7 @@ class Aurora extends StatelessWidget {
             home: const Login(),
             routes: {
               '/login': (context) => const Login(),
-              '/home': (context) => Homepage(),
+              '/home': (context) => const Homepage(),
             },
           );
         }

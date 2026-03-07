@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:aurora/backend/sellerdb.dart';
-import 'package:aurora/backend/productsdb.dart';
-import 'package:aurora/models/product.dart';
+import 'package:aurora/backend/products_db.dart';
+import 'package:aurora/models/aurora_product.dart';
 import 'package:aurora/models/customer.dart';
 import 'package:aurora/models/sale.dart';
 import 'package:aurora/services/queue_service.dart';
@@ -17,6 +17,7 @@ import 'package:image/image.dart' as img;
 
 // Factory Discovery Models
 import 'package:aurora/models/factory/factory_models.dart';
+import 'package:aurora/models/factory/factory_profile.dart';
 
 // New Multi-Role Models
 import 'package:aurora/models/middleman_profile.dart';
@@ -838,11 +839,11 @@ class SupabaseProvider extends ChangeNotifier {
   // --------------------------------------------------------------------------
 
   /// Fetches the current authenticated factory's profile.
-  Future<MiddlemanProfile?> getCurrentFactoryProfile() async {
+  Future<FactoryProfile?> getCurrentFactoryProfile() async {
     if (!isLoggedIn) return null;
 
     // Check cache first
-    final cached = await _cache.get<MiddlemanProfile>(
+    final cached = await _cache.get<FactoryProfile>(
       SupabaseConfig.cacheFactoryProfile,
     );
     if (cached != null) return cached;
@@ -857,23 +858,28 @@ class SupabaseProvider extends ChangeNotifier {
 
       if (response == null) return null;
 
-      // Convert seller record to MiddlemanProfile for factories
-      final profile = MiddlemanProfile(
-        userId: response['user_id'] as String,
-        fullName: response['full_name'] as String,
+      // Convert seller record to FactoryProfile with safe casting
+      final profile = FactoryProfile(
+        userId: (response['user_id'] as String?) ?? '',
+        fullName: (response['full_name'] as String?) ?? '',
         email: response['email'] as String?,
-        phone: response['phone'] as String,
+        phone: (response['phone'] as String?) ?? '',
         location: response['location'] as String?,
         latitude: (response['latitude'] as num?)?.toDouble(),
         longitude: (response['longitude'] as num?)?.toDouble(),
         companyName: response['company_name'] as String?,
         businessLicense: response['business_license'] as String?,
-        commissionRate: 0, // Factories don't have commission rates
-        isVerified: response['is_verified'] as bool? ?? false,
-        totalDeals: 0,
-        totalCommissionEarned: 0,
-        averageRating: 0,
-        createdAt: DateTime.now(),
+        isVerified: (response['is_verified'] as bool?) ?? false,
+        minOrderQuantity: response['min_order_quantity'] as int?,
+        wholesaleDiscount: (response['wholesale_discount'] as num?)?.toDouble(),
+        productionCapacity: response['production_capacity'] as String?,
+        acceptsReturns: response['accepts_returns'] as bool? ?? true,
+        averageRating: (response['average_rating'] as num?)?.toDouble() ?? 0,
+        totalReviews: response['total_reviews'] as int? ?? 0,
+        productCount: response['product_count'] as int? ?? 0,
+        createdAt: response['created_at'] != null
+            ? DateTime.parse(response['created_at'] as String)
+            : null,
       );
 
       await _cache.set(
@@ -1091,7 +1097,7 @@ class SupabaseProvider extends ChangeNotifier {
   ProductsDB? get productsDb => _productsDb;
 
   /// Create a new product
-  Future<AuthResult> createProduct(AmazonProduct product) async {
+  Future<AuthResult> createProduct(AuroraProduct product) async {
     try {
       // Save to local database first
       if (_productsDb != null) {
@@ -1115,7 +1121,7 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Update an existing product
-  Future<AuthResult> updateProduct(AmazonProduct product) async {
+  Future<AuthResult> updateProduct(AuroraProduct product) async {
     try {
       // Update local database
       if (_productsDb != null) {
@@ -1157,18 +1163,18 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Get product by ASIN
-  Future<AmazonProduct?> getProductByAsin(String asin) async {
+  Future<AuroraProduct?> getProductByAsin(String asin) async {
     if (_productsDb == null) return null;
     return await _productsDb.getProductByAsin(asin);
   }
 
   /// Get all products with caching
-  Future<List<AmazonProduct>> getAllProducts() async {
+  Future<List<AuroraProduct>> getAllProducts() async {
     // SECURITY FIX: Use user-specific cache key to prevent data leakage
     final cacheKey = _getUserCacheKey(SupabaseConfig.cacheProducts);
 
     // Check cache first
-    final cached = await _cache.get<List<AmazonProduct>>(cacheKey);
+    final cached = await _cache.get<List<AuroraProduct>>(cacheKey);
     if (cached != null) return cached;
 
     if (_productsDb == null) return [];
@@ -1181,7 +1187,7 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Search products with enhanced filters
-  Future<List<AmazonProduct>> searchProducts(
+  Future<List<AuroraProduct>> searchProducts(
     String query, {
     String? category,
     String? brand,
@@ -1194,7 +1200,7 @@ class SupabaseProvider extends ChangeNotifier {
       if (_productsDb == null) return [];
 
       // Start with basic search
-      List<AmazonProduct> products = await _productsDb.searchProducts(query);
+      List<AuroraProduct> products = await _productsDb.searchProducts(query);
 
       // Apply additional filters
       if (category != null && category.isNotEmpty) {
@@ -1231,19 +1237,19 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Get products by seller
-  Future<List<AmazonProduct>> getProductsBySeller(String sellerId) async {
+  Future<List<AuroraProduct>> getProductsBySeller(String sellerId) async {
     if (_productsDb == null) return [];
     return await _productsDb.getProductsBySeller(sellerId);
   }
 
   /// Get in-stock products
-  Future<List<AmazonProduct>> getInStockProducts() async {
+  Future<List<AuroraProduct>> getInStockProducts() async {
     if (_productsDb == null) return [];
     return await _productsDb.getInStockProducts();
   }
 
   /// Fetch products from Supabase cloud with pagination
-  Future<PaginationResult<AmazonProduct>> fetchProductsFromCloud({
+  Future<PaginationResult<AuroraProduct>> fetchProductsFromCloud({
     String? sellerId,
     int page = 1,
     int limit = 20,
@@ -1264,7 +1270,7 @@ class SupabaseProvider extends ChangeNotifier {
       final totalCount = await _productsDb.getProductsCount();
       final totalPages = (totalCount / limit).ceil();
 
-      return PaginationResult<AmazonProduct>(
+      return PaginationResult<AuroraProduct>(
         success: true,
         message: 'Products fetched successfully',
         items: products,
@@ -1275,7 +1281,7 @@ class SupabaseProvider extends ChangeNotifier {
       );
     } catch (e) {
       _errorHandler.handleError(e, 'Fetch Products from Cloud');
-      return PaginationResult<AmazonProduct>(
+      return PaginationResult<AuroraProduct>(
         success: false,
         message: 'Failed to fetch products: $e',
         items: [],
@@ -1512,7 +1518,7 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Get user's wishlist
-  Future<List<AmazonProduct>> getWishlist() async {
+  Future<List<AuroraProduct>> getWishlist() async {
     if (!isLoggedIn) return [];
 
     try {
@@ -1523,7 +1529,7 @@ class SupabaseProvider extends ChangeNotifier {
           .select('asin')
           .eq('user_id', userId);
 
-      final products = <AmazonProduct>[];
+      final products = <AuroraProduct>[];
       for (final item in wishlist) {
         final asin = item['asin'] as String;
         final product = await getProductByAsin(asin);
@@ -2101,12 +2107,12 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Create product using edge function
-  Future<AuthResult> createProductViaEdge(AmazonProduct product) async {
+  Future<AuthResult> createProductViaEdge(AuroraProduct product) async {
     return await callManageProduct(action: 'create', data: product.toJson());
   }
 
   /// Update product using edge function
-  Future<AuthResult> updateProductViaEdge(AmazonProduct product) async {
+  Future<AuthResult> updateProductViaEdge(AuroraProduct product) async {
     return await callManageProduct(
       action: 'update',
       asin: product.asin,
@@ -2171,7 +2177,7 @@ class SupabaseProvider extends ChangeNotifier {
         final productData = response.data?['product'] as Map<String, dynamic>?;
         if (productData != null && _productsDb != null) {
           try {
-            final product = AmazonProduct.fromJson(productData);
+            final product = AuroraProduct.fromJson(productData);
             await _productsDb.addProduct(product);
             if (kDebugMode) {
               print('✅ Product saved to local DB: ${product.asin}');
@@ -2219,7 +2225,7 @@ class SupabaseProvider extends ChangeNotifier {
         final productData = response.data?['product'] as Map<String, dynamic>?;
         if (productData != null && _productsDb != null) {
           try {
-            final product = AmazonProduct.fromJson(productData);
+            final product = AuroraProduct.fromJson(productData);
             await _productsDb.updateProduct(product);
             if (kDebugMode) {
               print('✅ Product updated in local DB: ${product.asin}');
@@ -2275,7 +2281,7 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Search products using the new search-products edge function
-  Future<DataResult<List<AmazonProduct>>> searchProductsWithEdgeFunction({
+  Future<DataResult<List<AuroraProduct>>> searchProductsWithEdgeFunction({
     String? query,
     String? category,
     String? subcategory,
@@ -2289,7 +2295,7 @@ class SupabaseProvider extends ChangeNotifier {
   }) async {
     try {
       if (!isLoggedIn) {
-        return DataResult<List<AmazonProduct>>(
+        return DataResult<List<AuroraProduct>>(
           success: false,
           message: 'User not authenticated',
           data: [],
@@ -2319,17 +2325,17 @@ class SupabaseProvider extends ChangeNotifier {
       if (response.status == 200 && response.data?['success'] == true) {
         final productsData = response.data?['products'] as List? ?? [];
         final products = productsData
-            .map((json) => AmazonProduct.fromJson(json as Map<String, dynamic>))
+            .map((json) => AuroraProduct.fromJson(json as Map<String, dynamic>))
             .toList();
 
-        return DataResult<List<AmazonProduct>>(
+        return DataResult<List<AuroraProduct>>(
           success: true,
           message: 'Found ${products.length} products',
           data: products,
           error: null,
         );
       } else {
-        return DataResult<List<AmazonProduct>>(
+        return DataResult<List<AuroraProduct>>(
           success: false,
           message: response.data?['error'] ?? 'Search failed',
           data: [],
@@ -2338,7 +2344,7 @@ class SupabaseProvider extends ChangeNotifier {
       }
     } catch (e) {
       _errorHandler.handleError(e, 'Search Products Edge Function');
-      return DataResult<List<AmazonProduct>>(
+      return DataResult<List<AuroraProduct>>(
         success: false,
         message: 'Search failed: $e',
         data: [],
@@ -2348,7 +2354,7 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Get all products (helper method)
-  Future<DataResult<List<AmazonProduct>>> getAllProductsWithEdgeFunction({
+  Future<DataResult<List<AuroraProduct>>> getAllProductsWithEdgeFunction({
     int limit = 100,
     int offset = 0,
   }) async {
@@ -2361,7 +2367,7 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Get in-stock products (helper method)
-  Future<DataResult<List<AmazonProduct>>> getInStockProductsWithEdgeFunction({
+  Future<DataResult<List<AuroraProduct>>> getInStockProductsWithEdgeFunction({
     int limit = 100,
     int offset = 0,
   }) async {
@@ -3561,8 +3567,8 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Get factory's products with wholesale pricing
-  /// Note: Returns AmazonProduct objects from factory_products view
-  Future<List<AmazonProduct>> getFactoryProducts(String factoryId) async {
+  /// Note: Returns AuroraProduct objects from factory_products view
+  Future<List<AuroraProduct>> getFactoryProducts(String factoryId) async {
     if (!isLoggedIn) return [];
 
     try {
@@ -3574,7 +3580,7 @@ class SupabaseProvider extends ChangeNotifier {
           .eq('is_deleted', false);
 
       return (response as List)
-          .map((json) => AmazonProduct.fromJson(json))
+          .map((json) => AuroraProduct.fromJson(json))
           .toList();
     } catch (e) {
       _errorHandler.handleError(e, 'Get Factory Products');
@@ -3954,4 +3960,309 @@ class SupabaseProvider extends ChangeNotifier {
     }
     return _success('Validated');
   }
+
+  // ===========================================================================
+  // FACTORY-SPECIFIC METHODS
+  // ===========================================================================
+
+  /// Get factory dashboard statistics
+  Future<FactoryDashboardStats> getFactoryDashboardStats() async {
+    try {
+      if (!isLoggedIn) return FactoryDashboardStats();
+
+      final userId = currentUser!.id;
+
+      // Get product stats
+      final productsResponse = await _client
+          .from('products')
+          .select('status, stock_quantity')
+          .eq('seller_id', userId)
+          .eq('is_deleted', false);
+
+      final products = productsResponse as List;
+      final totalProducts = products.length;
+      final activeProducts = products
+          .where((p) => p['status'] == 'active')
+          .length;
+      final outOfStockProducts = products
+          .where((p) => (p['stock_quantity'] as int? ?? 0) == 0)
+          .length;
+
+      // Get order stats (from factory_orders view or orders table)
+      final ordersResponse = await _client
+          .from('orders')
+          .select('status, total_amount, created_at')
+          .eq('seller_id', userId);
+
+      final orders = ordersResponse as List;
+      final totalOrders = orders.length;
+      final pendingOrders = orders
+          .where((o) => o['status'] == 'pending')
+          .length;
+      final completedOrders = orders
+          .where((o) => o['status'] == 'delivered')
+          .length;
+      final totalRevenue = orders.fold<double>(
+        0,
+        (sum, o) => sum + ((o['total_amount'] as num?)?.toDouble() ?? 0),
+      );
+
+      // Calculate monthly revenue
+      final now = DateTime.now();
+      final firstOfMonth = DateTime(now.year, now.month, 1);
+      final monthlyRevenue = orders
+          .where((o) {
+            final orderDate = DateTime.tryParse(
+              o['created_at'] as String? ?? '',
+            );
+            return orderDate != null && orderDate.isAfter(firstOfMonth);
+          })
+          .fold<double>(
+            0,
+            (sum, o) => sum + ((o['total_amount'] as num?)?.toDouble() ?? 0),
+          );
+
+      // Get connection stats
+      final connectionsResponse = await _client
+          .from('factory_connections')
+          .select('status')
+          .eq('factory_id', userId);
+
+      final connections = connectionsResponse as List;
+      final activeConnections = connections
+          .where((c) => c['status'] == 'accepted')
+          .length;
+      final connectionRequests = connections
+          .where((c) => c['status'] == 'pending')
+          .length;
+
+      // Get rating stats
+      final ratingSummary = await getFactoryRating(userId);
+
+      // Calculate wholesale stats
+      final wholesaleOrders = orders.where((o) {
+        final metadata = o['metadata'] as Map<String, dynamic>?;
+        return metadata?['is_wholesale'] == true;
+      }).length;
+
+      final wholesaleRevenue = orders
+          .where((o) {
+            final metadata = o['metadata'] as Map<String, dynamic>?;
+            return metadata?['is_wholesale'] == true;
+          })
+          .fold<double>(
+            0,
+            (sum, o) => sum + ((o['total_amount'] as num?)?.toDouble() ?? 0),
+          );
+
+      return FactoryDashboardStats(
+        totalProducts: totalProducts,
+        activeProducts: activeProducts,
+        outOfStockProducts: outOfStockProducts,
+        totalOrders: totalOrders,
+        pendingOrders: pendingOrders,
+        completedOrders: completedOrders,
+        totalRevenue: totalRevenue,
+        monthlyRevenue: monthlyRevenue,
+        connectionRequests: connectionRequests,
+        activeConnections: activeConnections,
+        averageRating: ratingSummary.averageRating,
+        totalReviews: ratingSummary.totalReviews,
+        totalWholesaleOrders: wholesaleOrders,
+        wholesaleRevenue: wholesaleRevenue,
+      );
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Factory Dashboard Stats');
+      return FactoryDashboardStats();
+    }
+  }
+
+  // Add to SupabaseProvider class
+  Future<FactoryInfo?> getFactoryInfo(String userId) async {
+    try {
+      final response = await _client
+          .from(SupabaseConfig.tableSellers)
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      return FactoryInfo.fromJson(response);
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Factory Info');
+      return null;
+    }
+  }
+
+  /// Get factory revenue data for charts
+  Future<List<RevenueDataPoint>> getFactoryRevenueData({
+    String period = '30d',
+  }) async {
+    try {
+      if (!isLoggedIn) return [];
+
+      final userId = currentUser!.id;
+      final now = DateTime.now();
+      DateTime startDate;
+
+      switch (period) {
+        case '7d':
+          startDate = now.subtract(const Duration(days: 7));
+          break;
+        case '30d':
+          startDate = now.subtract(const Duration(days: 30));
+          break;
+        case '90d':
+          startDate = now.subtract(const Duration(days: 90));
+          break;
+        case '1y':
+          startDate = now.subtract(const Duration(days: 365));
+          break;
+        default:
+          startDate = now.subtract(const Duration(days: 30));
+      }
+
+      final response = await _client
+          .from('orders')
+          .select('total_amount, created_at')
+          .eq('seller_id', userId)
+          .gte('created_at', startDate.toIso8601String());
+
+      final orders = response as List;
+
+      // Group by date
+      final Map<String, double> revenueByDate = {};
+      for (var order in orders) {
+        final dateStr = (order['created_at'] as String).substring(0, 10);
+        final amount = (order['total_amount'] as num?)?.toDouble() ?? 0;
+        revenueByDate[dateStr] = (revenueByDate[dateStr] ?? 0) + amount;
+      }
+
+      // Convert to data points
+      return revenueByDate.entries.map((e) {
+        return RevenueDataPoint(
+          label: e.key,
+          value: e.value,
+          date: DateTime.parse(e.key),
+        );
+      }).toList()..sort((a, b) => a.date.compareTo(b.date));
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Factory Revenue Data');
+      return [];
+    }
+  }
+
+  /// Get factory order status distribution
+  Future<OrderStatusDistribution> getFactoryOrderDistribution() async {
+    try {
+      if (!isLoggedIn) return OrderStatusDistribution();
+
+      final userId = currentUser!.id;
+      final response = await _client
+          .from('orders')
+          .select('status')
+          .eq('seller_id', userId);
+
+      final orders = response as List;
+
+      return OrderStatusDistribution(
+        pending: orders.where((o) => o['status'] == 'pending').length,
+        confirmed: orders.where((o) => o['status'] == 'confirmed').length,
+        processing: orders.where((o) => o['status'] == 'processing').length,
+        shipped: orders.where((o) => o['status'] == 'shipped').length,
+        delivered: orders.where((o) => o['status'] == 'delivered').length,
+        cancelled: orders.where((o) => o['status'] == 'cancelled').length,
+      );
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Factory Order Distribution');
+      return OrderStatusDistribution();
+    }
+  }
+
+  /// Get factory recent orders
+  Future<List<FactoryOrderItem>> getFactoryRecentOrders({
+    int limit = 10,
+  }) async {
+    try {
+      if (!isLoggedIn) return [];
+
+      final userId = currentUser!.id;
+      final response = await _client
+          .from('orders')
+          .select('''
+            id,
+            customer_name,
+            product_names,
+            total_amount,
+            status,
+            created_at,
+            quantity,
+            metadata
+          ''')
+          .eq('seller_id', userId)
+          .order('created_at', ascending: false)
+          .limit(limit);
+
+      final orders = response as List;
+
+      return orders.map((o) {
+        final metadata = o['metadata'] as Map<String, dynamic>? ?? {};
+        return FactoryOrderItem(
+          orderId: o['id'] as String? ?? '',
+          customerName: o['customer_name'] as String? ?? 'Unknown',
+          productNames: (o['product_names'] as List?)?.cast<String>() ?? [],
+          totalAmount: (o['total_amount'] as num?)?.toDouble() ?? 0,
+          status: o['status'] as String? ?? 'pending',
+          orderDate: DateTime.parse(
+            o['created_at'] as String? ?? DateTime.now().toIso8601String(),
+          ),
+          isWholesale: metadata['is_wholesale'] == true,
+          quantity: o['quantity'] as int? ?? 0,
+        );
+      }).toList();
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Factory Recent Orders');
+      return [];
+    }
+  }
+
+  /// Get all factory orders
+  Future<List<FactoryOrderItem>> getFactoryOrders() async {
+    return getFactoryRecentOrders(limit: 100);
+  }
+
+  /// Get factory top products
+  Future<List<TopProduct>> getFactoryTopProducts({int limit = 10}) async {
+    try {
+      if (!isLoggedIn) return [];
+
+      final userId = currentUser!.id;
+      final response = await _client
+          .from('products')
+          .select('id, title, main_image, sales_count, price')
+          .eq('seller_id', userId)
+          .eq('is_deleted', false)
+          .order('sales_count', ascending: false)
+          .limit(limit);
+
+      final products = response as List;
+
+      return products.map((p) {
+        return TopProduct(
+          productId: p['id'] as String? ?? '',
+          productName: p['title'] as String? ?? 'Unnamed',
+          unitsSold: p['sales_count'] as int? ?? 0,
+          revenue: ((p['sales_count'] as int? ?? 0) * (p['price'] as num? ?? 0))
+              .toDouble(),
+          imageUrl: p['main_image'] as String?,
+        );
+      }).toList();
+    } catch (e) {
+      _errorHandler.handleError(e, 'Get Factory Top Products');
+      return [];
+    }
+  }
+
+  /// Update order status
 }

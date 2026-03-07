@@ -1,5 +1,5 @@
 import 'package:aurora/models/customer.dart';
-import 'package:aurora/models/product.dart';
+import 'package:aurora/models/aurora_product.dart'; // Changed from product.dart
 import 'package:aurora/services/supabase.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -18,12 +18,14 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
   final _discountController = TextEditingController(text: '0');
 
   Customer? _selectedCustomer;
-  AmazonProduct? _selectedProduct;
+  AuroraProduct?
+  _selectedProduct; // Changed from AmazonProduct to AuroraProduct
   String _paymentMethod = 'cash';
   String _paymentStatus = 'completed';
 
   List<Customer> _customers = [];
-  List<AmazonProduct> _products = [];
+  List<AuroraProduct> _products =
+      []; // Changed from AmazonProduct to AuroraProduct
   bool _isLoading = false;
   bool _isLoadingData = true;
 
@@ -47,7 +49,18 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     try {
       final supabaseProvider = context.read<SupabaseProvider>();
       final customers = await supabaseProvider.getCustomers();
-      final products = await supabaseProvider.getAllProducts();
+
+      // ✅ Use getAllProductsWithEdgeFunction instead of getAllProducts
+      final result = await supabaseProvider.getAllProductsWithEdgeFunction(
+        limit: 100,
+        offset: 0,
+      );
+
+      // ✅ Explicitly cast to List<AuroraProduct>
+      List<AuroraProduct> products = [];
+      if (result.success && result.data != null) {
+        products = result.data!;
+      }
 
       setState(() {
         _customers = customers;
@@ -77,7 +90,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
 
       final result = await supabaseProvider.recordSale(
         customerId: _selectedCustomer?.id,
-        productId: _selectedProduct?.asin,
+        productId: _selectedProduct?.asin, // ✅ Still works with asin field
         quantity: quantity,
         unitPrice: unitPrice,
         discount: discount,
@@ -315,7 +328,8 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         border: Border.all(color: colorScheme.outline),
       ),
       child: DropdownButtonHideUnderline(
-        child: DropdownButton<AmazonProduct>(
+        child: DropdownButton<AuroraProduct>(
+          // Changed from AmazonProduct to AuroraProduct
           value: _selectedProduct,
           hint: Text(
             'Select product (optional)',
@@ -324,7 +338,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
           isExpanded: true,
           icon: Icon(Icons.arrow_drop_down, color: colorScheme.onSurface),
           items: [
-            const DropdownMenuItem<AmazonProduct>(
+            const DropdownMenuItem<AuroraProduct>(
               value: null,
               child: Text('General Sale'),
             ),

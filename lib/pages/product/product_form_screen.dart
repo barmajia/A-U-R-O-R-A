@@ -1,4 +1,4 @@
-import 'package:aurora/models/product.dart';
+import 'package:aurora/models/aurora_product.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/services/supabase_storage.dart';
 import 'package:aurora/backend/sellerdb.dart';
@@ -321,7 +321,7 @@ List<Map<String, String>> getAttributesForSubcategory(String subcategory) {
 // ============================================================================
 
 class ProductFormScreen extends StatefulWidget {
-  final AmazonProduct? product;
+  final AuroraProduct? product;
 
   const ProductFormScreen({super.key, this.product});
 
