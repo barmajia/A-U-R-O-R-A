@@ -1,5 +1,4 @@
 import 'package:aurora/models/aurora_product.dart'; // Changed from product.dart
-import 'package:aurora/models/product.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/widgets/drawer.dart';
 import 'package:aurora/pages/product/product_form_screen.dart';

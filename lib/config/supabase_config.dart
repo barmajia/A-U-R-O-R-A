@@ -3,10 +3,8 @@
 // Date: 2026-03-08
 // Status: ✅ PRODUCTION READY
 
-import 'package:flutter/foundation.dart';
-
 /// Secure configuration for Supabase credentials
-/// 
+///
 /// Use environment variables for production:
 /// ```bash
 /// flutter run --dart-define=SUPABASE_URL=your_url --dart-define=SUPABASE_ANON_KEY=your_key
@@ -20,9 +18,9 @@ class SupabaseConfig {
   // ============================================================================
 
   /// Supabase project URL
-  /// 
+  ///
   /// Set via: flutter run --dart-define=SUPABASE_URL=your_url
-  /// 
+  ///
   /// ⚠️ SECURITY: This defaultValue is for LOCAL DEVELOPMENT ONLY!
   /// For production/CI/CD, ALWAYS use --dart-define parameter
   static const String url = String.fromEnvironment(
@@ -31,15 +29,15 @@ class SupabaseConfig {
   );
 
   /// Supabase anonymous/public key
-  /// 
+  ///
   /// Set via: flutter run --dart-define=SUPABASE_ANON_KEY=your_key
-  /// 
+  ///
   /// ⚠️ SECURITY WARNING:
   /// - This defaultValue contains the REAL key for LOCAL DEVELOPMENT
   /// - NEVER commit this file with real keys to public repositories
   /// - For production/CI/CD, ALWAYS use --dart-define parameter
   /// - The key will be overridden by --dart-define if provided
-  /// 
+  ///
   /// Production usage:
   /// ```bash
   /// flutter build apk --dart-define=SUPABASE_ANON_KEY=your_secure_key

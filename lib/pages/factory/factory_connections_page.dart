@@ -120,7 +120,6 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final appBarBg = isDark ? AppColors.darkSurface : AppColors.auroraPrimary;
 
