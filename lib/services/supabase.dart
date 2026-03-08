@@ -114,13 +114,10 @@ class SupabaseConfig {
 // Type Definitions
 // ============================================================================
 
-/// Represents the type of user account in the Aurora multi-role system
+/// Represents the type of user account in the Aurora seller/factory system
 enum AccountType {
-  user, // General user
   seller, // Seller/merchant
   factory, // Factory/manufacturer
-  middleman, // Middleman/commission agent
-  customer, // Customer (B2B buyer)
 }
 
 /// Order Status
@@ -3166,6 +3163,54 @@ class SupabaseProvider extends ChangeNotifier {
   // ==========================================================================
   // LOCATION MANAGEMENT
   // ==========================================================================
+  /// Update seller's location coordinates
+  ///
+  /// This method updates the latitude and longitude for the current seller/factory
+  /// in the sellers table. It also invalidates relevant cache entries.
+  Future<AuthResult> updateSellerLocation({
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      if (!isLoggedIn) {
+        return _failure('You must be logged in to update location');
+      }
+
+      final userId = currentUser!.id;
+
+      // Update the sellers table with new coordinates
+      await _client
+          .from(SupabaseConfig.tableSellers)
+          .update({
+            'latitude': latitude,
+            'longitude': longitude,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('user_id', userId);
+
+      // Invalidate relevant caches
+      await _cache.remove(SupabaseConfig.cacheFactoryProfile);
+      await _cache.remove(SupabaseConfig.cacheSellerProfile);
+
+      // Update local SellerDB if available
+      if (_sellerDb != null) {
+        try {
+          await _sellerDb!.updateSellerLocation(userId, latitude, longitude);
+        } catch (e) {
+          // Log but don't fail the operation
+          debugPrint('Failed to update local seller DB: $e');
+        }
+      }
+
+      return _success('Location updated successfully', {
+        'latitude': latitude,
+        'longitude': longitude,
+      });
+    } catch (e) {
+      _errorHandler.handleError(e, 'Update Seller Location');
+      return _failure('Failed to update location: $e');
+    }
+  }
 
   /// Update user's location (supports all roles)
   Future<AuthResult> updateLocation({

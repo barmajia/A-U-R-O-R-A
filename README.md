@@ -5,6 +5,7 @@ A comprehensive Flutter-based e-commerce application with multi-vendor marketpla
 ![Flutter](https://img.shields.io/badge/Flutter-3.10.7-blue)
 ![Dart](https://img.shields.io/badge/Dart-3.10.7-blue)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green)
+![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android%20%7C%20Web-lightgrey)
 ![License](https://img.shields.io/badge/License-Private-red)
 
 ---
@@ -23,6 +24,7 @@ A comprehensive Flutter-based e-commerce application with multi-vendor marketpla
 - [Security](#-security)
 - [Documentation](#-documentation)
 - [Contributing](#-contributing)
+- [License](#-license)
 
 ---
 
@@ -55,11 +57,51 @@ A comprehensive Flutter-based e-commerce application with multi-vendor marketpla
 - Business insights and recommendations
 - Intelligent caching system for optimal performance
 
+### 💳 User Payment Methods
+
+- Save and manage multiple payment cards
+- Set default payment method
+- Beautiful card preview with real-time input
+- Support for Visa, Mastercard, Amex
+- Secure card information storage
+- Easy card removal with confirmation
+
+### 🏭 Factory System
+
+- Factory account management
+- Factory discovery and linking
+- Multi-factory support
+- Production tracking capabilities
+
+### 💬 Chat System
+
+- Real-time messaging
+- Seller-buyer communication
+- Chat history persistence
+- Message notifications
+
+### 📦 Product Management
+
+- Complete product catalog
+- ASIN generation and tracking
+- QR code / SKU integration
+- Image upload support
+- Product variants management
+
+### 🏠 User Features
+
+- User home page with personalized content
+- Order history and tracking
+- Wishlist management
+- Address management
+- User profile settings
+
 ### 🔐 Authentication & Security
 
 - Supabase Auth integration
 - Row Level Security (RLS) for data isolation
 - Multi-seller support with complete data separation
+- Multi-role system (Admin, Seller, Buyer, Factory)
 - Secure local storage
 - Biometric authentication support
 
@@ -108,6 +150,10 @@ A comprehensive Flutter-based e-commerce application with multi-vendor marketpla
 | `image_picker`           | Image handling           |
 | `firebase_messaging`     | Push notifications       |
 | `connectivity_plus`      | Network monitoring       |
+| `http`                   | HTTP client for edge functions |
+| `shared_preferences`     | Local caching            |
+| `intl`                   | Internationalization     |
+| `uuid`                   | UUID generation          |
 
 ---
 
@@ -120,7 +166,9 @@ A-U-R-O-R-A/
 │   ├── models/           # Data models
 │   │   ├── customer.dart
 │   │   ├── product.dart
-│   │   └── sale.dart
+│   │   ├── sale.dart
+│   │   ├── payment_method.dart
+│   │   └── chat_message.dart
 │   ├── pages/            # Application screens
 │   │   ├── sales/
 │   │   │   ├── record_sale_screen.dart
@@ -131,14 +179,41 @@ A-U-R-O-R-A/
 │   │   │   └── customer_details_screen.dart
 │   │   ├── analytics/
 │   │   │   └── analytics_page.dart
-│   │   └── ...
+│   │   ├── product/
+│   │   │   ├── products_page.dart
+│   │   │   └── product_details_screen.dart
+│   │   ├── factory/
+│   │   │   ├── factory_page.dart
+│   │   │   └── factory_discovery_page.dart
+│   │   ├── chat/
+│   │   │   └── chat_page.dart
+│   │   ├── user/
+│   │   │   ├── user_home_page.dart
+│   │   │   ├── user_orders_page.dart
+│   │   │   ├── user_payment_methods_page.dart
+│   │   │   ├── user_wishlist_page.dart
+│   │   │   ├── user_addresses_page.dart
+│   │   │   └── user_profile_page.dart
+│   │   ├── seller/
+│   │   │   └── seller_dashboard.dart
+│   │   ├── setting/
+│   │   │   └── settings_page.dart
+│   │   └── auth/
+│   │       ├── login_page.dart
+│   │       └── signup_page.dart
 │   ├── services/         # Business logic & API calls
-│   │   └── supabase.dart
+│   │   ├── supabase.dart
+│   │   ├── auth_service.dart
+│   │   └── edge_functions.dart
 │   ├── theme/            # App theming
 │   ├── widgets/          # Reusable components
 │   │   └── drawer.dart
 │   └── main.dart         # App entry point
 ├── supabase/
+│   ├── functions/        # Edge functions
+│   │   ├── payment-methods/
+│   │   ├── chat/
+│   │   └── factory/
 │   └── migrations/       # Database migrations
 │       └── 005_customers_sales_analytics_complete.sql
 ├── test/                 # Unit and widget tests
@@ -284,9 +359,37 @@ const String supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
 
 - [`analytics_page.dart`](lib/pages/analytics/analytics_page.dart) - Business intelligence dashboard
 
+### Payment Methods Module
+
+- [`user_payment_methods_page.dart`](lib/pages/user/user_payment_methods_page.dart) - Manage saved payment cards
+
+### Product Module
+
+- [`products_page.dart`](lib/pages/product/products_page.dart) - Product catalog management
+- [`product_details_screen.dart`](lib/pages/product/product_details_screen.dart) - Product details and editing
+
+### Factory Module
+
+- [`factory_page.dart`](lib/pages/factory/factory_page.dart) - Factory management
+- [`factory_discovery_page.dart`](lib/pages/factory/factory_discovery_page.dart) - Discover and link factories
+
+### Chat Module
+
+- [`chat_page.dart`](lib/pages/chat/chat_page.dart) - Real-time messaging
+
+### User Module
+
+- [`user_home_page.dart`](lib/pages/user/user_home_page.dart) - User home dashboard
+- [`user_orders_page.dart`](lib/pages/user/user_orders_page.dart) - Order history
+- [`user_wishlist_page.dart`](lib/pages/user/user_wishlist_page.dart) - Saved items
+- [`user_addresses_page.dart`](lib/pages/user/user_addresses_page.dart) - Address management
+- [`user_profile_page.dart`](lib/pages/user/user_profile_page.dart) - Profile settings
+
 ### Services
 
 - [`supabase.dart`](lib/services/supabase.dart) - Database operations and business logic
+- [`auth_service.dart`](lib/services/auth_service.dart) - Authentication management
+- [`edge_functions.dart`](lib/services/edge_functions.dart) - Edge function integration
 
 ---
 
@@ -299,6 +402,7 @@ All tables implement RLS policies ensuring:
 - Sellers can only access their own data
 - Complete data isolation between sellers
 - Service role bypass for calculations
+- Multi-role access control (Admin, Seller, Buyer, Factory)
 
 ```sql
 -- Example RLS Policy
@@ -314,6 +418,14 @@ USING (seller_id = auth.uid());
 - Secure token storage
 - Biometric authentication support
 - Session management
+- Multi-role system
+
+### Edge Functions Security
+
+- JWT validation for all edge functions
+- CORS configuration
+- Rate limiting
+- Input validation
 
 ---
 
@@ -321,14 +433,28 @@ USING (seller_id = auth.uid());
 
 Additional documentation files:
 
-| Document                                                                   | Description                  |
-| -------------------------------------------------------------------------- | ---------------------------- |
-| [`COMPLETE_IMPLEMENTATION_SUMMARY.md`](COMPLETE_IMPLEMENTATION_SUMMARY.md) | Full implementation overview |
-| [`SQL_IMPLEMENTATION_GUIDE.md`](SQL_IMPLEMENTATION_GUIDE.md)               | Database setup guide         |
-| [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md)                               | Production deployment        |
-| [`ENHANCED_FEATURES_GUIDE.md`](ENHANCED_FEATURES_GUIDE.md)                 | Advanced features            |
-| [`FACTORY_SYSTEM_SUMMARY.md`](FACTORY_SYSTEM_SUMMARY.md)                   | Factory module documentation |
-| [`EDGE_FUNCTIONS_GUIDE.md`](EDGE_FUNCTIONS_GUIDE.md)                       | Edge functions setup         |
+| Document                                                                   | Description                              |
+| -------------------------------------------------------------------------- | ---------------------------------------- |
+| [`COMPLETE_IMPLEMENTATION_SUMMARY.md`](COMPLETE_IMPLEMENTATION_SUMMARY.md) | Full implementation overview             |
+| [`SQL_IMPLEMENTATION_GUIDE.md`](SQL_IMPLEMENTATION_GUIDE.md)               | Database setup guide                     |
+| [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md)                               | Production deployment                    |
+| [`COMPLETE_DEPLOYMENT_GUIDE.md`](COMPLETE_DEPLOYMENT_GUIDE.md)             | Complete deployment instructions         |
+| [`ENHANCED_FEATURES_GUIDE.md`](ENHANCED_FEATURES_GUIDE.md)                 | Advanced features                        |
+| [`FACTORY_SYSTEM_SUMMARY.md`](FACTORY_SYSTEM_SUMMARY.md)                   | Factory module documentation             |
+| [`FACTORY_ACCOUNT_IMPLEMENTATION.md`](FACTORY_ACCOUNT_IMPLEMENTATION.md)   | Factory account setup                    |
+| [`FACTORY_DISCOVERY_IMPLEMENTATION.md`](FACTORY_DISCOVERY_IMPLEMENTATION.md)| Factory discovery feature               |
+| [`CHAT_SYSTEM_IMPLEMENTATION.md`](CHAT_SYSTEM_IMPLEMENTATION.md)           | Chat system implementation               |
+| [`BIOMETRIC_IMPLEMENTATION.md`](BIOMETRIC_IMPLEMENTATION.md)               | Biometric authentication setup           |
+| [`EDGE_FUNCTIONS_COMPLETE_GUIDE.md`](EDGE_FUNCTIONS_COMPLETE_GUIDE.md)     | Edge functions complete guide            |
+| [`EDGE_FUNCTIONS_DEPLOYMENT.md`](EDGE_FUNCTIONS_DEPLOYMENT.md)             | Edge functions deployment                |
+| [`PRODUCT_SYSTEM_GUIDE.md`](PRODUCT_SYSTEM_GUIDE.md)                       | Product management system                |
+| [`QR_CODE_SKU_GUIDE.md`](QR_CODE_SKU_GUIDE.md)                             | QR code and SKU integration              |
+| [`IMAGE_UPLOAD_SETUP.md`](IMAGE_UPLOAD_SETUP.md)                           | Image upload configuration               |
+| [`MULTI_ROLE_SYSTEM_IMPLEMENTATION.md`](MULTI_ROLE_SYSTEM_IMPLEMENTATION.md)| Multi-role access control               |
+| [`PGMQ_QUEUE_SERVICE.md`](PGMQ_QUEUE_SERVICE.md)                           | Message queue service                    |
+| [`SECURITY_FIXES_COMPLETE.md`](SECURITY_FIXES_COMPLETE.md)                 | Security implementation details          |
+| [`TROUBLESHOOTING_GUIDE.md`](TROUBLESHOOTING_GUIDE.md)                     | Common issues and solutions              |
+| [`FINAL_DEPLOYMENT_CHECKLIST.md`](FINAL_DEPLOYMENT_CHECKLIST.md)           | Pre-deployment checklist                 |
 
 ---
 

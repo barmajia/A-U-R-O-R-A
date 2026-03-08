@@ -878,7 +878,7 @@ class _FactoryAnalyticsPageState extends State<FactoryAnalyticsPage> {
                   icon: Icons.repeat,
                   label: 'Return Rate',
                   value:
-                      '${(_stats.totalRevenue > 0 ? (_stats.totalReturns / _stats.totalRevenue * 100) : 0).toStringAsFixed(1)}%',
+                      '${(_stats.totalRevenue > 0 ? (_stats.totalRevenue / _stats.totalRevenue * 100) : 0).toStringAsFixed(1)}%',
                   color: Colors.orange,
                 ),
               ],

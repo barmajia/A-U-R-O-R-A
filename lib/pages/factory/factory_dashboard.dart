@@ -7,9 +7,7 @@ import 'package:aurora/widgets/drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:aurora/pages/factory/factory_profile_page.dart';
-import 'package:aurora/pages/factory/connection_requests_page.dart';
-import 'package:aurora/pages/product/product_page.dart';
+import 'package:aurora/pages/factory/factory_settings_page.dart';
 import 'package:aurora/pages/product/product_form_screen.dart';
 
 class FactoryDashboard extends StatefulWidget {
@@ -465,7 +463,9 @@ class _FactoryDashboardState extends State<FactoryDashboard> {
               child: TextButton.icon(
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => FactoryProfilePage()),
+                  MaterialPageRoute(
+                    builder: (context) => const FactorySettingsPage(),
+                  ),
                 ),
                 icon: const Icon(Icons.edit),
                 label: const Text('Edit Profile'),
@@ -504,7 +504,7 @@ class _FactoryDashboardState extends State<FactoryDashboard> {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const ConnectionRequestsPage(),
+            builder: (context) => const FactoryConnectionsPage(),
           ),
         ),
         borderRadius: BorderRadius.circular(12),

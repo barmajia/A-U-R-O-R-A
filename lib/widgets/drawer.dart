@@ -8,6 +8,7 @@ import 'package:aurora/pages/seller/sellerProfile.dart';
 import 'package:aurora/pages/setting/setting.dart';
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/login.dart';
+import 'package:aurora/pages/user/user_pages.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -198,15 +199,31 @@ class AppDrawer extends StatelessWidget {
                         ),
                       ],
 
-                      // User Menu - For regular users
+                      // User Menu - For regular customers
                       if (accountType == AccountType.user) ...[
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.home_outlined,
+                          activeIcon: Icons.home,
+                          title: 'Home',
+                          pageName: 'user_home',
+                          onTap: () => _navigateTo(
+                            context,
+                            const UserHomePage(),
+                            'user_home',
+                          ),
+                        ),
                         _buildMenuItem(
                           context,
                           icon: Icons.shopping_bag_outlined,
                           activeIcon: Icons.shopping_bag,
                           title: 'My Orders',
                           pageName: 'orders',
-                          onTap: () => _showComingSoon(context, 'My Orders'),
+                          onTap: () => _navigateTo(
+                            context,
+                            const UserOrdersPage(),
+                            'orders',
+                          ),
                         ),
                         _buildMenuItem(
                           context,
@@ -214,7 +231,48 @@ class AppDrawer extends StatelessWidget {
                           activeIcon: Icons.favorite,
                           title: 'Wishlist',
                           pageName: 'wishlist',
-                          onTap: () => _showComingSoon(context, 'Wishlist'),
+                          onTap: () => _navigateTo(
+                            context,
+                            const UserWishlistPage(),
+                            'wishlist',
+                          ),
+                        ),
+                        const Divider(),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.person_outline,
+                          activeIcon: Icons.person,
+                          title: 'My Profile',
+                          pageName: 'user_profile',
+                          onTap: () => _navigateTo(
+                            context,
+                            const UserProfilePage(),
+                            'user_profile',
+                          ),
+                        ),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.location_on_outlined,
+                          activeIcon: Icons.location_on,
+                          title: 'Addresses',
+                          pageName: 'addresses',
+                          onTap: () => _navigateTo(
+                            context,
+                            const UserAddressesPage(),
+                            'addresses',
+                          ),
+                        ),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.payment_outlined,
+                          activeIcon: Icons.payment,
+                          title: 'Payment Methods',
+                          pageName: 'payments',
+                          onTap: () => _navigateTo(
+                            context,
+                            const UserPaymentMethodsPage(),
+                            'payments',
+                          ),
                         ),
                       ],
 
