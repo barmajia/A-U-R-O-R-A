@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:aurora/models/factory/factory_models.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/widgets/drawer.dart';
+import 'package:aurora/theme/themeprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -246,12 +247,14 @@ class _FactorySettingsPageState extends State<FactorySettingsPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final appBarBg = isDark ? AppColors.darkSurface : AppColors.auroraPrimary;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Factory Settings'),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
+        backgroundColor: appBarBg,
+        foregroundColor: Colors.white,
         actions: [
           if (_isSaving)
             const Padding(

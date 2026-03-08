@@ -28,10 +28,22 @@ migrate_working_dir/
 **/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins-dependencies
+.flutter-plugins
+.packages
+.dart_tool/
+.flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
 /coverage/
+
+# Security - DO NOT COMMIT files with real credentials
+# Uncomment if you create config files with real keys:
+# lib/config/supabase_config_prod.dart
+# lib/config/secrets.dart
+# .env
+# .env.local
+# .env.*.local
 
 # Symbolication related
 app.*.symbols

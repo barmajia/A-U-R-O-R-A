@@ -23,13 +23,16 @@ import 'package:aurora/models/factory/factory_profile.dart';
 // Constants & Configuration
 // ============================================================================
 
-class SupabaseConfig {
-  SupabaseConfig._();
+/// Constants for Supabase operations (legacy - use SupabaseConfig from config/supabase_config.dart)
+/// @deprecated Use SupabaseConfig instead
+class SupabaseConstants {
+  SupabaseConstants._();
 
   static const Duration analyticsCacheDuration = Duration(minutes: 15);
   static const String cacheAnalytics = 'cache_analytics';
   static const String cacheCategories = 'cache_categories';
-  static const String cacheCustomerProfile = 'cache_customer_profile'; // Deprecated
+  static const String cacheCustomerProfile =
+      'cache_customer_profile'; // Deprecated
   static const String cacheDeals = 'cache_deals'; // Deprecated
   // Cache Duration
   static const Duration cacheDuration = Duration(minutes: 5);
@@ -38,12 +41,14 @@ class SupabaseConfig {
   // Cache Keys - Core
   static const String cacheFactoryProfile = 'cache_factory_profile';
 
-  static const String cacheMiddlemanProfile = 'cache_middleman_profile'; // Deprecated
+  static const String cacheMiddlemanProfile =
+      'cache_middleman_profile'; // Deprecated
   // Cache Keys - Core
   static const String cacheProducts = 'cache_products';
 
   static const String cacheSellerProfile = 'cache_seller_profile';
-  static const String functionCreateDeal = 'create-deal'; // Deprecated - middleman removed
+  static const String functionCreateDeal =
+      'create-deal'; // Deprecated - middleman removed
   // Edge Functions - Orders
   static const String functionCreateOrder = 'create-order';
 
@@ -85,7 +90,8 @@ class SupabaseConfig {
   static const String tableCart = 'cart';
   static const String tableCategories = 'categories';
   static const String tableConversations = 'conversations';
-  static const String tableCustomers = 'customers'; // Deprecated - seller-managed customers
+  static const String tableCustomers =
+      'customers'; // Deprecated - seller-managed customers
   static const String tableDeals = 'deals'; // Deprecated
   static const String tableFactoryConnections = 'factory_connections';
   // Table Names - Factory System
@@ -93,7 +99,8 @@ class SupabaseConfig {
 
   static const String tableFactoryRatings = 'factory_ratings';
   static const String tableMessages = 'messages';
-  static const String tableMiddlemanProfiles = 'middleman_profiles'; // Deprecated
+  static const String tableMiddlemanProfiles =
+      'middleman_profiles'; // Deprecated
   static const String tableNotifications = 'notifications';
   static const String tableOrderItems = 'order_items';
   static const String tableOrders = 'orders';
@@ -458,7 +465,7 @@ class SupabaseProvider extends ChangeNotifier {
   /// The account type of the current user (from metadata).
   AccountType get accountType {
     final type =
-        currentUser?.userMetadata?[SupabaseConfig.keyAccountType] as String?;
+        currentUser?.userMetadata?[SupabaseConstants.keyAccountType] as String?;
     return AccountType.values.firstWhere(
       (e) => e.name == type,
       orElse: () => AccountType.seller,
@@ -467,13 +474,13 @@ class SupabaseProvider extends ChangeNotifier {
 
   /// Get user's preferred language
   String get userLanguage {
-    return currentUser?.userMetadata?[SupabaseConfig.keyLanguage] as String? ??
+    return currentUser?.userMetadata?[SupabaseConstants.keyLanguage] as String? ??
         'en';
   }
 
   /// Get user's currency
   String get userCurrency {
-    return currentUser?.userMetadata?[SupabaseConfig.keyCurrency] as String? ??
+    return currentUser?.userMetadata?[SupabaseConstants.keyCurrency] as String? ??
         'USD';
   }
 
@@ -503,21 +510,21 @@ class SupabaseProvider extends ChangeNotifier {
 
       // Determine account type and load role-specific profile
       final accountType =
-          response.user?.userMetadata?[SupabaseConfig.keyAccountType]
+          response.user?.userMetadata?[SupabaseConstants.keyAccountType]
               as String?;
 
       if (accountType == 'seller') {
         await _cache.set(
-          SupabaseConfig.cacheSellerProfile,
+          SupabaseConstants.cacheSellerProfile,
           response.user!.id,
-          SupabaseConfig.cacheDuration,
+          SupabaseConstants.cacheDuration,
         );
         await getCurrentSellerProfile();
       } else if (accountType == 'factory') {
         await _cache.set(
-          SupabaseConfig.cacheFactoryProfile,
+          SupabaseConstants.cacheFactoryProfile,
           response.user!.id,
-          SupabaseConfig.cacheDuration,
+          SupabaseConstants.cacheDuration,
         );
         await getCurrentFactoryProfile();
       }
@@ -534,58 +541,6 @@ class SupabaseProvider extends ChangeNotifier {
       return _failure(_mapAuthError(e.message));
     } catch (e) {
       _errorHandler.handleError(e, 'Login');
-      return _failure('An unexpected error occurred: $e');
-    }
-  }
-
-  /// Signs in a seller with additional validation against the sellers table.
-  Future<AuthResult> loginSeller({
-    required String email,
-    required String password,
-  }) async {
-    try {
-      // Step 1: Authenticate with Supabase Auth
-      final authResponse = await _client.auth.signInWithPassword(
-        email: email.toLowerCase().trim(),
-        password: password,
-      );
-
-      if (authResponse.user == null) {
-        return _failure('Invalid email or password.');
-      }
-
-      // Step 2: Verify seller record exists
-      final seller = await _fetchSeller(authResponse.user!.id);
-      if (seller == null) {
-        await _client.auth.signOut();
-        return _failure(
-          'Seller account not found. Please register as a seller.',
-        );
-      }
-
-      // Cache seller data
-      await _cache.set(
-        SupabaseConfig.cacheSellerProfile,
-        seller,
-        SupabaseConfig.cacheDuration,
-      );
-
-      notifyListeners();
-
-      return _success('Seller login successful!', {
-        'user': authResponse.user,
-        'session': authResponse.session,
-        'seller': seller,
-        'accountType': 'seller',
-      });
-    } on AuthException catch (e) {
-      _errorHandler.handleError(e, 'Seller Login');
-      return _failure(_mapAuthError(e.message));
-    } on PostgrestException {
-      await _client.auth.signOut();
-      return _failure('Seller account not found. Please register as a seller.');
-    } catch (e) {
-      _errorHandler.handleError(e, 'Seller Login');
       return _failure('An unexpected error occurred: $e');
     }
   }
@@ -618,12 +573,12 @@ class SupabaseProvider extends ChangeNotifier {
         email: email.toLowerCase().trim(),
         password: password,
         data: {
-          SupabaseConfig.keyFullName: fullName,
-          SupabaseConfig.keyAccountType: accountType.name,
-          SupabaseConfig.keyCurrency: currency,
-          SupabaseConfig.keyPhone: phone,
-          SupabaseConfig.keyLocation: location,
-          SupabaseConfig.keyLanguage: language ?? 'en',
+          SupabaseConstants.keyFullName: fullName,
+          SupabaseConstants.keyAccountType: accountType.name,
+          SupabaseConstants.keyCurrency: currency,
+          SupabaseConstants.keyPhone: phone,
+          SupabaseConstants.keyLocation: location,
+          SupabaseConstants.keyLanguage: language ?? 'en',
         },
       );
 
@@ -667,6 +622,11 @@ class SupabaseProvider extends ChangeNotifier {
         phone: phone,
         location: location,
         currency: currency,
+        // Factory-specific fields
+        companyName: accountType == AccountType.factory ? companyName : null,
+        businessLicense: accountType == AccountType.factory ? businessLicense : null,
+        latitude: latitude,
+        longitude: longitude,
       );
 
       notifyListeners();
@@ -717,7 +677,7 @@ class SupabaseProvider extends ChangeNotifier {
   Future<AuthResult> updateLanguage(String language) async {
     try {
       await _client.auth.updateUser(
-        UserAttributes(data: {SupabaseConfig.keyLanguage: language}),
+        UserAttributes(data: {SupabaseConstants.keyLanguage: language}),
       );
       notifyListeners();
       return _success('Language updated successfully');
@@ -737,16 +697,16 @@ class SupabaseProvider extends ChangeNotifier {
 
     // Check cache first
     final cached = await _cache.get<Map<String, dynamic>>(
-      SupabaseConfig.cacheSellerProfile,
+      SupabaseConstants.cacheSellerProfile,
     );
     if (cached != null) return cached;
 
     final seller = await _fetchSeller(currentUser!.id);
     if (seller != null) {
       await _cache.set(
-        SupabaseConfig.cacheSellerProfile,
+        SupabaseConstants.cacheSellerProfile,
         seller,
-        SupabaseConfig.cacheDuration,
+        SupabaseConstants.cacheDuration,
       );
     }
     return seller;
@@ -773,12 +733,12 @@ class SupabaseProvider extends ChangeNotifier {
   }) async {
     try {
       await _client
-          .from(SupabaseConfig.tableSellers)
+          .from(SupabaseConstants.tableSellers)
           .update(data)
           .eq('user_id', userId);
 
       // Invalidate cache
-      await _cache.remove(SupabaseConfig.cacheSellerProfile);
+      await _cache.remove(SupabaseConstants.cacheSellerProfile);
 
       return _success('Profile updated successfully!');
     } catch (e) {
@@ -797,14 +757,14 @@ class SupabaseProvider extends ChangeNotifier {
 
     // Check cache first
     final cached = await _cache.get<FactoryProfile>(
-      SupabaseConfig.cacheFactoryProfile,
+      SupabaseConstants.cacheFactoryProfile,
     );
     if (cached != null) return cached;
 
     final userId = currentUser!.id;
     try {
       final response = await _client
-          .from(SupabaseConfig.tableSellers)
+          .from(SupabaseConstants.tableSellers)
           .select()
           .eq('user_id', userId)
           .maybeSingle();
@@ -836,9 +796,9 @@ class SupabaseProvider extends ChangeNotifier {
       );
 
       await _cache.set(
-        SupabaseConfig.cacheFactoryProfile,
+        SupabaseConstants.cacheFactoryProfile,
         profile,
-        SupabaseConfig.cacheDuration,
+        SupabaseConstants.cacheDuration,
       );
       return profile;
     } catch (e) {
@@ -879,12 +839,12 @@ class SupabaseProvider extends ChangeNotifier {
       updates['updated_at'] = DateTime.now().toIso8601String();
 
       await _client
-          .from(SupabaseConfig.tableSellers)
+          .from(SupabaseConstants.tableSellers)
           .update(updates)
           .eq('user_id', userId);
 
       // Invalidate cache
-      await _cache.remove(SupabaseConfig.cacheFactoryProfile);
+      await _cache.remove(SupabaseConstants.cacheFactoryProfile);
 
       return _success('Factory profile updated successfully');
     } catch (e) {
@@ -913,7 +873,7 @@ class SupabaseProvider extends ChangeNotifier {
       }
 
       // Invalidate products cache
-      await _cache.remove(SupabaseConfig.cacheProducts);
+      await _cache.remove(SupabaseConstants.cacheProducts);
 
       notifyListeners();
       return _success('Product created successfully!', {'product': product});
@@ -937,7 +897,7 @@ class SupabaseProvider extends ChangeNotifier {
       }
 
       // Invalidate cache
-      await _cache.remove(SupabaseConfig.cacheProducts);
+      await _cache.remove(SupabaseConstants.cacheProducts);
 
       notifyListeners();
       return _success('Product updated successfully!', {'product': product});
@@ -974,7 +934,7 @@ class SupabaseProvider extends ChangeNotifier {
   /// Get all products with caching
   Future<List<AuroraProduct>> getAllProducts() async {
     // SECURITY FIX: Use user-specific cache key to prevent data leakage
-    final cacheKey = _getUserCacheKey(SupabaseConfig.cacheProducts);
+    final cacheKey = _getUserCacheKey(SupabaseConstants.cacheProducts);
 
     // Check cache first
     final cached = await _cache.get<List<AuroraProduct>>(cacheKey);
@@ -984,7 +944,7 @@ class SupabaseProvider extends ChangeNotifier {
     final products = await _productsDb.getAllProducts();
 
     // Cache the result with user-specific key
-    await _cache.set(cacheKey, products, SupabaseConfig.cacheDuration);
+    await _cache.set(cacheKey, products, SupabaseConstants.cacheDuration);
 
     return products;
   }
@@ -1146,7 +1106,7 @@ class SupabaseProvider extends ChangeNotifier {
 
       // Call Edge Function for secure order creation with server-side calculations
       final response = await _client.functions.invoke(
-        SupabaseConfig.functionCreateOrder,
+        SupabaseConstants.functionCreateOrder,
         body: orderData,
       );
 
@@ -1187,7 +1147,7 @@ class SupabaseProvider extends ChangeNotifier {
       final offset = (page - 1) * limit;
 
       dynamic query = _client
-          .from(SupabaseConfig.tableOrders)
+          .from(SupabaseConstants.tableOrders)
           .select()
           .eq('user_id', userId)
           .order('created_at', ascending: false)
@@ -1204,7 +1164,7 @@ class SupabaseProvider extends ChangeNotifier {
       final ordersWithItems = await Future.wait(
         (response as List).map((order) async {
           final items = await _client
-              .from(SupabaseConfig.tableOrderItems)
+              .from(SupabaseConstants.tableOrderItems)
               .select()
               .eq('order_id', order['id']);
           return {...order, 'items': items};
@@ -1241,7 +1201,7 @@ class SupabaseProvider extends ChangeNotifier {
   }) async {
     try {
       await _client
-          .from(SupabaseConfig.tableOrders)
+          .from(SupabaseConstants.tableOrders)
           .update({
             'status': status,
             'updated_at': DateTime.now().toIso8601String(),
@@ -1275,7 +1235,7 @@ class SupabaseProvider extends ChangeNotifier {
 
       // Check if already in wishlist
       final existing = await _client
-          .from(SupabaseConfig.tableWishlist)
+          .from(SupabaseConstants.tableWishlist)
           .select()
           .eq('user_id', userId)
           .eq('asin', asin)
@@ -1285,7 +1245,7 @@ class SupabaseProvider extends ChangeNotifier {
         return _failure('Product already in wishlist');
       }
 
-      await _client.from(SupabaseConfig.tableWishlist).insert({
+      await _client.from(SupabaseConstants.tableWishlist).insert({
         'user_id': userId,
         'asin': asin,
         'created_at': DateTime.now().toIso8601String(),
@@ -1308,7 +1268,7 @@ class SupabaseProvider extends ChangeNotifier {
       final userId = currentUser!.id;
 
       await _client
-          .from(SupabaseConfig.tableWishlist)
+          .from(SupabaseConstants.tableWishlist)
           .delete()
           .eq('user_id', userId)
           .eq('asin', asin);
@@ -1328,7 +1288,7 @@ class SupabaseProvider extends ChangeNotifier {
       final userId = currentUser!.id;
 
       final wishlist = await _client
-          .from(SupabaseConfig.tableWishlist)
+          .from(SupabaseConstants.tableWishlist)
           .select('asin')
           .eq('user_id', userId);
 
@@ -1371,7 +1331,7 @@ class SupabaseProvider extends ChangeNotifier {
       final userId = currentUser!.id;
       final reviewId = const Uuid().v4();
 
-      await _client.from(SupabaseConfig.tableReviews).insert({
+      await _client.from(SupabaseConstants.tableReviews).insert({
         'id': reviewId,
         'user_id': userId,
         'asin': asin,
@@ -1395,7 +1355,7 @@ class SupabaseProvider extends ChangeNotifier {
   Future<List<Map<String, dynamic>>> getProductReviews(String asin) async {
     try {
       final reviews = await _client
-          .from(SupabaseConfig.tableReviews)
+          .from(SupabaseConstants.tableReviews)
           .select('''
             reviews.*,
             users (full_name, avatar_url)
@@ -1471,7 +1431,7 @@ class SupabaseProvider extends ChangeNotifier {
       final userId = currentUser!.id;
 
       dynamic query = _client
-          .from(SupabaseConfig.tableNotifications)
+          .from(SupabaseConstants.tableNotifications)
           .select()
           .eq('user_id', userId)
           .order('created_at', ascending: false)
@@ -1493,7 +1453,7 @@ class SupabaseProvider extends ChangeNotifier {
   Future<AuthResult> markNotificationRead(String notificationId) async {
     try {
       await _client
-          .from(SupabaseConfig.tableNotifications)
+          .from(SupabaseConstants.tableNotifications)
           .update({'is_read': true})
           .eq('id', notificationId);
 
@@ -1514,7 +1474,7 @@ class SupabaseProvider extends ChangeNotifier {
       final userId = currentUser!.id;
 
       await _client
-          .from(SupabaseConfig.tableNotifications)
+          .from(SupabaseConstants.tableNotifications)
           .update({'is_read': true})
           .eq('user_id', userId);
 
@@ -1539,7 +1499,7 @@ class SupabaseProvider extends ChangeNotifier {
       final userId = currentUser!.id;
 
       // Check cache
-      final cacheKey = '${SupabaseConfig.cacheAnalytics}_$period';
+      final cacheKey = '${SupabaseConstants.cacheAnalytics}_$period';
       final cached = await _cache.get<Map<String, dynamic>>(cacheKey);
       if (cached != null) return cached;
 
@@ -1550,7 +1510,7 @@ class SupabaseProvider extends ChangeNotifier {
 
       // Get orders in period
       final orders = await _client
-          .from(SupabaseConfig.tableOrders)
+          .from(SupabaseConstants.tableOrders)
           .select('total, status, created_at')
           .eq('seller_id', userId)
           .gte('created_at', startDate.toIso8601String());
@@ -1587,7 +1547,7 @@ class SupabaseProvider extends ChangeNotifier {
       await _cache.set(
         cacheKey,
         analytics,
-        SupabaseConfig.analyticsCacheDuration,
+        SupabaseConstants.analyticsCacheDuration,
       );
 
       return analytics;
@@ -1623,12 +1583,12 @@ class SupabaseProvider extends ChangeNotifier {
       // If default, unset other defaults
       if (isDefault) {
         await _client
-            .from(SupabaseConfig.tableShippingAddresses)
+            .from(SupabaseConstants.tableShippingAddresses)
             .update({'is_default': false})
             .eq('user_id', userId);
       }
 
-      await _client.from(SupabaseConfig.tableShippingAddresses).insert({
+      await _client.from(SupabaseConstants.tableShippingAddresses).insert({
         'id': addressId,
         'user_id': userId,
         'full_name': fullName,
@@ -1657,7 +1617,7 @@ class SupabaseProvider extends ChangeNotifier {
       final userId = currentUser!.id;
 
       final addresses = await _client
-          .from(SupabaseConfig.tableShippingAddresses)
+          .from(SupabaseConstants.tableShippingAddresses)
           .select()
           .eq('user_id', userId)
           .order('is_default', ascending: false);
@@ -1676,7 +1636,7 @@ class SupabaseProvider extends ChangeNotifier {
   }) async {
     try {
       await _client
-          .from(SupabaseConfig.tableShippingAddresses)
+          .from(SupabaseConstants.tableShippingAddresses)
           .update({...data, 'updated_at': DateTime.now().toIso8601String()})
           .eq('id', addressId);
 
@@ -1691,7 +1651,7 @@ class SupabaseProvider extends ChangeNotifier {
   Future<AuthResult> deleteShippingAddress(String addressId) async {
     try {
       await _client
-          .from(SupabaseConfig.tableShippingAddresses)
+          .from(SupabaseConstants.tableShippingAddresses)
           .delete()
           .eq('id', addressId);
 
@@ -1720,7 +1680,7 @@ class SupabaseProvider extends ChangeNotifier {
 
       // Check if item already in cart
       final existing = await _client
-          .from(SupabaseConfig.tableCart)
+          .from(SupabaseConstants.tableCart)
           .select()
           .eq('user_id', userId)
           .eq('asin', asin)
@@ -1730,12 +1690,12 @@ class SupabaseProvider extends ChangeNotifier {
         // Update quantity
         final newQuantity = (existing['quantity'] as int) + quantity;
         await _client
-            .from(SupabaseConfig.tableCart)
+            .from(SupabaseConstants.tableCart)
             .update({'quantity': newQuantity})
             .eq('id', existing['id']);
       } else {
         // Add new item
-        await _client.from(SupabaseConfig.tableCart).insert({
+        await _client.from(SupabaseConstants.tableCart).insert({
           'user_id': userId,
           'asin': asin,
           'quantity': quantity,
@@ -1758,7 +1718,7 @@ class SupabaseProvider extends ChangeNotifier {
       final userId = currentUser!.id;
 
       final cart = await _client
-          .from(SupabaseConfig.tableCart)
+          .from(SupabaseConstants.tableCart)
           .select()
           .eq('user_id', userId);
 
@@ -1786,10 +1746,10 @@ class SupabaseProvider extends ChangeNotifier {
     try {
       if (quantity <= 0) {
         // Remove item
-        await _client.from(SupabaseConfig.tableCart).delete().eq('id', cartId);
+        await _client.from(SupabaseConstants.tableCart).delete().eq('id', cartId);
       } else {
         await _client
-            .from(SupabaseConfig.tableCart)
+            .from(SupabaseConstants.tableCart)
             .update({'quantity': quantity})
             .eq('id', cartId);
       }
@@ -1811,7 +1771,7 @@ class SupabaseProvider extends ChangeNotifier {
       final userId = currentUser!.id;
 
       await _client
-          .from(SupabaseConfig.tableCart)
+          .from(SupabaseConstants.tableCart)
           .delete()
           .eq('user_id', userId);
 
@@ -1891,7 +1851,7 @@ class SupabaseProvider extends ChangeNotifier {
   }) async {
     try {
       final result = await _client.functions.invoke(
-        SupabaseConfig.functionManageProduct,
+        SupabaseConstants.functionManageProduct,
         body: {'action': action, 'asin': asin, 'data': data},
       );
 
@@ -1956,7 +1916,7 @@ class SupabaseProvider extends ChangeNotifier {
       final sellerId = currentUser!.id;
 
       final response = await _client.functions.invoke(
-        SupabaseConfig.functionCreateProduct,
+        SupabaseConstants.functionCreateProduct,
         body: {
           'title': title,
           'description': description,
@@ -2019,7 +1979,7 @@ class SupabaseProvider extends ChangeNotifier {
       final sellerId = currentUser!.id;
 
       final response = await _client.functions.invoke(
-        SupabaseConfig.functionUpdateProduct,
+        SupabaseConstants.functionUpdateProduct,
         body: {'asin': asin, 'updates': updates, 'sellerId': sellerId},
       );
 
@@ -2064,7 +2024,7 @@ class SupabaseProvider extends ChangeNotifier {
       final sellerId = currentUser!.id;
 
       final response = await _client.functions.invoke(
-        SupabaseConfig.functionDeleteProduct,
+        SupabaseConstants.functionDeleteProduct,
         body: {'asin': asin, 'sellerId': sellerId},
       );
 
@@ -2109,7 +2069,7 @@ class SupabaseProvider extends ChangeNotifier {
       final sellerId = currentUser!.id;
 
       final response = await _client.functions.invoke(
-        SupabaseConfig.functionSearchProducts,
+        SupabaseConstants.functionSearchProducts,
         body: {
           'query': query,
           'category': category,
@@ -2575,7 +2535,7 @@ class SupabaseProvider extends ChangeNotifier {
       }
 
       final response = await _client.functions.invoke(
-        SupabaseConfig.functionGetOrCreateConversation,
+        SupabaseConstants.functionGetOrCreateConversation,
         body: {'otherUserId': otherUserId, 'productId': productId},
       );
 
@@ -2607,7 +2567,7 @@ class SupabaseProvider extends ChangeNotifier {
       final userId = currentUser!.id;
       final messageId = const Uuid().v4();
 
-      await _client.from(SupabaseConfig.tableMessages).insert({
+      await _client.from(SupabaseConstants.tableMessages).insert({
         'id': messageId,
         'conversation_id': conversationId,
         'sender_id': userId,
@@ -2619,7 +2579,7 @@ class SupabaseProvider extends ChangeNotifier {
 
       // Update conversation last message
       await _client
-          .from(SupabaseConfig.tableConversations)
+          .from(SupabaseConstants.tableConversations)
           .update({
             'last_message': content,
             'last_message_at': DateTime.now().toIso8601String(),
@@ -2644,7 +2604,7 @@ class SupabaseProvider extends ChangeNotifier {
       }
 
       final response = await _client
-          .from(SupabaseConfig.tableMessages)
+          .from(SupabaseConstants.tableMessages)
           .select('''
             *,
             sender:sender_id (full_name, avatar_url)
@@ -2681,7 +2641,7 @@ class SupabaseProvider extends ChangeNotifier {
       final userId = currentUser!.id;
 
       final response = await _client
-          .from(SupabaseConfig.tableConversations)
+          .from(SupabaseConstants.tableConversations)
           .select('''
             *,
             participant_a_data:participant_a (id, full_name, avatar_url),
@@ -2692,7 +2652,7 @@ class SupabaseProvider extends ChangeNotifier {
           .order('last_message_at', ascending: false);
 
       final response2 = await _client
-          .from(SupabaseConfig.tableConversations)
+          .from(SupabaseConstants.tableConversations)
           .select('''
             *,
             participant_a_data:participant_a (id, full_name, avatar_url),
@@ -2736,7 +2696,7 @@ class SupabaseProvider extends ChangeNotifier {
   /// Subscribe to messages in a conversation (realtime)
   Stream<List<Map<String, dynamic>>> getMessagesStream(String conversationId) {
     return _client
-        .from(SupabaseConfig.tableMessages)
+        .from(SupabaseConstants.tableMessages)
         .stream(primaryKey: ['id'])
         .eq('conversation_id', conversationId)
         .order('created_at');
@@ -2754,7 +2714,7 @@ class SupabaseProvider extends ChangeNotifier {
       final userId = currentUser!.id;
 
       await _client
-          .from(SupabaseConfig.tableMessages)
+          .from(SupabaseConstants.tableMessages)
           .update({
             'is_read': true,
             'read_at': DateTime.now().toIso8601String(),
@@ -2790,7 +2750,7 @@ class SupabaseProvider extends ChangeNotifier {
 
       // Update the sellers table with new coordinates
       await _client
-          .from(SupabaseConfig.tableSellers)
+          .from(SupabaseConstants.tableSellers)
           .update({
             'latitude': latitude,
             'longitude': longitude,
@@ -2799,8 +2759,8 @@ class SupabaseProvider extends ChangeNotifier {
           .eq('user_id', userId);
 
       // Invalidate relevant caches
-      await _cache.remove(SupabaseConfig.cacheFactoryProfile);
-      await _cache.remove(SupabaseConfig.cacheSellerProfile);
+      await _cache.remove(SupabaseConstants.cacheFactoryProfile);
+      await _cache.remove(SupabaseConstants.cacheSellerProfile);
 
       // Update local SellerDB if available
       if (_sellerDb != null) {
@@ -2840,7 +2800,7 @@ class SupabaseProvider extends ChangeNotifier {
       switch (role) {
         case AccountType.seller:
         case AccountType.factory:
-          table = SupabaseConfig.tableSellers;
+          table = SupabaseConstants.tableSellers;
           break;
         default:
           return _failure('Your role does not support location updates');
@@ -2856,8 +2816,8 @@ class SupabaseProvider extends ChangeNotifier {
           .eq('user_id', userId);
 
       // Invalidate profile cache
-      await _cache.remove(SupabaseConfig.cacheSellerProfile);
-      await _cache.remove(SupabaseConfig.cacheFactoryProfile);
+      await _cache.remove(SupabaseConstants.cacheSellerProfile);
+      await _cache.remove(SupabaseConstants.cacheFactoryProfile);
 
       return _success('Location updated successfully');
     } catch (e) {
@@ -2904,7 +2864,7 @@ class SupabaseProvider extends ChangeNotifier {
       }
 
       final response = await _client.functions.invoke(
-        SupabaseConfig.functionFindNearbyFactories,
+        SupabaseConstants.functionFindNearbyFactories,
         body: {
           'latitude': latitude,
           'longitude': longitude,
@@ -2955,7 +2915,7 @@ class SupabaseProvider extends ChangeNotifier {
       }
 
       final response = await _client.functions.invoke(
-        SupabaseConfig.functionRequestFactoryConnection,
+        SupabaseConstants.functionRequestFactoryConnection,
         body: {'factoryId': factoryId, 'notes': notes},
       );
 
@@ -3346,7 +3306,7 @@ class SupabaseProvider extends ChangeNotifier {
   Future<Map<String, dynamic>?> _fetchSeller(String userId) async {
     try {
       return await _client
-          .from(SupabaseConfig.tableSellers)
+          .from(SupabaseConstants.tableSellers)
           .select()
           .eq('user_id', userId)
           .maybeSingle();
@@ -3368,23 +3328,23 @@ class SupabaseProvider extends ChangeNotifier {
   }) async {
     final nameParts = fullName.split(' ');
     final firstname = nameParts.isNotEmpty ? nameParts[0] : '';
-    final secoundname = nameParts.length > 1 ? nameParts[1] : '';
+    final secondname = nameParts.length > 1 ? nameParts[1] : '';
     final thirdname = nameParts.length > 2 ? nameParts[2] : '';
-    final forthname = nameParts.length > 3 ? nameParts[3] : '';
+    final fourthname = nameParts.length > 3 ? nameParts[3] : '';
 
     try {
-      await _client.from(SupabaseConfig.tableSellers).insert({
+      await _client.from(SupabaseConstants.tableSellers).insert({
         'user_id': userId,
         'email': email,
         'full_name': fullName,
         'firstname': firstname,
-        'secoundname': secoundname,
+        'secondname': secondname,
         'thirdname': thirdname,
-        'forthname': forthname,
+        'fourthname': fourthname,
         'phone': phone,
         'location': location,
         'currency': currency,
-        SupabaseConfig.keyAccountType: 'seller',
+        SupabaseConstants.keyAccountType: 'seller',
         'is_verified': false,
         'created_at': DateTime.now().toIso8601String(),
       }).select();
@@ -3399,9 +3359,9 @@ class SupabaseProvider extends ChangeNotifier {
         await _sellerDb.addSeller({
           'user_id': userId,
           'firstname': firstname,
-          'secoundname': secoundname,
+          'secondname': secondname,
           'thirdname': thirdname,
-          'forthname': forthname,
+          'fourthname': fourthname,
           'full_name': fullName,
           'email': email,
           'password': password,
@@ -3435,23 +3395,23 @@ class SupabaseProvider extends ChangeNotifier {
   }) async {
     final nameParts = fullName.split(' ');
     final firstname = nameParts.isNotEmpty ? nameParts[0] : '';
-    final secoundname = nameParts.length > 1 ? nameParts[1] : '';
+    final secondname = nameParts.length > 1 ? nameParts[1] : '';
     final thirdname = nameParts.length > 2 ? nameParts[2] : '';
-    final forthname = nameParts.length > 3 ? nameParts[3] : '';
+    final fourthname = nameParts.length > 3 ? nameParts[3] : '';
 
     try {
-      await _client.from(SupabaseConfig.tableSellers).insert({
+      await _client.from(SupabaseConstants.tableSellers).insert({
         'user_id': userId,
         'email': email,
         'full_name': fullName,
         'firstname': firstname,
-        'secoundname': secoundname,
+        'secondname': secondname,
         'thirdname': thirdname,
-        'forthname': forthname,
+        'fourthname': fourthname,
         'phone': phone,
         'location': location,
         'currency': currency,
-        SupabaseConfig.keyAccountType: 'factory',
+        SupabaseConstants.keyAccountType: 'factory',
         'is_verified': false,
         'company_name': companyName,
         'business_license': businessLicense,
@@ -3464,6 +3424,36 @@ class SupabaseProvider extends ChangeNotifier {
     } catch (e) {
       if (kDebugMode) print('Failed to create factory in Supabase: $e');
     }
+
+    // Also save to local SQLite database
+    try {
+      if (_sellerDb != null) {
+        await _sellerDb.addSeller({
+          'user_id': userId,
+          'firstname': firstname,
+          'secondname': secondname,
+          'thirdname': thirdname,
+          'fourthname': fourthname,
+          'full_name': fullName,
+          'email': email,
+          'password': password,
+          'location': location,
+          'phone': phone,
+          'currency': currency,
+          'account_type': 'factory',
+          'is_factory': true,
+          'company_name': companyName,
+          'business_license': businessLicense,
+          'latitude': latitude,
+          'longitude': longitude,
+          'is_verified': 0,
+          'created_at': DateTime.now().toIso8601String(),
+        });
+        if (kDebugMode) print('Factory created in local SQLite');
+      }
+    } catch (e) {
+      if (kDebugMode) print('Failed to create factory in local DB: $e');
+    }
   }
 
   /// Invokes the signup edge function.
@@ -3475,19 +3465,33 @@ class SupabaseProvider extends ChangeNotifier {
     required String phone,
     required String location,
     required String currency,
+    String? companyName,
+    String? businessLicense,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
+      final body = <String, dynamic>{
+        'userId': userId,
+        'email': email,
+        'fullName': fullName,
+        'accountType': accountType,
+        'phone': phone,
+        'location': location,
+        'currency': currency,
+      };
+
+      // Add factory-specific fields if applicable
+      if (accountType == 'factory') {
+        if (companyName != null) body['companyName'] = companyName;
+        if (businessLicense != null) body['businessLicense'] = businessLicense;
+        if (latitude != null) body['latitude'] = latitude;
+        if (longitude != null) body['longitude'] = longitude;
+      }
+
       await _client.functions.invoke(
-        SupabaseConfig.functionProcessSignup,
-        body: {
-          'userId': userId,
-          'email': email,
-          'fullName': fullName,
-          'accountType': accountType,
-          'phone': phone,
-          'location': location,
-          'currency': currency,
-        },
+        SupabaseConstants.functionProcessSignup,
+        body: body,
       );
     } catch (e) {
       if (kDebugMode) print('Edge Function error (user still created): $e');
@@ -3658,7 +3662,7 @@ class SupabaseProvider extends ChangeNotifier {
   Future<FactoryInfo?> getFactoryInfo(String userId) async {
     try {
       final response = await _client
-          .from(SupabaseConfig.tableSellers)
+          .from(SupabaseConstants.tableSellers)
           .select()
           .eq('user_id', userId)
           .maybeSingle();

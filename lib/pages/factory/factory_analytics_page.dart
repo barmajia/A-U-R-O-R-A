@@ -1,6 +1,7 @@
 import 'package:aurora/models/factory/factory_dashboard_models.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/widgets/drawer.dart';
+import 'package:aurora/theme/themeprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -71,12 +72,14 @@ class _FactoryAnalyticsPageState extends State<FactoryAnalyticsPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final appBarBg = isDark ? AppColors.darkSurface : AppColors.auroraPrimary;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Factory Analytics'),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
+        backgroundColor: appBarBg,
+        foregroundColor: Colors.white,
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.calendar_today),
@@ -126,10 +129,16 @@ class _FactoryAnalyticsPageState extends State<FactoryAnalyticsPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Left Column - Top Products
-                      Expanded(flex: 3, child: _buildTopProductsCard()),
+                      Expanded(flex: 1, child: _buildTopProductsCard()),
+                    ],
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left Column - Performance Metrics
                       const SizedBox(width: 16),
                       // Right Column - Performance Metrics
-                      Expanded(flex: 2, child: _buildPerformanceMetricsCard()),
+                      Expanded(flex: 1, child: _buildPerformanceMetricsCard()),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -620,101 +629,18 @@ class _FactoryAnalyticsPageState extends State<FactoryAnalyticsPage> {
                 ),
               )
             else
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _topProducts.length,
-                separatorBuilder: (context, index) => const Divider(),
-                itemBuilder: (context, index) {
-                  final product = _topProducts[index];
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: product.imageUrl != null
-                          ? Image.network(
-                              product.imageUrl!,
-                              width: 48,
-                              height: 48,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stack) =>
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    color: Colors.grey[300],
-                                    child: const Icon(Icons.image, size: 24),
-                                  ),
-                            )
-                          : Container(
-                              width: 48,
-                              height: 48,
-                              color: Colors.grey[300],
-                              child: const Icon(Icons.image, size: 24),
-                            ),
-                    ),
-                    title: Text(
-                      product.productName,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text('${product.unitsSold} units sold'),
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          currencyFormat.format(product.revenue),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        ),
-                        if (index < 3)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: index == 0
-                                  ? Colors.amber.withOpacity(0.2)
-                                  : index == 1
-                                  ? Colors.grey.withOpacity(0.2)
-                                  : Colors.brown.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.emoji_events,
-                                  size: 10,
-                                  color: index == 0
-                                      ? Colors.amber
-                                      : index == 1
-                                      ? Colors.grey
-                                      : Colors.brown,
-                                ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  '#${index + 1}',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    color: index == 0
-                                        ? Colors.amber[800]
-                                        : index == 1
-                                        ? Colors.grey[800]
-                                        : Colors.brown[800],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
-                },
+              SizedBox(
+                height: 160,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _topProducts.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final product = _topProducts[index];
+                    return _buildTopProductCard(product, index, currencyFormat);
+                  },
+                ),
               ),
           ],
         ),
@@ -722,7 +648,131 @@ class _FactoryAnalyticsPageState extends State<FactoryAnalyticsPage> {
     );
   }
 
+  Widget _buildTopProductCard(
+    TopProduct product,
+    int index,
+    NumberFormat currencyFormat,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SizedBox(
+      width: 140,
+      child: Card(
+        elevation: 1,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: colorScheme.surfaceContainerHighest,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Rank badge
+              if (index < 3)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: index == 0
+                        ? Colors.amber.withOpacity(0.2)
+                        : index == 1
+                        ? Colors.grey.withOpacity(0.2)
+                        : Colors.brown.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.emoji_events,
+                        size: 12,
+                        color: index == 0
+                            ? Colors.amber
+                            : index == 1
+                            ? Colors.grey
+                            : Colors.brown,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        '#${index + 1}',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: index == 0
+                              ? Colors.amber[800]
+                              : index == 1
+                              ? Colors.grey[800]
+                              : Colors.brown[800],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (index >= 3) const SizedBox(height: 20),
+              const SizedBox(height: 8),
+              // Product image or placeholder
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: double.infinity,
+                  height: 60,
+                  color: isDark ? colorScheme.surface : Colors.grey[200],
+                  child: product.imageUrl != null
+                      ? Image.network(
+                          product.imageUrl!,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stack) =>
+                              const Icon(Icons.image, size: 24),
+                        )
+                      : const Icon(Icons.image, size: 24),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Product name
+              Text(
+                product.productName,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              // Units sold
+              Text(
+                '${product.unitsSold} units',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+              const Spacer(),
+              // Revenue
+              Text(
+                currencyFormat.format(product.revenue),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.tertiary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildPerformanceMetricsCard() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -736,45 +786,70 @@ class _FactoryAnalyticsPageState extends State<FactoryAnalyticsPage> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            _buildMetricRow(
+            // Each metric in its own full-width row with gradient background
+            _buildFullMetricRow(
               icon: Icons.inventory_2,
-              label: 'Products',
+              label: 'Total Products',
               value: '${_stats.totalProducts}',
-              subtitle: '${_stats.activeProducts} active',
+              subtitle:
+                  '${_stats.activeProducts} active • ${_stats.outOfStockProducts} out of stock',
               color: Colors.blue,
+              progressValue:
+                  _stats.activeProducts.toDouble() /
+                  (_stats.totalProducts > 0 ? _stats.totalProducts : 1),
             ),
-            const Divider(height: 24),
-            _buildMetricRow(
+            const SizedBox(height: 12),
+            _buildFullMetricRow(
               icon: Icons.shopping_bag,
               label: 'Total Orders',
               value: '${_stats.totalOrders}',
-              subtitle: '${_stats.pendingOrders} pending',
+              subtitle:
+                  '${_stats.pendingOrders} pending • ${_stats.completedOrders} completed',
               color: Colors.green,
+              progressValue:
+                  _stats.completedOrders.toDouble() /
+                  (_stats.totalOrders > 0 ? _stats.totalOrders : 1),
             ),
-            const Divider(height: 24),
-            _buildMetricRow(
+            const SizedBox(height: 12),
+            _buildFullMetricRow(
               icon: Icons.people,
-              label: 'Connections',
+              label: 'Active Connections',
               value: '${_stats.activeConnections}',
-              subtitle: '${_stats.connectionRequests} requests',
+              subtitle: '${_stats.connectionRequests} pending requests',
               color: Colors.purple,
+              progressValue: null,
             ),
-            const Divider(height: 24),
-            _buildMetricRow(
+            const SizedBox(height: 12),
+            _buildFullMetricRow(
               icon: Icons.star,
-              label: 'Rating',
+              label: 'Average Rating',
               value: _stats.averageRating.toStringAsFixed(1),
-              subtitle: '${_stats.totalReviews} reviews',
+              subtitle:
+                  '${_stats.totalReviews} reviews • ${_getRatingText(_stats.averageRating)}',
               color: Colors.amber,
+              progressValue: _stats.averageRating / 5.0,
             ),
-            const Divider(height: 24),
-            _buildMetricRow(
+            const SizedBox(height: 12),
+            _buildFullMetricRow(
               icon: Icons.percent,
               label: 'Wholesale Orders',
-              value: '${_stats.totalWholesaleOrders}',
-              subtitle:
-                  '${((_stats.totalWholesaleOrders / (_stats.totalOrders > 0 ? _stats.totalOrders : 1)) * 100).toStringAsFixed(0)}% of total',
+              value:
+                  '${((_stats.totalWholesaleOrders / (_stats.totalOrders > 0 ? _stats.totalOrders : 1)) * 100).toStringAsFixed(0)}%',
+              subtitle: '${_stats.totalWholesaleOrders} wholesale orders',
               color: Colors.indigo,
+              progressValue:
+                  _stats.totalWholesaleOrders.toDouble() /
+                  (_stats.totalOrders > 0 ? _stats.totalOrders : 1),
+            ),
+            const SizedBox(height: 12),
+            _buildFullMetricRow(
+              icon: Icons.attach_money,
+              label: 'Total Revenue',
+              value: '\$${_stats.totalRevenue.toStringAsFixed(0)}',
+              subtitle:
+                  '\$${_stats.monthlyRevenue.toStringAsFixed(0)} this month',
+              color: Colors.teal,
+              progressValue: null,
             ),
           ],
         ),
@@ -782,58 +857,116 @@ class _FactoryAnalyticsPageState extends State<FactoryAnalyticsPage> {
     );
   }
 
-  Widget _buildMetricRow({
+  String _getRatingText(double rating) {
+    if (rating >= 4.5) return 'Excellent';
+    if (rating >= 4.0) return 'Very Good';
+    if (rating >= 3.5) return 'Good';
+    if (rating >= 3.0) return 'Average';
+    return 'Needs Improvement';
+  }
+
+  Widget _buildFullMetricRow({
     required IconData icon,
     required String label,
     required String value,
     required String subtitle,
     required Color color,
+    required double? progressValue,
   }) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: color, size: 20),
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [color.withOpacity(0.15), color.withOpacity(0.05)]
+              : [color.withOpacity(0.1), color.withOpacity(0.02)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with icon and label
+          Row(
             children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
+                child: Icon(icon, color: color, size: 24),
               ),
-              Text(
-                label,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? colorScheme.onSurface
+                        : colorScheme.onSurface.withOpacity(0.8),
+                  ),
+                ),
               ),
             ],
           ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 10,
-              color: color,
-              fontWeight: FontWeight.w500,
+          const SizedBox(height: 12),
+          // Value
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+          // Subtitle
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark
+                  ? colorScheme.onSurface.withOpacity(0.6)
+                  : Colors.grey[600],
+            ),
+          ),
+          // Progress bar (if applicable)
+          if (progressValue != null) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progressValue.clamp(0.0, 1.0),
+                backgroundColor: isDark
+                    ? colorScheme.surface
+                    : Colors.grey[200],
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+                minHeight: 6,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 

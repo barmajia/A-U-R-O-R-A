@@ -20,7 +20,7 @@ class _LoginState extends State<Login> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
-  bool _isSellerLogin = false; // Toggle between regular and seller login
+  bool _isFactoryLogin = false; // Toggle: false = Seller, true = Factory
 
   @override
   void dispose() {
@@ -41,16 +41,12 @@ class _LoginState extends State<Login> {
 
     final supabaseProvider = context.read<SupabaseProvider>();
 
-    // Choose login method based on toggle
-    final result = _isSellerLogin
-        ? await supabaseProvider.loginSeller(
-            email: emailController.text.trim(),
-            password: passwordController.text,
-          )
-        : await supabaseProvider.login(
-            email: emailController.text.trim(),
-            password: passwordController.text,
-          );
+    // Use standard login for both seller and factory
+    // The account type is determined from user metadata automatically
+    final result = await supabaseProvider.login(
+      email: emailController.text.trim(),
+      password: passwordController.text,
+    );
 
     if (mounted) {
       if (result.success) {
@@ -122,11 +118,11 @@ class _LoginState extends State<Login> {
                     children: [
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => setState(() => _isSellerLogin = false),
+                          onTap: () => setState(() => _isFactoryLogin = false),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: !_isSellerLogin
+                              color: !_isFactoryLogin
                                   ? Colors.white
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(10),
@@ -135,9 +131,9 @@ class _LoginState extends State<Login> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
-                                  Icons.business_center_outlined,
+                                  Icons.store_outlined,
                                   size: 18,
-                                  color: !_isSellerLogin
+                                  color: !_isFactoryLogin
                                       ? Colors.blue
                                       : Colors.grey,
                                 ),
@@ -145,7 +141,7 @@ class _LoginState extends State<Login> {
                                 Text(
                                   'Seller',
                                   style: TextStyle(
-                                    color: !_isSellerLogin
+                                    color: !_isFactoryLogin
                                         ? Colors.blue
                                         : Colors.grey,
                                     fontWeight: FontWeight.w600,
@@ -158,11 +154,11 @@ class _LoginState extends State<Login> {
                       ),
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => setState(() => _isSellerLogin = true),
+                          onTap: () => setState(() => _isFactoryLogin = true),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: _isSellerLogin
+                              color: _isFactoryLogin
                                   ? Colors.white
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(10),
@@ -171,9 +167,9 @@ class _LoginState extends State<Login> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
-                                  Icons.factory,
+                                  Icons.business,
                                   size: 18,
-                                  color: _isSellerLogin
+                                  color: _isFactoryLogin
                                       ? Colors.blue
                                       : Colors.grey,
                                 ),
@@ -181,7 +177,7 @@ class _LoginState extends State<Login> {
                                 Text(
                                   'Factory',
                                   style: TextStyle(
-                                    color: _isSellerLogin
+                                    color: _isFactoryLogin
                                         ? Colors.blue
                                         : Colors.grey,
                                     fontWeight: FontWeight.w600,
@@ -197,31 +193,31 @@ class _LoginState extends State<Login> {
                 ),
                 const SizedBox(height: 24),
 
-                if (_isSellerLogin)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue[200]!),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Seller login verifies against the sellers table',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.blue[800],
-                            ),
+                // Info message - Same login for both
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Login works for both Seller and Factory accounts',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue[800],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                if (_isSellerLogin) const SizedBox(height: 16),
+                ),
+                const SizedBox(height: 16),
 
                 TextFormField(
                   controller: emailController,

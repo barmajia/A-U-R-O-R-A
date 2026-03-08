@@ -4,6 +4,7 @@ import 'package:aurora/pages/factory/factory_connections_page.dart';
 import 'package:aurora/pages/product/product.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/widgets/drawer.dart';
+import 'package:aurora/theme/themeprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -62,12 +63,16 @@ class _FactoryDashboardState extends State<FactoryDashboard> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Use same AppBar background as drawer and home page
+    final appBarBg = isDark ? AppColors.darkSurface : AppColors.auroraPrimary;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Factory Dashboard'),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
+        backgroundColor: appBarBg,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

@@ -1,5 +1,7 @@
 import 'package:aurora/models/factory/factory_models.dart';
 import 'package:aurora/services/supabase.dart';
+import 'package:aurora/widgets/drawer.dart';
+import 'package:aurora/theme/themeprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -17,7 +19,7 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = false;
-  
+
   List<FactoryConnection> _myConnections = [];
   List<FactoryConnection> _connectionRequests = [];
 
@@ -47,14 +49,16 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
 
     try {
       final supabase = Provider.of<SupabaseProvider>(context, listen: false);
-      
+
       // Load based on current tab
       if (_tabController.index == 0) {
         // My Connections (as seller)
         _myConnections = await supabase.getFactoryConnections(status: 'all');
       } else {
         // Connection Requests (as factory)
-        _connectionRequests = await supabase.getFactoryConnectionRequests(status: 'all');
+        _connectionRequests = await supabase.getFactoryConnectionRequests(
+          status: 'all',
+        );
       }
 
       setState(() => _isLoading = false);
@@ -71,7 +75,10 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
     }
   }
 
-  Future<void> _respondToRequest(FactoryConnection connection, bool accept) async {
+  Future<void> _respondToRequest(
+    FactoryConnection connection,
+    bool accept,
+  ) async {
     try {
       final supabase = Provider.of<SupabaseProvider>(context, listen: false);
       final result = await supabase.respondToConnectionRequest(
@@ -83,7 +90,9 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
         if (result.success) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(accept ? 'Connection accepted' : 'Connection declined'),
+              content: Text(
+                accept ? 'Connection accepted' : 'Connection declined',
+              ),
               backgroundColor: Colors.green,
             ),
           );
@@ -111,32 +120,42 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final appBarBg = isDark ? AppColors.darkSurface : AppColors.auroraPrimary;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Factory Connections'),
         centerTitle: true,
         elevation: 0,
+        backgroundColor: appBarBg,
+        foregroundColor: Colors.white,
         bottom: TabBar(
           controller: _tabController,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white.withOpacity(0.6),
+          indicatorColor: Colors.white,
           tabs: const [
             Tab(text: 'My Connections'),
             Tab(text: 'Requests'),
           ],
         ),
       ),
+      drawer: const AppDrawer(currentPage: 'factory_connections'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : TabBarView(
               controller: _tabController,
-              children: [
-                _buildMyConnectionsTab(),
-                _buildRequestsTab(),
-              ],
+              children: [_buildMyConnectionsTab(), _buildRequestsTab()],
             ),
     );
   }
 
   Widget _buildMyConnectionsTab() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (_myConnections.isEmpty) {
       return Center(
         child: Column(
@@ -145,17 +164,28 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
             Icon(
               Icons.business_outlined,
               size: 80,
-              color: Colors.grey[400],
+              color: isDark
+                  ? colorScheme.onSurface.withOpacity(0.3)
+                  : Colors.grey[400],
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'No Factory Connections',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Connect with factories to start ordering wholesale',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              style: TextStyle(
+                color: isDark
+                    ? colorScheme.onSurface.withOpacity(0.6)
+                    : Colors.grey[600],
+                fontSize: 14,
+              ),
             ),
           ],
         ),
@@ -181,6 +211,9 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
         .where((c) => c.isPending)
         .toList();
 
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (pendingRequests.isEmpty) {
       return Center(
         child: Column(
@@ -189,17 +222,28 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
             Icon(
               Icons.inbox_outlined,
               size: 80,
-              color: Colors.grey[400],
+              color: isDark
+                  ? colorScheme.onSurface.withOpacity(0.3)
+                  : Colors.grey[400],
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'No Pending Requests',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'When sellers want to connect, you\'ll see them here',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              style: TextStyle(
+                color: isDark
+                    ? colorScheme.onSurface.withOpacity(0.6)
+                    : Colors.grey[600],
+                fontSize: 14,
+              ),
             ),
           ],
         ),
@@ -219,9 +263,12 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
     );
   }
 
-  Widget _buildConnectionCard(FactoryConnection connection, {bool isRequest = false}) {
+  Widget _buildConnectionCard(
+    FactoryConnection connection, {
+    bool isRequest = false,
+  }) {
     final factory = connection.factory;
-    
+
     Color statusColor;
     String statusText;
     IconData statusIcon;
@@ -256,9 +303,7 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -273,11 +318,7 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
                     color: statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(
-                    Icons.business,
-                    color: statusColor,
-                    size: 28,
-                  ),
+                  child: Icon(Icons.business, color: statusColor, size: 28),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -294,11 +335,7 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(
-                            statusIcon,
-                            size: 14,
-                            color: statusColor,
-                          ),
+                          Icon(statusIcon, size: 14, color: statusColor),
                           const SizedBox(width: 4),
                           Text(
                             statusText,
@@ -314,11 +351,7 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
                   ),
                 ),
                 if (factory?.isVerified ?? false)
-                  const Icon(
-                    Icons.verified,
-                    color: Colors.blue,
-                    size: 18,
-                  ),
+                  const Icon(Icons.verified, color: Colors.blue, size: 18),
               ],
             ),
             const SizedBox(height: 12),
@@ -335,10 +368,7 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
                   Expanded(
                     child: Text(
                       factory!.location!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -347,10 +377,7 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
                 const Spacer(),
                 Text(
                   'Requested ${DateFormat('MMM d, yyyy').format(connection.requestedAt)}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                 ),
               ],
             ),
@@ -414,10 +441,7 @@ class _FactoryConnectionsPageState extends State<FactoryConnectionsPage>
                     const SizedBox(height: 4),
                     Text(
                       connection.notes!,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[800],
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[800]),
                     ),
                   ],
                 ),

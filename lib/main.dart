@@ -1,5 +1,6 @@
 import 'package:aurora/backend/sellerdb.dart';
 import 'package:aurora/backend/products_db.dart';
+import 'package:aurora/config/supabase_config.dart';
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/login.dart';
 import 'package:aurora/services/supabase.dart';
@@ -13,10 +14,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Validate configuration
+  final configError = SupabaseConfig.validate();
+  if (configError != null) {
+    debugPrint('⚠️ CONFIGURATION ERROR: $configError');
+    debugPrint('Please set environment variables:');
+    debugPrint('  --dart-define=SUPABASE_URL=your_url');
+    debugPrint('  --dart-define=SUPABASE_ANON_KEY=your_key');
+  }
+
   await Supabase.initialize(
-    url: 'https://ofovfxsfazlwvcakpuer.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mb3ZmeHNmYXpsd3ZjYWtwdWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMjY0MDcsImV4cCI6MjA4NzcwMjQwN30.QYx8-c9IiSMpuHeikKz25MKO5o6g112AKj4Tnr4aWzI',
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
   );
 
   // Request permissions on first launch

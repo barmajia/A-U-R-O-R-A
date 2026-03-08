@@ -1,5 +1,5 @@
 // Supabase Edge Function: process-signup
-// Handles user signup with seller profile creation
+// Handles user signup with seller/factory profile creation
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -17,6 +17,10 @@ interface SignupData {
   phone: string;
   location: string;
   currency: string;
+  companyName?: string;
+  businessLicense?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 serve(async (req) => {
@@ -42,6 +46,10 @@ serve(async (req) => {
       phone,
       location,
       currency,
+      companyName,
+      businessLicense,
+      latitude,
+      longitude,
     } = data;
 
     console.log("Processing signup for:", email, "Account Type:", accountType);
@@ -51,15 +59,15 @@ serve(async (req) => {
       throw new Error("Missing required fields");
     }
 
-    // If account type is seller, create seller profile
-    if (accountType === "seller") {
-      // Parse full name into parts
-      const nameParts = fullName.split(" ");
-      const firstName = nameParts[0] || "";
-      const secondName = nameParts[1] || "";
-      const thirdName = nameParts[2] || "";
-      const fourthName = nameParts[3] || "";
+    // Parse full name into parts
+    const nameParts = fullName.split(" ");
+    const firstName = nameParts[0] || "";
+    const secondName = nameParts[1] || "";
+    const thirdName = nameParts[2] || "";
+    const fourthName = nameParts[3] || "";
 
+    // Create profile based on account type
+    if (accountType === "seller") {
       // Create seller record in database
       const { data: seller, error: sellerError } = await supabase
         .from("sellers")
@@ -88,9 +96,6 @@ serve(async (req) => {
 
       console.log("Seller profile created successfully:", seller.user_id);
 
-      // Optionally: Send welcome email
-      // await sendWelcomeEmail(email, fullName);
-
       return new Response(
         JSON.stringify({
           success: true,
@@ -108,7 +113,58 @@ serve(async (req) => {
       );
     }
 
-    // For regular users, just return success
+    // If account type is factory, create factory profile
+    if (accountType === "factory") {
+      // Create factory record in database
+      const { data: factory, error: factoryError } = await supabase
+        .from("sellers")
+        .insert({
+          user_id: userId,
+          email: email,
+          full_name: fullName,
+          firstname: firstName,
+          secoundname: secondName,
+          thirdname: thirdName,
+          forthname: fourthName,
+          phone: phone,
+          location: location,
+          currency: currency,
+          account_type: "factory",
+          is_verified: false,
+          company_name: companyName || null,
+          business_license: businessLicense || null,
+          latitude: latitude || null,
+          longitude: longitude || null,
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (factoryError) {
+        console.error("Error creating factory profile:", factoryError);
+        throw new Error(`Failed to create factory profile: ${factoryError.message}`);
+      }
+
+      console.log("Factory profile created successfully:", factory.user_id);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Factory account created successfully",
+          data: {
+            userId,
+            email,
+            factoryId: factory.id,
+          },
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
+
+    // For other account types, just return success
     return new Response(
       JSON.stringify({
         success: true,

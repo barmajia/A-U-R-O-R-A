@@ -1,6 +1,7 @@
 import 'package:aurora/models/factory/factory_dashboard_models.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/widgets/drawer.dart';
+import 'package:aurora/theme/themeprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -84,6 +85,64 @@ class _FactoryOrdersPageState extends State<FactoryOrdersPage>
     }
   }
 
+  Widget _buildOrdersContent(String status) {
+    final filteredOrders = _getFilteredOrders(status);
+
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : _errorMessage != null
+        ? _buildErrorView()
+        : filteredOrders.isEmpty
+        ? _buildEmptyView(status)
+        : _buildOrdersList(filteredOrders);
+  }
+
+  List<FactoryOrderItem> _getFilteredOrders(String status) {
+    List<FactoryOrderItem> orders;
+
+    if (status == 'all') {
+      orders = _allOrders;
+    } else {
+      orders = _allOrders
+          .where((order) => order.status.toLowerCase() == status)
+          .toList();
+    }
+
+    // Apply search filter
+    if (_searchController.text.isNotEmpty) {
+      final searchTerm = _searchController.text.toLowerCase();
+      orders = orders
+          .where(
+            (order) =>
+                order.customerName.toLowerCase().contains(searchTerm) ||
+                order.productNames.any(
+                  (p) => p.toLowerCase().contains(searchTerm),
+                ) ||
+                order.orderId.toLowerCase().contains(searchTerm),
+          )
+          .toList();
+    }
+
+    return orders;
+  }
+
+  Widget _buildOrdersList(List<FactoryOrderItem> orders) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.85,
+      ),
+      itemCount: orders.length,
+      itemBuilder: (context, index) {
+        final order = orders[index];
+        return _buildOrderCard(order, isGrid: true);
+      },
+    );
+  }
+
   void _filterOrders() {
     setState(() {
       if (_selectedStatus == 'all') {
@@ -161,12 +220,14 @@ class _FactoryOrdersPageState extends State<FactoryOrdersPage>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final appBarBg = isDark ? AppColors.darkSurface : AppColors.auroraPrimary;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Factory Orders'),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
+        backgroundColor: appBarBg,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -194,26 +255,32 @@ class _FactoryOrdersPageState extends State<FactoryOrdersPage>
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search orders...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: colorScheme.surfaceContainerHighest,
               ),
+              style: TextStyle(color: colorScheme.onSurface),
               onChanged: (_) => _filterOrders(),
             ),
           ),
 
-          // Orders List
+          // Orders List with swipe support
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _errorMessage != null
-                ? _buildErrorView()
-                : _filteredOrders.isEmpty
-                ? _buildEmptyView()
-                : _buildOrdersList(),
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildOrdersContent('all'),
+                _buildOrdersContent('pending'),
+                _buildOrdersContent('processing'),
+                _buildOrdersContent('completed'),
+              ],
+            ),
           ),
         ],
       ),
@@ -231,13 +298,22 @@ class _FactoryOrdersPageState extends State<FactoryOrdersPage>
   }
 
   Widget _buildErrorView() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: isDark
+                ? colorScheme.error.withOpacity(0.7)
+                : Colors.red[300],
+          ),
           const SizedBox(height: 16),
-          Text(_errorMessage!),
+          Text(_errorMessage!, style: TextStyle(color: colorScheme.error)),
           const SizedBox(height: 24),
           ElevatedButton(onPressed: _loadOrders, child: const Text('Retry')),
         ],
@@ -245,29 +321,46 @@ class _FactoryOrdersPageState extends State<FactoryOrdersPage>
     );
   }
 
-  Widget _buildEmptyView() {
+  Widget _buildEmptyView(String status) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.receipt_long, size: 80, color: Colors.grey[400]),
+          Icon(
+            Icons.receipt_long,
+            size: 80,
+            color: isDark
+                ? colorScheme.onSurface.withOpacity(0.3)
+                : Colors.grey[400],
+          ),
           const SizedBox(height: 16),
           Text(
-            _getEmptyMessage(),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            _getEmptyMessage(status),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Orders will appear here',
-            style: TextStyle(color: Colors.grey[600]),
+            style: TextStyle(
+              color: isDark
+                  ? colorScheme.onSurface.withOpacity(0.6)
+                  : Colors.grey[600],
+            ),
           ),
         ],
       ),
     );
   }
 
-  String _getEmptyMessage() {
-    switch (_selectedStatus) {
+  String _getEmptyMessage(String status) {
+    switch (status) {
       case 'pending':
         return 'No pending orders';
       case 'processing':
@@ -279,25 +372,27 @@ class _FactoryOrdersPageState extends State<FactoryOrdersPage>
     }
   }
 
-  Widget _buildOrdersList() {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _filteredOrders.length,
-      itemBuilder: (context, index) {
-        final order = _filteredOrders[index];
-        return _buildOrderCard(order);
-      },
-    );
-  }
-
-  Widget _buildOrderCard(FactoryOrderItem order) {
+  Widget _buildOrderCard(FactoryOrderItem order, {bool isGrid = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final currencyFormat = NumberFormat.currency(symbol: '\$');
     final dateFormat = DateFormat('MMM d, yyyy');
+
+    if (isGrid) {
+      return _buildGridOrderCard(
+        order,
+        colorScheme,
+        isDark,
+        currencyFormat,
+        dateFormat,
+      );
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: colorScheme.surface,
       child: InkWell(
         onTap: () => _showOrderDetails(order),
         borderRadius: BorderRadius.circular(12),
@@ -313,15 +408,17 @@ class _FactoryOrdersPageState extends State<FactoryOrdersPage>
                     height: 40,
                     decoration: BoxDecoration(
                       color: order.isWholesale
-                          ? Colors.purple.withOpacity(0.1)
-                          : Colors.blue.withOpacity(0.1),
+                          ? colorScheme.secondary.withOpacity(0.1)
+                          : colorScheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       order.isWholesale
                           ? Icons.circle_outlined
                           : Icons.shopping_bag,
-                      color: order.isWholesale ? Colors.purple : Colors.blue,
+                      color: order.isWholesale
+                          ? colorScheme.secondary
+                          : colorScheme.primary,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -331,16 +428,17 @@ class _FactoryOrdersPageState extends State<FactoryOrdersPage>
                       children: [
                         Text(
                           order.customerName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         Text(
                           'Order #${order.orderId.substring(0, 8)}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                       ],
@@ -373,7 +471,7 @@ class _FactoryOrdersPageState extends State<FactoryOrdersPage>
                   ),
                 ],
               ),
-              const Divider(height: 24),
+              Divider(height: 24, color: colorScheme.outline.withOpacity(0.2)),
               Row(
                 children: [
                   Expanded(
@@ -386,7 +484,7 @@ class _FactoryOrdersPageState extends State<FactoryOrdersPage>
                               : order.productNames.first,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[700],
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -394,7 +492,7 @@ class _FactoryOrdersPageState extends State<FactoryOrdersPage>
                           '${order.quantity} units',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                       ],
@@ -405,22 +503,28 @@ class _FactoryOrdersPageState extends State<FactoryOrdersPage>
                     children: [
                       Text(
                         currencyFormat.format(order.totalAmount),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green,
+                          color: colorScheme.tertiary,
                         ),
                       ),
                       Text(
                         dateFormat.format(order.orderDate),
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colorScheme.onSurface.withOpacity(0.6),
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
               if (order.status == 'pending') ...[
-                const Divider(height: 24),
+                Divider(
+                  height: 24,
+                  color: colorScheme.outline.withOpacity(0.2),
+                ),
                 Row(
                   children: [
                     Expanded(
@@ -441,6 +545,124 @@ class _FactoryOrdersPageState extends State<FactoryOrdersPage>
                   ],
                 ),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGridOrderCard(
+    FactoryOrderItem order,
+    ColorScheme colorScheme,
+    bool isDark,
+    NumberFormat currencyFormat,
+    DateFormat dateFormat,
+  ) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: colorScheme.surface,
+      child: InkWell(
+        onTap: () => _showOrderDetails(order),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Status badge
+              Align(
+                alignment: Alignment.topRight,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getOrderStatusColor(order.status).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    order.status.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      color: _getOrderStatusColor(order.status),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Icon
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: order.isWholesale
+                      ? colorScheme.secondary.withOpacity(0.1)
+                      : colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  order.isWholesale
+                      ? Icons.circle_outlined
+                      : Icons.shopping_bag,
+                  color: order.isWholesale
+                      ? colorScheme.secondary
+                      : colorScheme.primary,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Customer name
+              Text(
+                order.customerName,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              // Order number
+              Text(
+                '#${order.orderId.substring(0, 8)}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+              const Spacer(),
+              // Products count
+              Text(
+                '${order.productNames.length} product${order.productNames.length > 1 ? 's' : ''}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 4),
+              // Quantity
+              Text(
+                '${order.quantity} units',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Amount
+              Text(
+                currencyFormat.format(order.totalAmount),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.tertiary,
+                ),
+              ),
             ],
           ),
         ),

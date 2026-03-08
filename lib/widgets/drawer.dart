@@ -9,6 +9,7 @@ import 'package:aurora/pages/setting/setting.dart';
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/login.dart';
 import 'package:aurora/services/supabase.dart';
+import 'package:aurora/theme/themeprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,6 +23,11 @@ class AppDrawer extends StatelessWidget {
     final supabaseProvider = context.watch<SupabaseProvider>();
     final currentUser = supabaseProvider.currentUser;
     final accountType = supabaseProvider.accountType;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // AppBar background colors from theme
+    final appBarBg = isDark ? AppColors.darkSurface : AppColors.auroraPrimary;
 
     return Drawer(
       child: Container(
@@ -29,11 +35,9 @@ class AppDrawer extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).primaryColor,
-              Theme.of(context).primaryColor.withOpacity(0.8),
-              Colors.white,
-            ],
+            colors: isDark
+                ? [appBarBg, appBarBg.withOpacity(0.8), colorScheme.surface]
+                : [appBarBg, appBarBg.withOpacity(0.8), Colors.white],
             stops: const [0.0, 0.6, 1.0],
           ),
         ),
@@ -254,6 +258,8 @@ class AppDrawer extends StatelessWidget {
   ) {
     final fullName = user?.userMetadata?['full_name'] ?? 'User';
     final email = user?.email ?? 'email@example.com';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -262,36 +268,43 @@ class AppDrawer extends StatelessWidget {
           const SizedBox(height: 20),
           CircleAvatar(
             radius: 40,
-            backgroundColor: Colors.white,
+            backgroundColor: isDark ? colorScheme.surface : Colors.white,
             child: Text(
               fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).primaryColor,
+                color: colorScheme.primary,
               ),
             ),
           ),
           const SizedBox(height: 16),
           Text(
             fullName,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: isDark ? colorScheme.onSurface : Colors.white,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             email,
-            style: const TextStyle(fontSize: 14, color: Colors.white70),
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark
+                  ? colorScheme.onSurface.withOpacity(0.7)
+                  : Colors.white70,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: isDark
+                  ? colorScheme.primary.withOpacity(0.3)
+                  : Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -300,19 +313,17 @@ class AppDrawer extends StatelessWidget {
                 Icon(
                   accountType == AccountType.seller
                       ? Icons.store
-                      : Icons.business, // Factory icon
+                      : Icons.business,
                   size: 16,
-                  color: Colors.white,
+                  color: isDark ? colorScheme.onPrimary : Colors.white,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  accountType == AccountType.seller
-                      ? 'SELLER'
-                      : 'FACTORY',
-                  style: const TextStyle(
+                  accountType == AccountType.seller ? 'SELLER' : 'FACTORY',
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: isDark ? colorScheme.onPrimary : Colors.white,
                   ),
                 ),
               ],
@@ -334,19 +345,25 @@ class AppDrawer extends StatelessWidget {
     String? badge,
   }) {
     final isActive = currentPage == pageName;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: isActive ? Colors.white : Colors.white.withOpacity(0.9),
+        color: isActive
+            ? (isDark ? colorScheme.surface : Colors.white)
+            : (isDark
+                  ? colorScheme.surface.withOpacity(0.5)
+                  : Colors.white.withOpacity(0.9)),
         borderRadius: BorderRadius.circular(12),
         border: isActive
-            ? Border.all(color: Theme.of(context).primaryColor, width: 2)
-            : Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
+            ? Border.all(color: colorScheme.primary, width: 2)
+            : Border.all(color: colorScheme.outline.withOpacity(0.2), width: 1),
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: Theme.of(context).primaryColor.withOpacity(0.2),
+                  color: colorScheme.primary.withOpacity(0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -367,13 +384,17 @@ class AppDrawer extends StatelessWidget {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? Theme.of(context).primaryColor
-                        : Colors.grey[100],
+                        ? colorScheme.primary
+                        : (isDark
+                              ? colorScheme.surface
+                              : colorScheme.surfaceContainerHighest),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     isActive ? activeIcon : icon,
-                    color: isActive ? Colors.white : Colors.black87,
+                    color: isActive
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurface,
                     size: 22,
                   ),
                 ),
@@ -386,7 +407,7 @@ class AppDrawer extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                      color: isActive ? Colors.black87 : Colors.black87,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -399,7 +420,7 @@ class AppDrawer extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.red,
+                      color: colorScheme.error,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -415,7 +436,9 @@ class AppDrawer extends StatelessWidget {
                 // Arrow
                 Icon(
                   Icons.chevron_right,
-                  color: isActive ? Colors.black87 : Colors.grey[600],
+                  color: isActive
+                      ? colorScheme.onSurface
+                      : colorScheme.onSurfaceVariant,
                   size: 20,
                 ),
               ],
@@ -427,11 +450,18 @@ class AppDrawer extends StatelessWidget {
   }
 
   Widget _buildFooter(BuildContext context, SupabaseProvider supabaseProvider) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        border: Border(top: BorderSide(color: Colors.grey[300]!)),
+        color: isDark
+            ? colorScheme.surfaceContainerHighest
+            : colorScheme.surfaceContainerHighest,
+        border: Border(
+          top: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+        ),
       ),
       child: Column(
         children: [
@@ -440,17 +470,17 @@ class AppDrawer extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: () => _showLogoutDialog(context, supabaseProvider),
-              icon: const Icon(Icons.logout, color: Colors.red),
-              label: const Text(
+              icon: Icon(Icons.logout, color: colorScheme.error),
+              label: Text(
                 'Logout',
                 style: TextStyle(
-                  color: Colors.red,
+                  color: colorScheme.error,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                side: const BorderSide(color: Colors.red),
+                side: BorderSide(color: colorScheme.error),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -462,12 +492,22 @@ class AppDrawer extends StatelessWidget {
           // App Version
           Text(
             'Aurora E-commerce v1.0.0',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark
+                  ? colorScheme.onSurface.withOpacity(0.6)
+                  : colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             '© 2024 Aurora. All rights reserved.',
-            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark
+                  ? colorScheme.onSurface.withOpacity(0.5)
+                  : colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -475,15 +515,16 @@ class AppDrawer extends StatelessWidget {
   }
 
   void _navigateTo(BuildContext context, Widget page, String pageName) {
+    // Close the drawer
+
+    // If we're already on this page, nothing to do
     if (currentPage == pageName) {
-      Navigator.pop(context); // Close drawer if already on this page
       return;
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => page),
-    );
+    // Navigate to the page normally - this allows back button to work
+    // Each page is added to the stack, so user can navigate back
+    Navigator.push(context, MaterialPageRoute(builder: (context) => page));
   }
 
   void _showComingSoon(BuildContext context, String feature) {

@@ -37,9 +37,9 @@ class SellerDB extends ChangeNotifier {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id TEXT NOT NULL UNIQUE,
         firstname TEXT NOT NULL,
-        secoundname TEXT NOT NULL,
+        secondname TEXT NOT NULL,
         thirdname TEXT NOT NULL,
-        forthname TEXT NOT NULL,
+        fourthname TEXT NOT NULL,
         full_name TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
         location TEXT NOT NULL,
@@ -47,7 +47,7 @@ class SellerDB extends ChangeNotifier {
         currency TEXT,
         account_type TEXT DEFAULT 'seller',
         is_verified INTEGER DEFAULT 0,
-        
+
         -- Multi-Role System Fields
         latitude REAL,
         longitude REAL,
@@ -59,7 +59,7 @@ class SellerDB extends ChangeNotifier {
         accepts_returns INTEGER DEFAULT 0,
         production_capacity TEXT,
         verified_at TEXT,
-        
+
         created_at TEXT,
         updated_at TEXT
       );
@@ -79,7 +79,7 @@ class SellerDB extends ChangeNotifier {
 
       final stmt = db.prepare('''
         INSERT INTO $tableName (
-          user_id, firstname, secoundname, thirdname, forthname,
+          user_id, firstname, secondname, thirdname, fourthname,
           full_name, email, location, phone,
           currency, account_type, is_verified,
           latitude, longitude, is_factory, company_name, business_license,
@@ -91,9 +91,9 @@ class SellerDB extends ChangeNotifier {
       stmt.execute([
         seller['user_id'],
         seller['firstname'] ?? '',
-        seller['secoundname'] ?? '',
+        seller['secondname'] ?? '',
         seller['thirdname'] ?? '',
-        seller['forthname'] ?? '',
+        seller['fourthname'] ?? '',
         seller['full_name'] ?? '',
         seller['email'],
         seller['location'],
@@ -141,7 +141,7 @@ class SellerDB extends ChangeNotifier {
     try {
       final stmt = db.prepare('''
         UPDATE $tableName
-        SET firstname = ?, secoundname = ?, thirdname = ?, forthname = ?,
+        SET firstname = ?, secondname = ?, thirdname = ?, fourthname = ?,
             full_name = ?, location = ?, phone = ?, currency = ?,
             is_verified = ?, latitude = ?, longitude = ?,
             is_factory = ?, company_name = ?, business_license = ?,
@@ -153,9 +153,9 @@ class SellerDB extends ChangeNotifier {
 
       stmt.execute([
         data['firstname'] ?? '',
-        data['secoundname'] ?? '',
+        data['secondname'] ?? '',
         data['thirdname'] ?? '',
-        data['forthname'] ?? '',
+        data['fourthname'] ?? '',
         data['full_name'] ?? '',
         data['location'] ?? '',
         data['phone'] ?? '',
