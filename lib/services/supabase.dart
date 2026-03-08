@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:aurora/backend/sellerdb.dart';
 import 'package:aurora/backend/products_db.dart';
 import 'package:aurora/models/aurora_product.dart';
-import 'package:aurora/models/customer.dart';
+import 'package:aurora/models/customer.dart'; // Deprecated - kept for seller-managed customers
 import 'package:aurora/models/sale.dart';
 import 'package:aurora/services/queue_service.dart';
 import 'package:flutter/foundation.dart';
@@ -19,10 +19,6 @@ import 'package:image/image.dart' as img;
 import 'package:aurora/models/factory/factory_models.dart';
 import 'package:aurora/models/factory/factory_profile.dart';
 
-// New Multi-Role Models
-import 'package:aurora/models/middleman_profile.dart';
-import 'package:aurora/models/deal.dart';
-
 // ============================================================================
 // Constants & Configuration
 // ============================================================================
@@ -33,22 +29,22 @@ class SupabaseConfig {
   static const Duration analyticsCacheDuration = Duration(minutes: 15);
   static const String cacheAnalytics = 'cache_analytics';
   static const String cacheCategories = 'cache_categories';
-  static const String cacheCustomerProfile = 'cache_customer_profile';
-  static const String cacheDeals = 'cache_deals';
+  static const String cacheCustomerProfile = 'cache_customer_profile'; // Deprecated
+  static const String cacheDeals = 'cache_deals'; // Deprecated
   // Cache Duration
   static const Duration cacheDuration = Duration(minutes: 5);
 
   static const String cacheExpiry = 'cache_expiry';
-  // Cache Keys - Multi-Role System
+  // Cache Keys - Core
   static const String cacheFactoryProfile = 'cache_factory_profile';
 
-  static const String cacheMiddlemanProfile = 'cache_middleman_profile';
+  static const String cacheMiddlemanProfile = 'cache_middleman_profile'; // Deprecated
   // Cache Keys - Core
   static const String cacheProducts = 'cache_products';
 
   static const String cacheSellerProfile = 'cache_seller_profile';
-  static const String functionCreateDeal = 'create-deal';
-  // Edge Functions - Orders & Deals
+  static const String functionCreateDeal = 'create-deal'; // Deprecated - middleman removed
+  // Edge Functions - Orders
   static const String functionCreateOrder = 'create-order';
 
   static const String functionCreateProduct = 'create-product';
@@ -89,15 +85,15 @@ class SupabaseConfig {
   static const String tableCart = 'cart';
   static const String tableCategories = 'categories';
   static const String tableConversations = 'conversations';
-  static const String tableCustomers = 'customers';
-  static const String tableDeals = 'deals';
+  static const String tableCustomers = 'customers'; // Deprecated - seller-managed customers
+  static const String tableDeals = 'deals'; // Deprecated
   static const String tableFactoryConnections = 'factory_connections';
-  // Table Names - Multi-Role System
+  // Table Names - Factory System
   static const String tableFactoryProfiles = 'factory_profiles';
 
   static const String tableFactoryRatings = 'factory_ratings';
   static const String tableMessages = 'messages';
-  static const String tableMiddlemanProfiles = 'middleman_profiles';
+  static const String tableMiddlemanProfiles = 'middleman_profiles'; // Deprecated
   static const String tableNotifications = 'notifications';
   static const String tableOrderItems = 'order_items';
   static const String tableOrders = 'orders';
@@ -465,7 +461,7 @@ class SupabaseProvider extends ChangeNotifier {
         currentUser?.userMetadata?[SupabaseConfig.keyAccountType] as String?;
     return AccountType.values.firstWhere(
       (e) => e.name == type,
-      orElse: () => AccountType.user,
+      orElse: () => AccountType.seller,
     );
   }
 
@@ -524,20 +520,6 @@ class SupabaseProvider extends ChangeNotifier {
           SupabaseConfig.cacheDuration,
         );
         await getCurrentFactoryProfile();
-      } else if (accountType == 'middleman') {
-        await _cache.set(
-          SupabaseConfig.cacheMiddlemanProfile,
-          response.user!.id,
-          SupabaseConfig.cacheDuration,
-        );
-        await getCurrentMiddlemanProfile();
-      } else if (accountType == 'customer') {
-        await _cache.set(
-          SupabaseConfig.cacheCustomerProfile,
-          response.user!.id,
-          SupabaseConfig.cacheDuration,
-        );
-        await getCurrentCustomerProfile();
       }
 
       notifyListeners();
@@ -545,7 +527,7 @@ class SupabaseProvider extends ChangeNotifier {
       return _success('Login successful!', {
         'user': response.user,
         'session': response.session,
-        'accountType': accountType ?? 'user',
+        'accountType': accountType ?? 'seller',
       });
     } on AuthException catch (e) {
       _errorHandler.handleError(e, 'Login');
@@ -614,7 +596,7 @@ class SupabaseProvider extends ChangeNotifier {
 
   /// Registers a new user with Supabase Auth and creates role-specific profile.
   ///
-  /// Supports all Aurora roles: seller, factory, middleman, customer.
+  /// Supports only seller and factory account types.
   Future<AuthResult> signup({
     required String fullName,
     required AccountType accountType,
@@ -629,9 +611,6 @@ class SupabaseProvider extends ChangeNotifier {
     String? businessLicense,
     double? latitude,
     double? longitude,
-    // Middleman-specific fields
-    double? commissionRate,
-    String? specialization,
   }) async {
     try {
       // Step 1: Create auth user
@@ -652,7 +631,7 @@ class SupabaseProvider extends ChangeNotifier {
         return _failure('Signup failed. Please try again.');
       }
 
-      // Step 2: Create role-specific profile
+      // Step 2: Create role-specific profile (only seller or factory)
       if (accountType == AccountType.seller) {
         await _createSellerRecord(
           userId: authResponse.user!.id,
@@ -676,29 +655,6 @@ class SupabaseProvider extends ChangeNotifier {
           latitude: latitude,
           longitude: longitude,
           password: password,
-        );
-      } else if (accountType == AccountType.middleman) {
-        await _createMiddlemanRecord(
-          userId: authResponse.user!.id,
-          email: email,
-          fullName: fullName,
-          phone: phone,
-          location: location,
-          currency: currency,
-          companyName: companyName,
-          commissionRate: commissionRate,
-          specialization: specialization,
-          password: password,
-        );
-      } else if (accountType == AccountType.customer) {
-        // For customers, we create a basic record in customers table
-        // They may be upgraded to B2B customers later
-        await _createCustomerRecord(
-          userId: authResponse.user!.id,
-          email: email,
-          fullName: fullName,
-          phone: phone,
-          location: location,
         );
       }
 
@@ -934,156 +890,6 @@ class SupabaseProvider extends ChangeNotifier {
     } catch (e) {
       _errorHandler.handleError(e, 'Update Factory Profile');
       return _failure('Failed to update factory profile: $e');
-    }
-  }
-
-  // --------------------------------------------------------------------------
-  // Middleman Profile Operations
-  // --------------------------------------------------------------------------
-
-  /// Fetches the current authenticated middleman's profile.
-  Future<MiddlemanProfile?> getCurrentMiddlemanProfile() async {
-    if (!isLoggedIn) return null;
-
-    // Check cache first
-    final cached = await _cache.get<MiddlemanProfile>(
-      SupabaseConfig.cacheMiddlemanProfile,
-    );
-    if (cached != null) return cached;
-
-    final userId = currentUser!.id;
-    try {
-      final response = await _client
-          .from(SupabaseConfig.tableMiddlemanProfiles)
-          .select()
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      if (response == null) return null;
-
-      final profile = MiddlemanProfile.fromJson(response);
-
-      await _cache.set(
-        SupabaseConfig.cacheMiddlemanProfile,
-        profile,
-        SupabaseConfig.cacheDuration,
-      );
-      return profile;
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get Middleman Profile');
-      return null;
-    }
-  }
-
-  /// Updates the middleman profile.
-  Future<AuthResult> updateMiddlemanProfile({
-    String? companyName,
-    double? commissionRate,
-    String? specialization,
-    double? latitude,
-    double? longitude,
-  }) async {
-    try {
-      if (!isLoggedIn) {
-        return _failure('You must be logged in');
-      }
-
-      final userId = currentUser!.id;
-      final Map<String, dynamic> updates = {};
-
-      if (companyName != null) updates['company_name'] = companyName;
-      if (commissionRate != null) updates['commission_rate'] = commissionRate;
-      if (specialization != null) updates['specialization'] = specialization;
-      if (latitude != null) updates['latitude'] = latitude;
-      if (longitude != null) updates['longitude'] = longitude;
-      updates['updated_at'] = DateTime.now().toIso8601String();
-
-      await _client
-          .from(SupabaseConfig.tableMiddlemanProfiles)
-          .update(updates)
-          .eq('user_id', userId);
-
-      // Invalidate cache
-      await _cache.remove(SupabaseConfig.cacheMiddlemanProfile);
-
-      return _success('Middleman profile updated successfully');
-    } catch (e) {
-      _errorHandler.handleError(e, 'Update Middleman Profile');
-      return _failure('Failed to update middleman profile: $e');
-    }
-  }
-
-  // --------------------------------------------------------------------------
-  // Customer Profile Operations
-  // --------------------------------------------------------------------------
-
-  /// Fetches the current authenticated customer's profile.
-  Future<Customer?> getCurrentCustomerProfile() async {
-    if (!isLoggedIn) return null;
-
-    // Check cache first
-    final cached = await _cache.get<Customer>(
-      SupabaseConfig.cacheCustomerProfile,
-    );
-    if (cached != null) return cached;
-
-    final userId = currentUser!.id;
-    try {
-      final response = await _client
-          .from(SupabaseConfig.tableCustomers)
-          .select()
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      if (response == null) return null;
-
-      final customer = Customer.fromJson(response);
-
-      await _cache.set(
-        SupabaseConfig.cacheCustomerProfile,
-        customer,
-        SupabaseConfig.cacheDuration,
-      );
-      return customer;
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get Customer Profile');
-      return null;
-    }
-  }
-
-  /// Updates the customer profile.
-  Future<AuthResult> updateCustomerProfile({
-    String? name,
-    String? email,
-    String? ageRange,
-    String? notes,
-  }) async {
-    try {
-      if (!isLoggedIn) {
-        return _failure('You must be logged in');
-      }
-
-      final userId = currentUser!.id;
-      final Map<String, dynamic> updates = {};
-
-      if (name != null) updates['name'] = name;
-      if (email != null) updates['email'] = email;
-      if (ageRange != null) updates['age_range'] = ageRange;
-      if (notes != null) updates['notes'] = notes;
-      updates['updated_at'] = DateTime.now().toIso8601String();
-
-      await _client
-          .from(SupabaseConfig.tableCustomers)
-          .update(updates)
-          .eq('user_id', userId);
-
-      // Invalidate cache
-      await _cache.remove(SupabaseConfig.cacheCustomerProfile);
-
-      return _success('Customer profile updated successfully');
-    } catch (e) {
-      _errorHandler.handleError(e, 'Update Customer Profile');
-      return _failure('Failed to update customer profile: $e');
     }
   }
 
@@ -2965,202 +2771,6 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   // ==========================================================================
-  // DEAL MANAGEMENT (For Middlemen)
-  // ==========================================================================
-
-  /// Create a new deal
-  Future<AuthResult> createDeal({
-    required String partyAId,
-    required String partyBId,
-    String? productId,
-    required double commissionRate,
-    String? terms,
-  }) async {
-    try {
-      if (!isLoggedIn) {
-        return _failure('You must be logged in');
-      }
-
-      final middlemanId = currentUser!.id;
-      final dealId = const Uuid().v4();
-
-      // Call edge function for deal creation
-      final response = await _client.functions.invoke(
-        SupabaseConfig.functionCreateDeal,
-        body: {
-          'id': dealId,
-          'middlemanId': middlemanId,
-          'partyAId': partyAId,
-          'partyBId': partyBId,
-          'productId': productId,
-          'commissionRate': commissionRate,
-          'terms': terms,
-        },
-      );
-
-      if (response.status == 201 && response.data?['success'] == true) {
-        return _success(
-          response.data?['message'] ?? 'Deal created successfully',
-          response.data,
-        );
-      } else {
-        return _failure(response.data?['error'] ?? 'Failed to create deal');
-      }
-    } catch (e) {
-      _errorHandler.handleError(e, 'Create Deal');
-      return _failure('Failed to create deal: $e');
-    }
-  }
-
-  /// Get deals for current middleman
-  Future<List<Deal>> getMyDeals({String? status}) async {
-    if (!isLoggedIn) return [];
-
-    try {
-      final middlemanId = currentUser!.id;
-
-      dynamic query = _client
-          .from(SupabaseConfig.tableDeals)
-          .select('''
-            *,
-            partyA: party_a_id (full_name, email),
-            partyB: party_b_id (full_name, email),
-            product (title, image_url)
-          ''')
-          .eq('middleman_id', middlemanId);
-
-      if (status != null && status.isNotEmpty) {
-        query = (query as dynamic).eq('status', status);
-      }
-
-      final response = await (query as dynamic).order(
-        'created_at',
-        ascending: false,
-      );
-
-      return (response as List).map((json) => Deal.fromJson(json)).toList();
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get My Deals');
-      return [];
-    }
-  }
-
-  /// Get deals where user is a party (A or B)
-  Future<List<Deal>> getDealsAsParty() async {
-    if (!isLoggedIn) return [];
-
-    try {
-      final userId = currentUser!.id;
-
-      // Query as party A
-      final responseA = await _client
-          .from(SupabaseConfig.tableDeals)
-          .select('''
-            *,
-            middleman: middleman_id (full_name, email),
-            partyA: party_a_id (full_name, email),
-            partyB: party_b_id (full_name, email),
-            product (title, image_url)
-          ''')
-          .eq('party_a_id', userId)
-          .order('created_at', ascending: false);
-
-      // Query as party B
-      final responseB = await _client
-          .from(SupabaseConfig.tableDeals)
-          .select('''
-            *,
-            middleman: middleman_id (full_name, email),
-            partyA: party_a_id (full_name, email),
-            partyB: party_b_id (full_name, email),
-            product (title, image_url)
-          ''')
-          .eq('party_b_id', userId)
-          .order('created_at', ascending: false);
-
-      // Combine both results
-      final allDeals = [...(responseA as List), ...(responseB as List)];
-
-      // Remove duplicates by deal ID
-      final uniqueMap = <String, Map<String, dynamic>>{};
-      for (var deal in allDeals) {
-        final id = deal['id'] as String;
-        if (!uniqueMap.containsKey(id)) {
-          uniqueMap[id] = deal;
-        }
-      }
-
-      // Sort by created_at
-      final sorted = uniqueMap.values.toList();
-      sorted.sort((a, b) {
-        final aTime = DateTime.parse(a['created_at'] as String);
-        final bTime = DateTime.parse(b['created_at'] as String);
-        return bTime.compareTo(aTime);
-      });
-
-      return sorted.map((json) => Deal.fromJson(json)).toList();
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get Deals as Party');
-      return [];
-    }
-  }
-
-  /// Update deal status
-  Future<AuthResult> updateDealStatus({
-    required String dealId,
-    required String status,
-  }) async {
-    try {
-      if (!isLoggedIn) {
-        return _failure('You must be logged in');
-      }
-
-      final updates = <String, dynamic>{
-        'status': status,
-        'updated_at': DateTime.now().toIso8601String(),
-      };
-
-      if (status == 'completed') {
-        updates['completed_at'] = DateTime.now().toIso8601String();
-      }
-
-      await _client
-          .from(SupabaseConfig.tableDeals)
-          .update(updates)
-          .eq('id', dealId);
-
-      // Invalidate cache
-      await _cache.remove(_getUserCacheKey(SupabaseConfig.cacheDeals));
-
-      return _success('Deal status updated');
-    } catch (e) {
-      _errorHandler.handleError(e, 'Update Deal Status');
-      return _failure('Failed to update deal status: $e');
-    }
-  }
-
-  /// Get deal by ID
-  Future<Deal?> getDealById(String dealId) async {
-    try {
-      final response = await _client
-          .from(SupabaseConfig.tableDeals)
-          .select('''
-            *,
-            middleman: middleman_id (full_name, email),
-            partyA: party_a_id (full_name, email),
-            partyB: party_b_id (full_name, email),
-            product (title, image_url)
-          ''')
-          .eq('id', dealId)
-          .single();
-
-      return Deal.fromJson(response);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  // ==========================================================================
   // LOCATION MANAGEMENT
   // ==========================================================================
   /// Update seller's location coordinates
@@ -3232,9 +2842,6 @@ class SupabaseProvider extends ChangeNotifier {
         case AccountType.factory:
           table = SupabaseConfig.tableSellers;
           break;
-        case AccountType.middleman:
-          table = SupabaseConfig.tableMiddlemanProfiles;
-          break;
         default:
           return _failure('Your role does not support location updates');
       }
@@ -3249,11 +2856,8 @@ class SupabaseProvider extends ChangeNotifier {
           .eq('user_id', userId);
 
       // Invalidate profile cache
-      if (role == AccountType.seller || role == AccountType.factory) {
-        await _cache.remove(SupabaseConfig.cacheFactoryProfile);
-      } else if (role == AccountType.middleman) {
-        await _cache.remove(SupabaseConfig.cacheMiddlemanProfile);
-      }
+      await _cache.remove(SupabaseConfig.cacheSellerProfile);
+      await _cache.remove(SupabaseConfig.cacheFactoryProfile);
 
       return _success('Location updated successfully');
     } catch (e) {
@@ -3272,17 +2876,8 @@ class SupabaseProvider extends ChangeNotifier {
   /// Check if current user is a factory
   bool get isFactory => accountType == AccountType.factory;
 
-  /// Check if current user is a middleman
-  bool get isMiddleman => accountType == AccountType.middleman;
-
-  /// Check if current user is a customer
-  bool get isCustomer => accountType == AccountType.customer;
-
   /// Check if current user can sell products (seller or factory)
   bool get canSell => isSeller || isFactory;
-
-  /// Check if current user can create deals (middleman only)
-  bool get canCreateDeals => isMiddleman;
 
   /// Check if current user can manage factory connections
   bool get canManageFactoryConnections => isSeller || isFactory;
@@ -3868,69 +3463,6 @@ class SupabaseProvider extends ChangeNotifier {
       if (kDebugMode) print('Factory created in Supabase');
     } catch (e) {
       if (kDebugMode) print('Failed to create factory in Supabase: $e');
-    }
-  }
-
-  /// Creates a new middleman record in the database.
-  Future<void> _createMiddlemanRecord({
-    required String userId,
-    required String email,
-    required String fullName,
-    required String phone,
-    required String location,
-    required String currency,
-    String? companyName,
-    double? commissionRate,
-    String? specialization,
-    required String password,
-  }) async {
-    try {
-      await _client.from(SupabaseConfig.tableMiddlemanProfiles).insert({
-        'user_id': userId,
-        'full_name': fullName,
-        'email': email,
-        'phone': phone,
-        'location': location,
-        'currency': currency,
-        'company_name': companyName,
-        'commission_rate': commissionRate ?? 0.0,
-        'specialization': specialization,
-        'is_verified': false,
-        'total_deals': 0,
-        'total_commission_earned': 0,
-        'average_rating': 0,
-        'created_at': DateTime.now().toIso8601String(),
-      }).select();
-
-      if (kDebugMode) print('Middleman created in Supabase');
-    } catch (e) {
-      if (kDebugMode) print('Failed to create middleman in Supabase: $e');
-    }
-  }
-
-  /// Creates a new customer record in the database.
-  Future<void> _createCustomerRecord({
-    required String userId,
-    required String email,
-    required String fullName,
-    required String phone,
-    String? location,
-  }) async {
-    try {
-      await _client.from(SupabaseConfig.tableCustomers).insert({
-        'user_id': userId,
-        'name': fullName,
-        'email': email,
-        'phone': phone,
-        'location': location,
-        'total_orders': 0,
-        'total_spent': 0,
-        'created_at': DateTime.now().toIso8601String(),
-      }).select();
-
-      if (kDebugMode) print('Customer created in Supabase');
-    } catch (e) {
-      if (kDebugMode) print('Failed to create customer in Supabase: $e');
     }
   }
 

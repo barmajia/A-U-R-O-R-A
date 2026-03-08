@@ -8,7 +8,6 @@ import 'package:aurora/pages/seller/sellerProfile.dart';
 import 'package:aurora/pages/setting/setting.dart';
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/login.dart';
-import 'package:aurora/pages/user/user_pages.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -199,84 +198,7 @@ class AppDrawer extends StatelessWidget {
                         ),
                       ],
 
-                      // User Menu - For regular customers
-                      if (accountType == AccountType.user) ...[
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.home_outlined,
-                          activeIcon: Icons.home,
-                          title: 'Home',
-                          pageName: 'user_home',
-                          onTap: () => _navigateTo(
-                            context,
-                            const UserHomePage(),
-                            'user_home',
-                          ),
-                        ),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.shopping_bag_outlined,
-                          activeIcon: Icons.shopping_bag,
-                          title: 'My Orders',
-                          pageName: 'orders',
-                          onTap: () => _navigateTo(
-                            context,
-                            const UserOrdersPage(),
-                            'orders',
-                          ),
-                        ),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.favorite_outline,
-                          activeIcon: Icons.favorite,
-                          title: 'Wishlist',
-                          pageName: 'wishlist',
-                          onTap: () => _navigateTo(
-                            context,
-                            const UserWishlistPage(),
-                            'wishlist',
-                          ),
-                        ),
-                        const Divider(),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.person_outline,
-                          activeIcon: Icons.person,
-                          title: 'My Profile',
-                          pageName: 'user_profile',
-                          onTap: () => _navigateTo(
-                            context,
-                            const UserProfilePage(),
-                            'user_profile',
-                          ),
-                        ),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.location_on_outlined,
-                          activeIcon: Icons.location_on,
-                          title: 'Addresses',
-                          pageName: 'addresses',
-                          onTap: () => _navigateTo(
-                            context,
-                            const UserAddressesPage(),
-                            'addresses',
-                          ),
-                        ),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.payment_outlined,
-                          activeIcon: Icons.payment,
-                          title: 'Payment Methods',
-                          pageName: 'payments',
-                          onTap: () => _navigateTo(
-                            context,
-                            const UserPaymentMethodsPage(),
-                            'payments',
-                          ),
-                        ),
-                      ],
-
-                      // Common Menu Items
+                      // Common Menu Items - Visible to both seller and factory
                       _buildMenuItem(
                         context,
                         icon: Icons.chat_bubble_outline,
@@ -378,13 +300,15 @@ class AppDrawer extends StatelessWidget {
                 Icon(
                   accountType == AccountType.seller
                       ? Icons.store
-                      : Icons.person,
+                      : Icons.business, // Factory icon
                   size: 16,
                   color: Colors.white,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  accountType.name.toUpperCase(),
+                  accountType == AccountType.seller
+                      ? 'SELLER'
+                      : 'FACTORY',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,

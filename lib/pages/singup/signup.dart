@@ -57,6 +57,10 @@ class _SignupState extends State<Signup> {
   Position? _currentPosition;
   bool _locationGranted = false;
 
+  // Factory-specific controllers
+  final TextEditingController companyNameController = TextEditingController();
+  final TextEditingController businessLicenseController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -77,6 +81,8 @@ class _SignupState extends State<Signup> {
     passwordController.dispose();
     confirmPasswordController.dispose();
     locationController.dispose();
+    companyNameController.dispose();
+    businessLicenseController.dispose();
     _firstNameFocus.dispose();
     _secondNameFocus.dispose();
     _thirdNameFocus.dispose();
@@ -321,9 +327,9 @@ class _SignupState extends State<Signup> {
       // Determine account type from selection
       final accountType = _selectedAccountType == 'seller'
           ? AccountType.seller
-          : AccountType.user;
+          : AccountType.factory;
 
-      // Call signup function
+      // Call signup function - add factory-specific fields if factory
       final result = await supabaseProvider.signup(
         fullName: fullName,
         accountType: accountType,
@@ -334,6 +340,11 @@ class _SignupState extends State<Signup> {
         currency: currency,
         email: emailController.text.trim(),
         password: passwordController.text,
+        // Factory-specific fields (only if factory selected)
+        companyName: _selectedAccountType == 'factory' ? companyNameController.text : null,
+        businessLicense: _selectedAccountType == 'factory' ? businessLicenseController.text : null,
+        latitude: _currentPosition?.latitude,
+        longitude: _currentPosition?.longitude,
       );
 
       if (mounted) {

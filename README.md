@@ -139,21 +139,21 @@ A comprehensive Flutter-based e-commerce application with multi-vendor marketpla
 
 ### Key Dependencies
 
-| Package                  | Purpose                  |
-| ------------------------ | ------------------------ |
-| `supabase_flutter`       | Backend connectivity     |
-| `provider`               | State management         |
-| `flutter_secure_storage` | Secure data storage      |
-| `local_auth`             | Biometric authentication |
-| `geolocator`             | Location services        |
-| `qr_flutter`             | QR code generation       |
-| `image_picker`           | Image handling           |
-| `firebase_messaging`     | Push notifications       |
-| `connectivity_plus`      | Network monitoring       |
+| Package                  | Purpose                        |
+| ------------------------ | ------------------------------ |
+| `supabase_flutter`       | Backend connectivity           |
+| `provider`               | State management               |
+| `flutter_secure_storage` | Secure data storage            |
+| `local_auth`             | Biometric authentication       |
+| `geolocator`             | Location services              |
+| `qr_flutter`             | QR code generation             |
+| `image_picker`           | Image handling                 |
+| `firebase_messaging`     | Push notifications             |
+| `connectivity_plus`      | Network monitoring             |
 | `http`                   | HTTP client for edge functions |
-| `shared_preferences`     | Local caching            |
-| `intl`                   | Internationalization     |
-| `uuid`                   | UUID generation          |
+| `shared_preferences`     | Local caching                  |
+| `intl`                   | Internationalization           |
+| `uuid`                   | UUID generation                |
 
 ---
 
@@ -433,28 +433,28 @@ USING (seller_id = auth.uid());
 
 Additional documentation files:
 
-| Document                                                                   | Description                              |
-| -------------------------------------------------------------------------- | ---------------------------------------- |
-| [`COMPLETE_IMPLEMENTATION_SUMMARY.md`](COMPLETE_IMPLEMENTATION_SUMMARY.md) | Full implementation overview             |
-| [`SQL_IMPLEMENTATION_GUIDE.md`](SQL_IMPLEMENTATION_GUIDE.md)               | Database setup guide                     |
-| [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md)                               | Production deployment                    |
-| [`COMPLETE_DEPLOYMENT_GUIDE.md`](COMPLETE_DEPLOYMENT_GUIDE.md)             | Complete deployment instructions         |
-| [`ENHANCED_FEATURES_GUIDE.md`](ENHANCED_FEATURES_GUIDE.md)                 | Advanced features                        |
-| [`FACTORY_SYSTEM_SUMMARY.md`](FACTORY_SYSTEM_SUMMARY.md)                   | Factory module documentation             |
-| [`FACTORY_ACCOUNT_IMPLEMENTATION.md`](FACTORY_ACCOUNT_IMPLEMENTATION.md)   | Factory account setup                    |
-| [`FACTORY_DISCOVERY_IMPLEMENTATION.md`](FACTORY_DISCOVERY_IMPLEMENTATION.md)| Factory discovery feature               |
-| [`CHAT_SYSTEM_IMPLEMENTATION.md`](CHAT_SYSTEM_IMPLEMENTATION.md)           | Chat system implementation               |
-| [`BIOMETRIC_IMPLEMENTATION.md`](BIOMETRIC_IMPLEMENTATION.md)               | Biometric authentication setup           |
-| [`EDGE_FUNCTIONS_COMPLETE_GUIDE.md`](EDGE_FUNCTIONS_COMPLETE_GUIDE.md)     | Edge functions complete guide            |
-| [`EDGE_FUNCTIONS_DEPLOYMENT.md`](EDGE_FUNCTIONS_DEPLOYMENT.md)             | Edge functions deployment                |
-| [`PRODUCT_SYSTEM_GUIDE.md`](PRODUCT_SYSTEM_GUIDE.md)                       | Product management system                |
-| [`QR_CODE_SKU_GUIDE.md`](QR_CODE_SKU_GUIDE.md)                             | QR code and SKU integration              |
-| [`IMAGE_UPLOAD_SETUP.md`](IMAGE_UPLOAD_SETUP.md)                           | Image upload configuration               |
-| [`MULTI_ROLE_SYSTEM_IMPLEMENTATION.md`](MULTI_ROLE_SYSTEM_IMPLEMENTATION.md)| Multi-role access control               |
-| [`PGMQ_QUEUE_SERVICE.md`](PGMQ_QUEUE_SERVICE.md)                           | Message queue service                    |
-| [`SECURITY_FIXES_COMPLETE.md`](SECURITY_FIXES_COMPLETE.md)                 | Security implementation details          |
-| [`TROUBLESHOOTING_GUIDE.md`](TROUBLESHOOTING_GUIDE.md)                     | Common issues and solutions              |
-| [`FINAL_DEPLOYMENT_CHECKLIST.md`](FINAL_DEPLOYMENT_CHECKLIST.md)           | Pre-deployment checklist                 |
+| Document                                                                     | Description                      |
+| ---------------------------------------------------------------------------- | -------------------------------- |
+| [`COMPLETE_IMPLEMENTATION_SUMMARY.md`](COMPLETE_IMPLEMENTATION_SUMMARY.md)   | Full implementation overview     |
+| [`SQL_IMPLEMENTATION_GUIDE.md`](SQL_IMPLEMENTATION_GUIDE.md)                 | Database setup guide             |
+| [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md)                                 | Production deployment            |
+| [`COMPLETE_DEPLOYMENT_GUIDE.md`](COMPLETE_DEPLOYMENT_GUIDE.md)               | Complete deployment instructions |
+| [`ENHANCED_FEATURES_GUIDE.md`](ENHANCED_FEATURES_GUIDE.md)                   | Advanced features                |
+| [`FACTORY_SYSTEM_SUMMARY.md`](FACTORY_SYSTEM_SUMMARY.md)                     | Factory module documentation     |
+| [`FACTORY_ACCOUNT_IMPLEMENTATION.md`](FACTORY_ACCOUNT_IMPLEMENTATION.md)     | Factory account setup            |
+| [`FACTORY_DISCOVERY_IMPLEMENTATION.md`](FACTORY_DISCOVERY_IMPLEMENTATION.md) | Factory discovery feature        |
+| [`CHAT_SYSTEM_IMPLEMENTATION.md`](CHAT_SYSTEM_IMPLEMENTATION.md)             | Chat system implementation       |
+| [`BIOMETRIC_IMPLEMENTATION.md`](BIOMETRIC_IMPLEMENTATION.md)                 | Biometric authentication setup   |
+| [`EDGE_FUNCTIONS_COMPLETE_GUIDE.md`](EDGE_FUNCTIONS_COMPLETE_GUIDE.md)       | Edge functions complete guide    |
+| [`EDGE_FUNCTIONS_DEPLOYMENT.md`](EDGE_FUNCTIONS_DEPLOYMENT.md)               | Edge functions deployment        |
+| [`PRODUCT_SYSTEM_GUIDE.md`](PRODUCT_SYSTEM_GUIDE.md)                         | Product management system        |
+| [`QR_CODE_SKU_GUIDE.md`](QR_CODE_SKU_GUIDE.md)                               | QR code and SKU integration      |
+| [`IMAGE_UPLOAD_SETUP.md`](IMAGE_UPLOAD_SETUP.md)                             | Image upload configuration       |
+| [`MULTI_ROLE_SYSTEM_IMPLEMENTATION.md`](MULTI_ROLE_SYSTEM_IMPLEMENTATION.md) | Multi-role access control        |
+| [`PGMQ_QUEUE_SERVICE.md`](PGMQ_QUEUE_SERVICE.md)                             | Message queue service            |
+| [`SECURITY_FIXES_COMPLETE.md`](SECURITY_FIXES_COMPLETE.md)                   | Security implementation details  |
+| [`TROUBLESHOOTING_GUIDE.md`](TROUBLESHOOTING_GUIDE.md)                       | Common issues and solutions      |
+| [`FINAL_DEPLOYMENT_CHECKLIST.md`](FINAL_DEPLOYMENT_CHECKLIST.md)             | Pre-deployment checklist         |
 
 ---
 
