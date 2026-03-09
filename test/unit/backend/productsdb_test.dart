@@ -3,21 +3,37 @@ import 'package:aurora/backend/products_db.dart';
 import 'package:aurora/models/aurora_product.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   // Initialize binding for tests that use path_provider
   TestWidgetsFlutterBinding.ensureInitialized();
   
-  group('ProductsDB', () {
-    late ProductsDB productsDb;
+  late ProductsDB productsDb;
 
+  setUpAll(() async {
+    // Mock shared preferences
+    SharedPreferences.setMockInitialValues({});
+    
+    // Initialize database (ProductsDB auto-initializes in constructor)
+    productsDb = ProductsDB();
+    // Wait for initialization
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
+
+  tearDownAll(() async {
+    // Clean up
+    await productsDb.deleteAllProducts();
+    await productsDb.close();
+  });
+  
+  group('ProductsDB', () {
     setUp(() async {
-      productsDb = ProductsDB();
-      // Database auto-initializes in constructor
+      // Database already initialized in setUpAll
     });
 
     tearDown(() async {
-      await productsDb.close();
+      // Clean up after each test if needed
     });
 
     group('Initialization', () {

@@ -2,21 +2,36 @@
 import 'package:aurora/backend/sellerdb.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   // Initialize binding for tests that use path_provider
   TestWidgetsFlutterBinding.ensureInitialized();
   
-  group('SellerDB', () {
-    late SellerDB sellerDb;
+  late SellerDB sellerDb;
 
+  setUpAll(() async {
+    // Mock shared preferences
+    SharedPreferences.setMockInitialValues({});
+    
+    // Initialize database (SellerDB auto-initializes in constructor)
+    sellerDb = SellerDB();
+    // Wait for initialization
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
+
+  tearDownAll(() async {
+    // Clean up
+    await sellerDb.close();
+  });
+  
+  group('SellerDB', () {
     setUp(() async {
-      sellerDb = SellerDB();
-      await sellerDb.init();
+      // Database already initialized in setUpAll
     });
 
     tearDown(() async {
-      await sellerDb.close();
+      // Clean up after each test if needed
     });
 
     group('Initialization', () {

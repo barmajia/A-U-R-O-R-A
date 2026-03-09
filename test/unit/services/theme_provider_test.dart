@@ -2,10 +2,16 @@
 import 'package:aurora/theme/themeprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   // Initialize binding for tests
   TestWidgetsFlutterBinding.ensureInitialized();
+  
+  setUpAll(() async {
+    // Mock shared preferences
+    SharedPreferences.setMockInitialValues({});
+  });
   
   group('AppColors', () {
     test('should have correct primary colors', () {
