@@ -514,18 +514,8 @@ class SupabaseProvider extends ChangeNotifier {
               as String?;
 
       if (accountType == 'seller') {
-        await _cache.set(
-          SupabaseConstants.cacheSellerProfile,
-          response.user!.id,
-          SupabaseConstants.cacheDuration,
-        );
         await getCurrentSellerProfile();
       } else if (accountType == 'factory') {
-        await _cache.set(
-          SupabaseConstants.cacheFactoryProfile,
-          response.user!.id,
-          SupabaseConstants.cacheDuration,
-        );
         await getCurrentFactoryProfile();
       }
 
