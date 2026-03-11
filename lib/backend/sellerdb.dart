@@ -48,17 +48,9 @@ class SellerDB extends ChangeNotifier {
         account_type TEXT DEFAULT 'seller',
         is_verified INTEGER DEFAULT 0,
 
-        -- Multi-Role System Fields
+        -- Location Fields
         latitude REAL,
         longitude REAL,
-        is_factory INTEGER DEFAULT 0,
-        company_name TEXT,
-        business_license TEXT,
-        min_order_quantity INTEGER,
-        wholesale_discount REAL,
-        accepts_returns INTEGER DEFAULT 0,
-        production_capacity TEXT,
-        verified_at TEXT,
 
         created_at TEXT,
         updated_at TEXT
@@ -82,10 +74,9 @@ class SellerDB extends ChangeNotifier {
           user_id, firstname, secondname, thirdname, fourthname,
           full_name, email, location, phone,
           currency, account_type, is_verified,
-          latitude, longitude, is_factory, company_name, business_license,
-          min_order_quantity, wholesale_discount, accepts_returns, production_capacity,
+          latitude, longitude,
           created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
       ''');
 
       stmt.execute([
@@ -103,13 +94,6 @@ class SellerDB extends ChangeNotifier {
         seller['is_verified'] ?? 0,
         seller['latitude'] as double?,
         seller['longitude'] as double?,
-        seller['is_factory'] as int? ?? 0,
-        seller['company_name'] as String?,
-        seller['business_license'] as String?,
-        seller['min_order_quantity'] as int?,
-        seller['wholesale_discount'] as double?,
-        seller['accepts_returns'] as int? ?? 0,
-        seller['production_capacity'] as String?,
         seller['created_at'] ?? DateTime.now().toIso8601String(),
       ]);
       notifyListeners();
@@ -144,9 +128,6 @@ class SellerDB extends ChangeNotifier {
         SET firstname = ?, secondname = ?, thirdname = ?, fourthname = ?,
             full_name = ?, location = ?, phone = ?, currency = ?,
             is_verified = ?, latitude = ?, longitude = ?,
-            is_factory = ?, company_name = ?, business_license = ?,
-            min_order_quantity = ?, wholesale_discount = ?,
-            accepts_returns = ?, production_capacity = ?,
             updated_at = ?
         WHERE user_id = ?;
       ''');
@@ -163,13 +144,6 @@ class SellerDB extends ChangeNotifier {
         data['is_verified'] ?? 0,
         data['latitude'] as double?,
         data['longitude'] as double?,
-        data['is_factory'] as int? ?? 0,
-        data['company_name'] as String?,
-        data['business_license'] as String?,
-        data['min_order_quantity'] as int?,
-        data['wholesale_discount'] as double?,
-        data['accepts_returns'] as int? ?? 0,
-        data['production_capacity'] as String?,
         DateTime.now().toIso8601String(),
         userId,
       ]);

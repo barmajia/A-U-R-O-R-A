@@ -4,7 +4,7 @@
 //
 // Features:
 // - User Authentication (Login/Signup)
-// - Multi-role Support (Customer, Seller, Factory, Middleman)
+// - Seller Support
 // - Real-time Chat with Deal Negotiation
 // - Product Management & Sales Tracking
 // - Commission-based Deal System

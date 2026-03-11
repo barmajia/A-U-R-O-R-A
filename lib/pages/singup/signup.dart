@@ -49,17 +49,12 @@ class _SignupState extends State<Signup> {
     e164Key: '1',
   );
 
-  String _selectedAccountType = 'seller';
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String? _errorMessage;
   Position? _currentPosition;
   bool _locationGranted = false;
-
-  // Factory-specific controllers
-  final TextEditingController companyNameController = TextEditingController();
-  final TextEditingController businessLicenseController = TextEditingController();
 
   @override
   void initState() {
@@ -81,8 +76,6 @@ class _SignupState extends State<Signup> {
     passwordController.dispose();
     confirmPasswordController.dispose();
     locationController.dispose();
-    companyNameController.dispose();
-    businessLicenseController.dispose();
     _firstNameFocus.dispose();
     _secondNameFocus.dispose();
     _thirdNameFocus.dispose();
@@ -324,12 +317,10 @@ class _SignupState extends State<Signup> {
       // Get currency based on selected country (hidden, automatic)
       final currency = _getCurrencyByCountry(_selectedCountry.countryCode);
 
-      // Determine account type from selection
-      final accountType = _selectedAccountType == 'seller'
-          ? AccountType.seller
-          : AccountType.factory;
+      // Determine account type (always seller)
+      final accountType = AccountType.seller;
 
-      // Call signup function - add factory-specific fields if factory
+      // Call signup function
       final result = await supabaseProvider.signup(
         fullName: fullName,
         accountType: accountType,
@@ -340,11 +331,6 @@ class _SignupState extends State<Signup> {
         currency: currency,
         email: emailController.text.trim(),
         password: passwordController.text,
-        // Factory-specific fields (only if factory selected)
-        companyName: _selectedAccountType == 'factory' ? companyNameController.text : null,
-        businessLicense: _selectedAccountType == 'factory' ? businessLicenseController.text : null,
-        latitude: _currentPosition?.latitude,
-        longitude: _currentPosition?.longitude,
       );
 
       if (mounted) {
@@ -423,35 +409,6 @@ class _SignupState extends State<Signup> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-
-                // Account Type Dropdown
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedAccountType,
-                  decoration: InputDecoration(
-                    labelText: 'Account Type',
-                    prefixIcon: const Icon(Icons.business_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'seller', child: Text('Seller')),
-                    DropdownMenuItem(value: 'factory', child: Text('Factory')),
-                  ],
-                  onSaved: (value) {
-                    if (value != null) {
-                      _selectedAccountType = value;
-                    }
-                  },
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedAccountType = value;
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
 
                 // Full Name Fields
                 const Text(

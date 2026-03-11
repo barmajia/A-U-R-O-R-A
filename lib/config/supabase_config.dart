@@ -60,7 +60,6 @@ class SupabaseConfig {
 
   /// Cache keys
   static const String cacheAnalytics = 'cache_analytics';
-  static const String cacheFactoryProfile = 'cache_factory_profile';
   static const String cacheSellerProfile = 'cache_seller_profile';
   static const String cacheProducts = 'cache_products';
   static const String cacheExpiry = 'cache_expiry';
@@ -82,12 +81,6 @@ class SupabaseConfig {
 
   /// Order management functions
   static const String functionCreateOrder = 'create-order';
-
-  /// Factory discovery functions
-  static const String functionFindNearbyFactories = 'find-nearby-factories';
-  static const String functionRequestFactoryConnection =
-      'request-factory-connection';
-  static const String functionRateFactory = 'rate-factory';
 
   /// Chat system functions
   static const String functionGetOrCreateConversation =
@@ -117,11 +110,6 @@ class SupabaseConfig {
   /// Chat tables
   static const String tableMessages = 'messages';
   static const String tableConversations = 'conversations';
-
-  /// Factory tables
-  static const String tableFactoryConnections = 'factory_connections';
-  static const String tableFactoryRatings = 'factory_ratings';
-  static const String tableFactoryProfiles = 'factory_profiles';
 
   /// Analytics tables
   static const String tableAnalytics = 'analytics';

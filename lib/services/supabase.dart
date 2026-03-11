@@ -15,10 +15,6 @@ import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:image/image.dart' as img;
 
-// Factory Discovery Models
-import 'package:aurora/models/factory/factory_models.dart';
-import 'package:aurora/models/factory/factory_profile.dart';
-
 // ============================================================================
 // Constants & Configuration
 // ============================================================================
@@ -39,11 +35,6 @@ class SupabaseConstants {
 
   static const String cacheExpiry = 'cache_expiry';
   // Cache Keys - Core
-  static const String cacheFactoryProfile = 'cache_factory_profile';
-
-  static const String cacheMiddlemanProfile =
-      'cache_middleman_profile'; // Deprecated
-  // Cache Keys - Core
   static const String cacheProducts = 'cache_products';
 
   static const String cacheSellerProfile = 'cache_seller_profile';
@@ -54,8 +45,6 @@ class SupabaseConstants {
 
   static const String functionCreateProduct = 'create-product';
   static const String functionDeleteProduct = 'delete-product';
-  // Edge Functions - Factory Discovery
-  static const String functionFindNearbyFactories = 'find-nearby-factories';
 
   // Edge Functions - Chat System
   static const String functionGetOrCreateConversation =
@@ -71,10 +60,6 @@ class SupabaseConstants {
 
   // Edge Functions - Auth
   static const String functionProcessSignup = 'process-signup';
-
-  static const String functionRateFactory = 'rate-factory';
-  static const String functionRequestFactoryConnection =
-      'request-factory-connection';
 
   static const String functionSearchProducts = 'search-products';
   static const String functionUpdateProduct = 'update-product';
@@ -93,11 +78,6 @@ class SupabaseConstants {
   static const String tableCustomers =
       'customers'; // Deprecated - seller-managed customers
   static const String tableDeals = 'deals'; // Deprecated
-  static const String tableFactoryConnections = 'factory_connections';
-  // Table Names - Factory System
-  static const String tableFactoryProfiles = 'factory_profiles';
-
-  static const String tableFactoryRatings = 'factory_ratings';
   static const String tableMessages = 'messages';
   static const String tableMiddlemanProfiles =
       'middleman_profiles'; // Deprecated
@@ -117,10 +97,9 @@ class SupabaseConstants {
 // Type Definitions
 // ============================================================================
 
-/// Represents the type of user account in the Aurora seller/factory system
+/// Represents the type of user account in the Aurora seller system
 enum AccountType {
   seller, // Seller/merchant
-  factory, // Factory/manufacturer
 }
 
 /// Order Status
@@ -517,8 +496,6 @@ class SupabaseProvider extends ChangeNotifier {
 
       if (accountType == 'seller') {
         await getCurrentSellerProfile();
-      } else if (accountType == 'factory') {
-        await getCurrentFactoryProfile();
       }
 
       notifyListeners();
@@ -543,7 +520,7 @@ class SupabaseProvider extends ChangeNotifier {
 
   /// Registers a new user with Supabase Auth and creates role-specific profile.
   ///
-  /// Supports only seller and factory account types.
+  /// Supports seller account type.
   Future<AuthResult> signup({
     required String fullName,
     required AccountType accountType,
@@ -553,11 +530,6 @@ class SupabaseProvider extends ChangeNotifier {
     required String email,
     required String password,
     String? language,
-    // Factory-specific fields
-    String? companyName,
-    String? businessLicense,
-    double? latitude,
-    double? longitude,
   }) async {
     try {
       // Step 1: Create auth user
@@ -578,7 +550,7 @@ class SupabaseProvider extends ChangeNotifier {
         return _failure('Signup failed. Please try again.');
       }
 
-      // Step 2: Create role-specific profile (only seller or factory)
+      // Step 2: Create role-specific profile (seller)
       if (accountType == AccountType.seller) {
         await _createSellerRecord(
           userId: authResponse.user!.id,
@@ -587,20 +559,6 @@ class SupabaseProvider extends ChangeNotifier {
           phone: phone,
           location: location,
           currency: currency,
-          password: password,
-        );
-      } else if (accountType == AccountType.factory) {
-        await _createFactoryRecord(
-          userId: authResponse.user!.id,
-          email: email,
-          fullName: fullName,
-          phone: phone,
-          location: location,
-          currency: currency,
-          companyName: companyName,
-          businessLicense: businessLicense,
-          latitude: latitude,
-          longitude: longitude,
           password: password,
         );
       }
@@ -614,13 +572,6 @@ class SupabaseProvider extends ChangeNotifier {
         phone: phone,
         location: location,
         currency: currency,
-        // Factory-specific fields
-        companyName: accountType == AccountType.factory ? companyName : null,
-        businessLicense: accountType == AccountType.factory
-            ? businessLicense
-            : null,
-        latitude: latitude,
-        longitude: longitude,
       );
 
       notifyListeners();
@@ -738,112 +689,6 @@ class SupabaseProvider extends ChangeNotifier {
     } catch (e) {
       _errorHandler.handleError(e, 'Update Seller Profile');
       return _failure('Failed to update profile: $e');
-    }
-  }
-
-  // --------------------------------------------------------------------------
-  // Factory Profile Operations
-  // --------------------------------------------------------------------------
-
-  /// Fetches the current authenticated factory's profile.
-  Future<FactoryProfile?> getCurrentFactoryProfile() async {
-    if (!isLoggedIn) return null;
-
-    // Check cache first
-    final cached = await _cache.get<FactoryProfile>(
-      SupabaseConstants.cacheFactoryProfile,
-    );
-    if (cached != null) return cached;
-
-    final userId = currentUser!.id;
-    try {
-      final response = await _client
-          .from(SupabaseConstants.tableSellers)
-          .select()
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      if (response == null) return null;
-
-      // Convert seller record to FactoryProfile with safe casting
-      final profile = FactoryProfile(
-        userId: (response['user_id'] as String?) ?? '',
-        fullName: (response['full_name'] as String?) ?? '',
-        email: response['email'] as String?,
-        phone: (response['phone'] as String?) ?? '',
-        location: response['location'] as String?,
-        latitude: (response['latitude'] as num?)?.toDouble(),
-        longitude: (response['longitude'] as num?)?.toDouble(),
-        companyName: response['company_name'] as String?,
-        businessLicense: response['business_license'] as String?,
-        isVerified: (response['is_verified'] as bool?) ?? false,
-        minOrderQuantity: response['min_order_quantity'] as int?,
-        wholesaleDiscount: (response['wholesale_discount'] as num?)?.toDouble(),
-        productionCapacity: response['production_capacity'] as String?,
-        acceptsReturns: response['accepts_returns'] as bool? ?? true,
-        averageRating: (response['average_rating'] as num?)?.toDouble() ?? 0,
-        totalReviews: response['total_reviews'] as int? ?? 0,
-        productCount: response['product_count'] as int? ?? 0,
-        createdAt: response['created_at'] != null
-            ? DateTime.parse(response['created_at'] as String)
-            : null,
-      );
-
-      await _cache.set(
-        SupabaseConstants.cacheFactoryProfile,
-        profile,
-        SupabaseConstants.cacheDuration,
-      );
-      return profile;
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get Factory Profile');
-      return null;
-    }
-  }
-
-  /// Updates the factory profile settings.
-  Future<AuthResult> updateFactoryProfile({
-    String? companyName,
-    String? businessLicense,
-    double? latitude,
-    double? longitude,
-    int? minOrderQuantity,
-    double? wholesaleDiscount,
-    String? productionCapacity,
-  }) async {
-    try {
-      if (!isLoggedIn) {
-        return _failure('You must be logged in');
-      }
-
-      final userId = currentUser!.id;
-      final Map<String, dynamic> updates = {};
-
-      if (companyName != null) updates['company_name'] = companyName;
-      if (businessLicense != null)
-        updates['business_license'] = businessLicense;
-      if (latitude != null) updates['latitude'] = latitude;
-      if (longitude != null) updates['longitude'] = longitude;
-      if (minOrderQuantity != null)
-        updates['min_order_quantity'] = minOrderQuantity;
-      if (wholesaleDiscount != null)
-        updates['wholesale_discount'] = wholesaleDiscount;
-      if (productionCapacity != null)
-        updates['production_capacity'] = productionCapacity;
-      updates['updated_at'] = DateTime.now().toIso8601String();
-
-      await _client
-          .from(SupabaseConstants.tableSellers)
-          .update(updates)
-          .eq('user_id', userId);
-
-      // Invalidate cache
-      await _cache.remove(SupabaseConstants.cacheFactoryProfile);
-
-      return _success('Factory profile updated successfully');
-    } catch (e) {
-      _errorHandler.handleError(e, 'Update Factory Profile');
-      return _failure('Failed to update factory profile: $e');
     }
   }
 
@@ -2793,7 +2638,7 @@ class SupabaseProvider extends ChangeNotifier {
   // ==========================================================================
   /// Update seller's location coordinates
   ///
-  /// This method updates the latitude and longitude for the current seller/factory
+  /// This method updates the latitude and longitude for the current seller
   /// in the sellers table. It also invalidates relevant cache entries.
   Future<AuthResult> updateSellerLocation({
     required double latitude,
@@ -2817,7 +2662,6 @@ class SupabaseProvider extends ChangeNotifier {
           .eq('user_id', userId);
 
       // Invalidate relevant caches
-      await _cache.remove(SupabaseConstants.cacheFactoryProfile);
       await _cache.remove(SupabaseConstants.cacheSellerProfile);
 
       // Update local SellerDB if available
@@ -2851,21 +2695,10 @@ class SupabaseProvider extends ChangeNotifier {
       }
 
       final userId = currentUser!.id;
-      final role = accountType;
 
-      // Determine table based on role
-      String table;
-      switch (role) {
-        case AccountType.seller:
-        case AccountType.factory:
-          table = SupabaseConstants.tableSellers;
-          break;
-        default:
-          return _failure('Your role does not support location updates');
-      }
-
+      // Update the sellers table with new coordinates
       await _client
-          .from(table)
+          .from(SupabaseConstants.tableSellers)
           .update({
             'latitude': latitude,
             'longitude': longitude,
@@ -2875,7 +2708,6 @@ class SupabaseProvider extends ChangeNotifier {
 
       // Invalidate profile cache
       await _cache.remove(SupabaseConstants.cacheSellerProfile);
-      await _cache.remove(SupabaseConstants.cacheFactoryProfile);
 
       return _success('Location updated successfully');
     } catch (e) {
@@ -2891,403 +2723,12 @@ class SupabaseProvider extends ChangeNotifier {
   /// Check if current user is a seller
   bool get isSeller => accountType == AccountType.seller;
 
-  /// Check if current user is a factory
-  bool get isFactory => accountType == AccountType.factory;
-
-  /// Check if current user can sell products (seller or factory)
-  bool get canSell => isSeller || isFactory;
-
-  /// Check if current user can manage factory connections
-  bool get canManageFactoryConnections => isSeller || isFactory;
+  /// Check if current user can sell products
+  bool get canSell => isSeller;
 
   // ==========================================================================
-  // FACTORY DISCOVERY & CONNECTION
+  // END OF PUBLIC API
   // ==========================================================================
-
-  /// Find nearby factories using location
-  Future<DataResult<List<FactoryInfo>>> findNearbyFactories({
-    required double latitude,
-    required double longitude,
-    double radiusKm = 50,
-    int limit = 20,
-  }) async {
-    try {
-      if (!isLoggedIn) {
-        return DataResult<List<FactoryInfo>>(
-          success: false,
-          message: 'User not authenticated',
-          data: [],
-          error: 'Not authenticated',
-        );
-      }
-
-      final response = await _client.functions.invoke(
-        SupabaseConstants.functionFindNearbyFactories,
-        body: {
-          'latitude': latitude,
-          'longitude': longitude,
-          'radius': radiusKm,
-          'limit': limit,
-        },
-      );
-
-      if (response.status == 200 && response.data?['success'] == true) {
-        final factoriesData = response.data?['factories'] as List? ?? [];
-        final factories = factoriesData
-            .map((json) => FactoryInfo.fromJson(json as Map<String, dynamic>))
-            .toList();
-
-        return DataResult<List<FactoryInfo>>(
-          success: true,
-          message: 'Found ${factories.length} factories',
-          data: factories,
-          error: null,
-        );
-      } else {
-        return DataResult<List<FactoryInfo>>(
-          success: false,
-          message: response.data?['error'] ?? 'Search failed',
-          data: [],
-          error: response.data?['error'],
-        );
-      }
-    } catch (e) {
-      _errorHandler.handleError(e, 'Find Nearby Factories');
-      return DataResult<List<FactoryInfo>>(
-        success: false,
-        message: 'Search failed: $e',
-        data: [],
-        error: e.toString(),
-      );
-    }
-  }
-
-  /// Request connection with a factory
-  Future<AuthResult> requestFactoryConnection({
-    required String factoryId,
-    String? notes,
-  }) async {
-    try {
-      if (!isLoggedIn) {
-        return _failure('You must be logged in');
-      }
-
-      final response = await _client.functions.invoke(
-        SupabaseConstants.functionRequestFactoryConnection,
-        body: {'factoryId': factoryId, 'notes': notes},
-      );
-
-      if (response.status == 201 && response.data?['success'] == true) {
-        return _success(
-          response.data?['message'] ?? 'Connection request sent',
-          response.data,
-        );
-      } else {
-        return _failure(response.data?['error'] ?? 'Failed to send request');
-      }
-    } catch (e) {
-      _errorHandler.handleError(e, 'Request Factory Connection');
-      return _failure('Failed to send request: $e');
-    }
-  }
-
-  /// Get seller's factory connections
-  Future<List<FactoryConnection>> getFactoryConnections({
-    String status = 'all',
-  }) async {
-    if (!isLoggedIn) return [];
-
-    try {
-      final sellerId = currentUser!.id;
-
-      dynamic query = _client
-          .from('factory_connections')
-          .select('''
-            *,
-            factory: sellers!factory_id (
-              user_id,
-              full_name,
-              location,
-              latitude,
-              longitude,
-              is_verified,
-              wholesale_discount,
-              min_order_quantity
-            )
-          ''')
-          .eq('seller_id', sellerId);
-
-      if (status != 'all') {
-        query = (query as dynamic).eq('status', status);
-      }
-
-      final response = await (query as dynamic).order(
-        'requested_at',
-        ascending: false,
-      );
-
-      return (response as List)
-          .map((json) => FactoryConnection.fromJson(json))
-          .toList();
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get Factory Connections');
-      return [];
-    }
-  }
-
-  /// Get factory's connection requests (for factories to manage)
-  Future<List<FactoryConnection>> getFactoryConnectionRequests({
-    String status = 'pending',
-  }) async {
-    if (!isLoggedIn) return [];
-
-    try {
-      final factoryId = currentUser!.id;
-
-      dynamic query = _client
-          .from('factory_connections')
-          .select('''
-            *,
-            seller: sellers!seller_id (
-              user_id,
-              full_name,
-              location,
-              is_verified
-            )
-          ''')
-          .eq('factory_id', factoryId);
-
-      if (status != 'all') {
-        query = (query as dynamic).eq('status', status);
-      }
-
-      final response = await (query as dynamic).order(
-        'requested_at',
-        ascending: false,
-      );
-
-      return (response as List)
-          .map((json) => FactoryConnection.fromJson(json))
-          .toList();
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get Factory Connection Requests');
-      return [];
-    }
-  }
-
-  /// Accept or reject a factory connection request (for factories)
-  Future<AuthResult> respondToConnectionRequest({
-    required String connectionId,
-    required bool accept,
-    String? notes,
-  }) async {
-    try {
-      if (!isLoggedIn) {
-        return _failure('You must be logged in');
-      }
-
-      final factoryId = currentUser!.id;
-      final status = accept ? 'accepted' : 'rejected';
-
-      final Map<String, dynamic> updates = {
-        'status': status,
-        'updated_at': DateTime.now().toIso8601String(),
-      };
-
-      if (accept) {
-        updates['accepted_at'] = DateTime.now().toIso8601String();
-      } else {
-        updates['rejected_at'] = DateTime.now().toIso8601String();
-        if (notes != null) updates['notes'] = notes;
-      }
-
-      await _client
-          .from('factory_connections')
-          .update(updates)
-          .eq('id', connectionId)
-          .eq('factory_id', factoryId);
-
-      // Create notification for seller
-      final connection = await _client
-          .from('factory_connections')
-          .select('seller_id')
-          .eq('id', connectionId)
-          .single();
-
-      if (connection != null) {
-        await _client.from('notifications').insert({
-          'user_id': connection['seller_id'],
-          'type': 'system',
-          'title': accept
-              ? 'Factory Connection Accepted'
-              : 'Factory Connection Declined',
-          'message': accept
-              ? 'Your factory connection request has been accepted!'
-              : 'Your factory connection request was declined',
-          'metadata': {'connection_id': connectionId, 'status': status},
-        });
-      }
-
-      return _success(accept ? 'Connection accepted' : 'Connection declined');
-    } catch (e) {
-      _errorHandler.handleError(e, 'Respond to Connection Request');
-      return _failure('Failed to respond: $e');
-    }
-  }
-
-  /// Rate a factory
-  Future<AuthResult> rateFactory({
-    required String factoryId,
-    required int rating,
-    required int deliveryRating,
-    required int qualityRating,
-    required int communicationRating,
-    String? review,
-  }) async {
-    try {
-      if (!isLoggedIn) {
-        return _failure('You must be logged in');
-      }
-
-      final sellerId = currentUser!.id;
-
-      // Check if already rated
-      final existing = await _client
-          .from('factory_ratings')
-          .select()
-          .eq('factory_id', factoryId)
-          .eq('seller_id', sellerId)
-          .maybeSingle();
-
-      if (existing != null) {
-        // Update existing rating
-        await _client
-            .from('factory_ratings')
-            .update({
-              'rating': rating,
-              'review': review,
-              'delivery_rating': deliveryRating,
-              'quality_rating': qualityRating,
-              'communication_rating': communicationRating,
-              'updated_at': DateTime.now().toIso8601String(),
-            })
-            .eq('factory_id', factoryId)
-            .eq('seller_id', sellerId);
-      } else {
-        // Create new rating
-        await _client.from('factory_ratings').insert({
-          'factory_id': factoryId,
-          'seller_id': sellerId,
-          'rating': rating,
-          'review': review,
-          'delivery_rating': deliveryRating,
-          'quality_rating': qualityRating,
-          'communication_rating': communicationRating,
-        });
-      }
-
-      return _success('Rating submitted successfully');
-    } catch (e) {
-      _errorHandler.handleError(e, 'Rate Factory');
-      return _failure('Failed to submit rating: $e');
-    }
-  }
-
-  /// Get factory rating details
-  Future<FactoryRatingSummary> getFactoryRating(String factoryId) async {
-    try {
-      final result = await _client.rpc(
-        'get_factory_rating',
-        params: {'p_factory_id': factoryId},
-      );
-
-      if (result is List && result.isNotEmpty) {
-        return FactoryRatingSummary.fromJson(result[0]);
-      }
-
-      return FactoryRatingSummary(
-        averageRating: 0,
-        totalReviews: 0,
-        deliveryRating: 0,
-        qualityRating: 0,
-        communicationRating: 0,
-      );
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get Factory Rating');
-      return FactoryRatingSummary(
-        averageRating: 0,
-        totalReviews: 0,
-        deliveryRating: 0,
-        qualityRating: 0,
-        communicationRating: 0,
-      );
-    }
-  }
-
-  /// Get factory's products with wholesale pricing
-  /// Note: Returns AuroraProduct objects from factory_products view
-  Future<List<AuroraProduct>> getFactoryProducts(String factoryId) async {
-    if (!isLoggedIn) return [];
-
-    try {
-      final response = await _client
-          .from('factory_products')
-          .select()
-          .eq('seller_id', factoryId)
-          .eq('status', 'active')
-          .eq('is_deleted', false);
-
-      return (response as List)
-          .map((json) => AuroraProduct.fromJson(json))
-          .toList();
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get Factory Products');
-      return [];
-    }
-  }
-
-  /// Update seller's factory settings
-  Future<AuthResult> updateFactorySettings({
-    bool? isFactory,
-    double? latitude,
-    double? longitude,
-    String? factoryLicenseUrl,
-    int? minOrderQuantity,
-    double? wholesaleDiscount,
-    bool? acceptsReturns,
-    String? productionCapacity,
-  }) async {
-    try {
-      if (!isLoggedIn) {
-        return _failure('You must be logged in');
-      }
-
-      final sellerId = currentUser!.id;
-
-      final Map<String, dynamic> updates = {};
-      if (isFactory != null) updates['is_factory'] = isFactory;
-      if (latitude != null) updates['latitude'] = latitude;
-      if (longitude != null) updates['longitude'] = longitude;
-      if (factoryLicenseUrl != null)
-        updates['factory_license_url'] = factoryLicenseUrl;
-      if (minOrderQuantity != null)
-        updates['min_order_quantity'] = minOrderQuantity;
-      if (wholesaleDiscount != null)
-        updates['wholesale_discount'] = wholesaleDiscount;
-      if (acceptsReturns != null) updates['accepts_returns'] = acceptsReturns;
-      if (productionCapacity != null)
-        updates['production_capacity'] = productionCapacity;
-
-      if (updates.isNotEmpty) {
-        await _client.from('sellers').update(updates).eq('user_id', sellerId);
-      }
-
-      return _success('Factory settings updated successfully');
-    } catch (e) {
-      _errorHandler.handleError(e, 'Update Factory Settings');
-      return _failure('Failed to update settings: $e');
-    }
-  }
 
   void _initProvider() {
     // Listen to auth state changes
@@ -3437,83 +2878,6 @@ class SupabaseProvider extends ChangeNotifier {
     }
   }
 
-  /// Creates a new factory record in the database.
-  Future<void> _createFactoryRecord({
-    required String userId,
-    required String email,
-    required String fullName,
-    required String phone,
-    required String location,
-    required String currency,
-    String? companyName,
-    String? businessLicense,
-    double? latitude,
-    double? longitude,
-    required String password,
-  }) async {
-    final nameParts = fullName.split(' ');
-    final firstname = nameParts.isNotEmpty ? nameParts[0] : '';
-    final secondname = nameParts.length > 1 ? nameParts[1] : '';
-    final thirdname = nameParts.length > 2 ? nameParts[2] : '';
-    final fourthname = nameParts.length > 3 ? nameParts[3] : '';
-
-    try {
-      await _client.from(SupabaseConstants.tableSellers).insert({
-        'user_id': userId,
-        'email': email,
-        'full_name': fullName,
-        'firstname': firstname,
-        'secondname': secondname,
-        'thirdname': thirdname,
-        'fourthname': fourthname,
-        'phone': phone,
-        'location': location,
-        'currency': currency,
-        SupabaseConstants.keyAccountType: 'factory',
-        'is_verified': false,
-        'company_name': companyName,
-        'business_license': businessLicense,
-        'latitude': latitude,
-        'longitude': longitude,
-        'created_at': DateTime.now().toIso8601String(),
-      }).select();
-
-      if (kDebugMode) print('Factory created in Supabase');
-    } catch (e) {
-      if (kDebugMode) print('Failed to create factory in Supabase: $e');
-    }
-
-    // Also save to local SQLite database
-    try {
-      if (_sellerDb != null) {
-        await _sellerDb.addSeller({
-          'user_id': userId,
-          'firstname': firstname,
-          'secondname': secondname,
-          'thirdname': thirdname,
-          'fourthname': fourthname,
-          'full_name': fullName,
-          'email': email,
-          'password': password,
-          'location': location,
-          'phone': phone,
-          'currency': currency,
-          'account_type': 'factory',
-          'is_factory': true,
-          'company_name': companyName,
-          'business_license': businessLicense,
-          'latitude': latitude,
-          'longitude': longitude,
-          'is_verified': 0,
-          'created_at': DateTime.now().toIso8601String(),
-        });
-        if (kDebugMode) print('Factory created in local SQLite');
-      }
-    } catch (e) {
-      if (kDebugMode) print('Failed to create factory in local DB: $e');
-    }
-  }
-
   /// Invokes the signup edge function.
   Future<void> _invokeSignupFunction({
     required String userId,
@@ -3523,10 +2887,6 @@ class SupabaseProvider extends ChangeNotifier {
     required String phone,
     required String location,
     required String currency,
-    String? companyName,
-    String? businessLicense,
-    double? latitude,
-    double? longitude,
   }) async {
     try {
       final body = <String, dynamic>{
@@ -3538,14 +2898,6 @@ class SupabaseProvider extends ChangeNotifier {
         'location': location,
         'currency': currency,
       };
-
-      // Add factory-specific fields if applicable
-      if (accountType == 'factory') {
-        if (companyName != null) body['companyName'] = companyName;
-        if (businessLicense != null) body['businessLicense'] = businessLicense;
-        if (latitude != null) body['latitude'] = latitude;
-        if (longitude != null) body['longitude'] = longitude;
-      }
 
       await _client.functions.invoke(
         SupabaseConstants.functionProcessSignup,
@@ -3584,11 +2936,6 @@ class SupabaseProvider extends ChangeNotifier {
     };
   }
 
-  /// Helper to check if user is seller or factory
-  bool _isSellerOrFactory() {
-    return isSeller || isFactory;
-  }
-
   /// Validate role for protected operations
   AuthResult _validateRole(AccountType requiredRole) {
     if (!isLoggedIn) {
@@ -3598,309 +2945,6 @@ class SupabaseProvider extends ChangeNotifier {
       return _failure('This action requires a ${requiredRole.name} account');
     }
     return _success('Validated');
-  }
-
-  // ===========================================================================
-  // FACTORY-SPECIFIC METHODS
-  // ===========================================================================
-
-  /// Get factory dashboard statistics
-  Future<FactoryDashboardStats> getFactoryDashboardStats() async {
-    try {
-      if (!isLoggedIn) return FactoryDashboardStats();
-
-      final userId = currentUser!.id;
-
-      // Get product stats
-      final productsResponse = await _client
-          .from('products')
-          .select('status, stock_quantity')
-          .eq('seller_id', userId)
-          .eq('is_deleted', false);
-
-      final products = productsResponse as List;
-      final totalProducts = products.length;
-      final activeProducts = products
-          .where((p) => p['status'] == 'active')
-          .length;
-      final outOfStockProducts = products
-          .where((p) => (p['stock_quantity'] as int? ?? 0) == 0)
-          .length;
-
-      // Get order stats (from factory_orders view or orders table)
-      final ordersResponse = await _client
-          .from('orders')
-          .select('status, total_amount, created_at')
-          .eq('seller_id', userId);
-
-      final orders = ordersResponse as List;
-      final totalOrders = orders.length;
-      final pendingOrders = orders
-          .where((o) => o['status'] == 'pending')
-          .length;
-      final completedOrders = orders
-          .where((o) => o['status'] == 'delivered')
-          .length;
-      final totalRevenue = orders.fold<double>(
-        0,
-        (sum, o) => sum + ((o['total_amount'] as num?)?.toDouble() ?? 0),
-      );
-
-      // Calculate monthly revenue
-      final now = DateTime.now();
-      final firstOfMonth = DateTime(now.year, now.month, 1);
-      final monthlyRevenue = orders
-          .where((o) {
-            final orderDate = DateTime.tryParse(
-              o['created_at'] as String? ?? '',
-            );
-            return orderDate != null && orderDate.isAfter(firstOfMonth);
-          })
-          .fold<double>(
-            0,
-            (sum, o) => sum + ((o['total_amount'] as num?)?.toDouble() ?? 0),
-          );
-
-      // Get connection stats
-      final connectionsResponse = await _client
-          .from('factory_connections')
-          .select('status')
-          .eq('factory_id', userId);
-
-      final connections = connectionsResponse as List;
-      final activeConnections = connections
-          .where((c) => c['status'] == 'accepted')
-          .length;
-      final connectionRequests = connections
-          .where((c) => c['status'] == 'pending')
-          .length;
-
-      // Get rating stats
-      final ratingSummary = await getFactoryRating(userId);
-
-      // Calculate wholesale stats
-      final wholesaleOrders = orders.where((o) {
-        final metadata = o['metadata'] as Map<String, dynamic>?;
-        return metadata?['is_wholesale'] == true;
-      }).length;
-
-      final wholesaleRevenue = orders
-          .where((o) {
-            final metadata = o['metadata'] as Map<String, dynamic>?;
-            return metadata?['is_wholesale'] == true;
-          })
-          .fold<double>(
-            0,
-            (sum, o) => sum + ((o['total_amount'] as num?)?.toDouble() ?? 0),
-          );
-
-      return FactoryDashboardStats(
-        totalProducts: totalProducts,
-        activeProducts: activeProducts,
-        outOfStockProducts: outOfStockProducts,
-        totalOrders: totalOrders,
-        pendingOrders: pendingOrders,
-        completedOrders: completedOrders,
-        totalRevenue: totalRevenue,
-        monthlyRevenue: monthlyRevenue,
-        connectionRequests: connectionRequests,
-        activeConnections: activeConnections,
-        averageRating: ratingSummary.averageRating,
-        totalReviews: ratingSummary.totalReviews,
-        totalWholesaleOrders: wholesaleOrders,
-        wholesaleRevenue: wholesaleRevenue,
-      );
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get Factory Dashboard Stats');
-      return FactoryDashboardStats();
-    }
-  }
-
-  // Add to SupabaseProvider class
-  Future<FactoryInfo?> getFactoryInfo(String userId) async {
-    try {
-      final response = await _client
-          .from(SupabaseConstants.tableSellers)
-          .select()
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      if (response == null) return null;
-
-      return FactoryInfo.fromJson(response);
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get Factory Info');
-      return null;
-    }
-  }
-
-  /// Get factory revenue data for charts
-  Future<List<RevenueDataPoint>> getFactoryRevenueData({
-    String period = '30d',
-  }) async {
-    try {
-      if (!isLoggedIn) return [];
-
-      final userId = currentUser!.id;
-      final now = DateTime.now();
-      DateTime startDate;
-
-      switch (period) {
-        case '7d':
-          startDate = now.subtract(const Duration(days: 7));
-          break;
-        case '30d':
-          startDate = now.subtract(const Duration(days: 30));
-          break;
-        case '90d':
-          startDate = now.subtract(const Duration(days: 90));
-          break;
-        case '1y':
-          startDate = now.subtract(const Duration(days: 365));
-          break;
-        default:
-          startDate = now.subtract(const Duration(days: 30));
-      }
-
-      final response = await _client
-          .from('orders')
-          .select('total_amount, created_at')
-          .eq('seller_id', userId)
-          .gte('created_at', startDate.toIso8601String());
-
-      final orders = response as List;
-
-      // Group by date
-      final Map<String, double> revenueByDate = {};
-      for (var order in orders) {
-        final dateStr = (order['created_at'] as String).substring(0, 10);
-        final amount = (order['total_amount'] as num?)?.toDouble() ?? 0;
-        revenueByDate[dateStr] = (revenueByDate[dateStr] ?? 0) + amount;
-      }
-
-      // Convert to data points
-      return revenueByDate.entries.map((e) {
-        return RevenueDataPoint(
-          label: e.key,
-          value: e.value,
-          date: DateTime.parse(e.key),
-        );
-      }).toList()..sort((a, b) => a.date.compareTo(b.date));
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get Factory Revenue Data');
-      return [];
-    }
-  }
-
-  /// Get factory order status distribution
-  Future<OrderStatusDistribution> getFactoryOrderDistribution() async {
-    try {
-      if (!isLoggedIn) return OrderStatusDistribution();
-
-      final userId = currentUser!.id;
-      final response = await _client
-          .from('orders')
-          .select('status')
-          .eq('seller_id', userId);
-
-      final orders = response as List;
-
-      return OrderStatusDistribution(
-        pending: orders.where((o) => o['status'] == 'pending').length,
-        confirmed: orders.where((o) => o['status'] == 'confirmed').length,
-        processing: orders.where((o) => o['status'] == 'processing').length,
-        shipped: orders.where((o) => o['status'] == 'shipped').length,
-        delivered: orders.where((o) => o['status'] == 'delivered').length,
-        cancelled: orders.where((o) => o['status'] == 'cancelled').length,
-      );
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get Factory Order Distribution');
-      return OrderStatusDistribution();
-    }
-  }
-
-  /// Get factory recent orders
-  Future<List<FactoryOrderItem>> getFactoryRecentOrders({
-    int limit = 10,
-  }) async {
-    try {
-      if (!isLoggedIn) return [];
-
-      final userId = currentUser!.id;
-      final response = await _client
-          .from('orders')
-          .select('''
-            id,
-            customer_name,
-            product_names,
-            total_amount,
-            status,
-            created_at,
-            quantity,
-            metadata
-          ''')
-          .eq('seller_id', userId)
-          .order('created_at', ascending: false)
-          .limit(limit);
-
-      final orders = response as List;
-
-      return orders.map((o) {
-        final metadata = o['metadata'] as Map<String, dynamic>? ?? {};
-        return FactoryOrderItem(
-          orderId: o['id'] as String? ?? '',
-          customerName: o['customer_name'] as String? ?? 'Unknown',
-          productNames: (o['product_names'] as List?)?.cast<String>() ?? [],
-          totalAmount: (o['total_amount'] as num?)?.toDouble() ?? 0,
-          status: o['status'] as String? ?? 'pending',
-          orderDate: DateTime.parse(
-            o['created_at'] as String? ?? DateTime.now().toIso8601String(),
-          ),
-          isWholesale: metadata['is_wholesale'] == true,
-          quantity: o['quantity'] as int? ?? 0,
-        );
-      }).toList();
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get Factory Recent Orders');
-      return [];
-    }
-  }
-
-  /// Get all factory orders
-  Future<List<FactoryOrderItem>> getFactoryOrders() async {
-    return getFactoryRecentOrders(limit: 100);
-  }
-
-  /// Get factory top products
-  Future<List<TopProduct>> getFactoryTopProducts({int limit = 10}) async {
-    try {
-      if (!isLoggedIn) return [];
-
-      final userId = currentUser!.id;
-      final response = await _client
-          .from('products')
-          .select('id, title, main_image, sales_count, price')
-          .eq('seller_id', userId)
-          .eq('is_deleted', false)
-          .order('sales_count', ascending: false)
-          .limit(limit);
-
-      final products = response as List;
-
-      return products.map((p) {
-        return TopProduct(
-          productId: p['id'] as String? ?? '',
-          productName: p['title'] as String? ?? 'Unnamed',
-          unitsSold: p['sales_count'] as int? ?? 0,
-          revenue: ((p['sales_count'] as int? ?? 0) * (p['price'] as num? ?? 0))
-              .toDouble(),
-          imageUrl: p['main_image'] as String?,
-        );
-      }).toList();
-    } catch (e) {
-      _errorHandler.handleError(e, 'Get Factory Top Products');
-      return [];
-    }
   }
 
   /// Update order status

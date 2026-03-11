@@ -10,10 +10,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 // ============================================================================
 //
 // Features:
-// - Discover nearby users based on location
-// - Uses actual database schema (sellers table, find_nearby_factories RPC)
+// - Discover nearby sellers based on location
+// - Uses actual database schema (sellers table)
 // - Start conversations with nearby users
-// - Filter users by distance, account type, and interests
+// - Filter users by distance and account type
 // - Location-based user search
 // - Haversine distance calculation
 // ============================================================================
@@ -54,7 +54,7 @@ class NearbyChatService extends ChangeNotifier {
   // ==========================================================================
 
   /// Fetch nearby users based on current location
-  /// Uses actual database schema: find_nearby_factories RPC + sellers table
+  /// Uses actual database schema: sellers table
   Future<void> fetchNearbyUsers({
     required double latitude,
     required double longitude,
@@ -78,22 +78,15 @@ class NearbyChatService extends ChangeNotifier {
     try {
       final searchRadius = radius ?? _searchRadius;
 
-      // ✅ Use find_nearby_factories() RPC function (EXISTS in schema)
-      final factories = await _findNearbyFactories(
-        latitude: latitude,
-        longitude: longitude,
-        maxDistanceKm: searchRadius,
-      );
-
-      // ✅ Query sellers table directly (latitude/longitude exist in sellers table)
+      // Query sellers table directly (latitude/longitude exist in sellers table)
       final sellers = await _findNearbySellers(
         latitude: latitude,
         longitude: longitude,
         maxDistanceKm: searchRadius,
       );
 
-      // Combine and sort by distance
-      _nearbyUsers = [...factories, ...sellers]
+      // Sort by distance
+      _nearbyUsers = sellers
         ..sort((a, b) => (a.distance ?? 999).compareTo(b.distance ?? 999));
 
       // Apply filters
@@ -109,44 +102,7 @@ class NearbyChatService extends ChangeNotifier {
     }
   }
 
-  /// ✅ Use ACTUAL find_nearby_factories() RPC function
-  Future<List<NearbyUser>> _findNearbyFactories({
-    required double latitude,
-    required double longitude,
-    double maxDistanceKm = 100,
-  }) async {
-    try {
-      final currentUser = _client.auth.currentUser;
-      if (currentUser == null) return [];
-
-      // ✅ This function EXISTS in your schema
-      final response = await _client.rpc(
-        'find_nearby_factories',
-        params: {
-          'p_seller_id': currentUser.id,
-          'p_latitude': latitude,
-          'p_longitude': longitude,
-          'p_max_distance_km': maxDistanceKm,
-          'p_limit_count': 20,
-        },
-      );
-
-      if (response is! List) return [];
-
-      return response
-          .map(
-            (item) => NearbyUser.fromFactoryMap(
-              item as Map<String, dynamic>,
-            ),
-          )
-          .toList();
-    } catch (e) {
-      debugPrint('❌ Error finding nearby factories: $e');
-      return [];
-    }
-  }
-
-  /// ✅ Query sellers table directly (latitude/longitude columns exist)
+  /// Query sellers table directly (latitude/longitude columns exist)
   Future<List<NearbyUser>> _findNearbySellers({
     required double latitude,
     required double longitude,
@@ -156,7 +112,7 @@ class NearbyChatService extends ChangeNotifier {
       final currentUser = _client.auth.currentUser;
       if (currentUser == null) return [];
 
-      // ✅ sellers table HAS latitude/longitude columns
+      // sellers table HAS latitude/longitude columns
       final response = await _client
           .from('sellers')
           .select('''
@@ -165,17 +121,12 @@ class NearbyChatService extends ChangeNotifier {
             latitude,
             longitude,
             location,
-            is_factory,
             account_type,
             is_verified
           ''')
           .not('user_id', 'eq', currentUser.id)
           .not('latitude', 'is', null)
           .not('longitude', 'is', null)
-          .eq(
-            'is_factory',
-            false,
-          ) // Exclude factories (already fetched via RPC)
           .limit(50);
 
       if (response is! List) return [];
@@ -186,7 +137,7 @@ class NearbyChatService extends ChangeNotifier {
         final sellerLat = (item['latitude'] as num).toDouble();
         final sellerLon = (item['longitude'] as num).toDouble();
 
-        // ✅ Calculate distance using Haversine formula
+        // Calculate distance using Haversine formula
         final distance = _calculateDistance(
           latitude,
           longitude,
@@ -216,7 +167,7 @@ class NearbyChatService extends ChangeNotifier {
     }
   }
 
-  /// ✅ Haversine distance calculation
+  /// Haversine distance calculation
   double _calculateDistance(
     double lat1,
     double lon1,

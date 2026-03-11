@@ -2,7 +2,6 @@ import 'package:aurora/pages/analytics/analytics_page.dart';
 import 'package:aurora/pages/chat/chat_list.dart';
 import 'package:aurora/screens/chat/nearby_users_screen.dart';
 import 'package:aurora/pages/customers/customers_page.dart';
-import 'package:aurora/pages/factory/factory_pages.dart';
 import 'package:aurora/pages/product/product.dart';
 import 'package:aurora/pages/sales/sales_page.dart';
 import 'package:aurora/pages/seller/sellerProfile.dart';
@@ -128,83 +127,7 @@ class AppDrawer extends StatelessWidget {
                         ),
                       ],
 
-                      // Factory Menu - For factory accounts
-                      if (accountType == AccountType.factory) ...[
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.dashboard_outlined,
-                          activeIcon: Icons.dashboard,
-                          title: 'Dashboard',
-                          pageName: 'factory_dashboard',
-                          onTap: () => _navigateTo(
-                            context,
-                            const FactoryDashboard(),
-                            'factory_dashboard',
-                          ),
-                        ),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.inventory_2_outlined,
-                          activeIcon: Icons.inventory_2,
-                          title: 'Products',
-                          pageName: 'products',
-                          onTap: () => _navigateTo(
-                            context,
-                            const ProductPage(),
-                            'products',
-                          ),
-                        ),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.shopping_bag_outlined,
-                          activeIcon: Icons.shopping_bag,
-                          title: 'Orders',
-                          pageName: 'factory_orders',
-                          onTap: () => _navigateTo(
-                            context,
-                            const FactoryOrdersPage(),
-                            'factory_orders',
-                          ),
-                        ),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.people_outlined,
-                          activeIcon: Icons.people,
-                          title: 'Connections',
-                          pageName: 'factory_connections',
-                          onTap: () => _navigateTo(
-                            context,
-                            const FactoryConnectionsPage(),
-                            'factory_connections',
-                          ),
-                        ),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.analytics_outlined,
-                          activeIcon: Icons.analytics,
-                          title: 'Analytics',
-                          pageName: 'factory_analytics',
-                          onTap: () => _navigateTo(
-                            context,
-                            const FactoryAnalyticsPage(),
-                            'factory_analytics',
-                          ),
-                        ),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.settings_outlined,
-                          activeIcon: Icons.settings,
-                          title: 'Factory Settings',
-                          pageName: 'factory_settings',
-                          onTap: () => _navigateTo(
-                            context,
-                            const FactorySettingsPage(),
-                            'factory_settings',
-                          ),
-                        ),
-                      ],
-
-                      // Common Menu Items - Visible to both seller and factory
+                      // Common Menu Items - Visible to all users
                       _buildMenuItem(
                         context,
                         icon: Icons.chat_bubble_outline,
@@ -335,15 +258,13 @@ class AppDrawer extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  accountType == AccountType.seller
-                      ? Icons.store
-                      : Icons.business,
+                  Icons.store,
                   size: 16,
                   color: isDark ? colorScheme.onPrimary : Colors.white,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  accountType == AccountType.seller ? 'SELLER' : 'FACTORY',
+                  'SELLER',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
