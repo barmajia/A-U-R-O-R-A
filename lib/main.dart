@@ -1,3 +1,27 @@
+// ============================================================================
+// Aurora E-commerce Platform - Main Entry Point
+// ============================================================================
+//
+// Features:
+// - User Authentication (Login/Signup)
+// - Multi-role Support (Customer, Seller, Factory, Middleman)
+// - Real-time Chat with Deal Negotiation
+// - Product Management & Sales Tracking
+// - Commission-based Deal System
+// - Biometric Authentication
+// - Theme Customization
+//
+// Chat & Deal Features:
+// - Real-time messaging (Supabase Realtime)
+// - Text, Image, and File messages
+// - Deal proposals within chat conversations
+// - Commission rate negotiation
+// - Deal status tracking (pending → accepted/rejected)
+// - Typing indicators and read receipts
+//
+// Database: Supabase (PostgreSQL + Realtime)
+// ============================================================================
+
 import 'package:aurora/backend/sellerdb.dart';
 import 'package:aurora/backend/products_db.dart';
 import 'package:aurora/config/supabase_config.dart';

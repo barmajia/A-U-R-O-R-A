@@ -1,11 +1,22 @@
 import 'dart:io';
+import 'package:aurora/models/chat/deal_proposal.dart';
 import 'package:aurora/models/chat/message.dart';
 import 'package:aurora/services/chat_provider.dart';
+import 'package:aurora/widgets/deal_proposal_card.dart';
+import 'package:aurora/widgets/deal_proposal_form_dialog.dart';
+import 'package:aurora/widgets/drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Chat Detail Screen - Displays messages and allows sending new messages
+///
+/// Permissions:
+/// - Factory ↔ Seller: ✅ Allowed (B2B chat + deals)
+/// - Factory ↔ Factory: ❌ Not allowed
+/// - Seller ↔ Seller: ❌ Not allowed
+/// - Customer → Seller: ✅ Via React Web (product inquiries only)
 class ChatDetailScreen extends StatefulWidget {
   const ChatDetailScreen({super.key});
 
@@ -20,15 +31,38 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final ImagePicker _imagePicker = ImagePicker();
 
   bool _showAttachmentOptions = false;
+  String?
+  _currentUserRole; // 'factory', 'seller', 'middleman', 'customer', 'delivery'
 
   @override
   void initState() {
     super.initState();
+    _loadCurrentUser();
 
     // Scroll to bottom when messages are loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
     });
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      // Get user's account type
+      try {
+        final response = await Supabase.instance.client
+            .from('users')
+            .select('account_type')
+            .eq('user_id', user.id)
+            .single();
+
+        setState(() {
+          _currentUserRole = response['account_type'] as String?;
+        });
+      } catch (e) {
+        debugPrint('❌ Failed to get user role: $e');
+      }
+    }
   }
 
   @override
@@ -49,12 +83,59 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     }
   }
 
+  void _showDealProposalDialog() {
+    final chatProvider = context.read<ChatProvider>();
+    final conversation = chatProvider.activeConversation;
+
+    if (conversation == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => DealProposalFormDialog(
+        recipientId: conversation.otherUserId,
+        conversationId: conversation.id,
+        onSubmit: (formData) async {
+          final success = await chatProvider.createDealProposal(
+            conversationId: conversation.id,
+            recipientId: conversation.otherUserId,
+            commissionRate: formData.commissionRate,
+            minOrderQuantity: formData.minOrderQuantity,
+            terms: formData.terms,
+            expiresAt: formData.expiresAt,
+          );
+
+          if (success) {
+            // Send a notification message about the deal proposal
+            await chatProvider.sendTextMessage(
+              conversationId: conversation.id,
+              content:
+                  '🤝 Deal proposal sent: ${formData.commissionRate}% commission',
+            );
+          }
+
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                success
+                    ? 'Deal proposal sent!'
+                    : 'Failed to send deal proposal',
+              ),
+              backgroundColor: success ? Colors.green : Colors.red,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      drawer: const AppDrawer(currentPage: 'messages'),
       drawerEdgeDragWidth: double.infinity,
       drawerEnableOpenDragGesture: true,
       backgroundColor: colorScheme.surface,
@@ -129,6 +210,26 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       backgroundColor: colorScheme.primary,
       foregroundColor: colorScheme.onPrimary,
       actions: [
+        // Propose Deal Button - Only for Factory, Seller, and Middleman
+        // Customer and Delivery accounts cannot propose deals
+        Consumer<ChatProvider>(
+          builder: (context, chatProvider, child) {
+            final canProposeDeal =
+                _currentUserRole == 'factory' ||
+                _currentUserRole == 'seller' ||
+                _currentUserRole == 'middleman';
+
+            if (!canProposeDeal) {
+              return const SizedBox.shrink();
+            }
+
+            return IconButton(
+              icon: const Icon(Icons.handshake),
+              onPressed: _showDealProposalDialog,
+              tooltip: 'Propose Deal',
+            );
+          },
+        ),
         IconButton(
           icon: Icon(Icons.phone, size: 22, color: colorScheme.onPrimary),
           onPressed: () => _showComingSoon('Voice Call', colorScheme),
@@ -174,6 +275,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   Widget _buildEmptyChat(ColorScheme colorScheme) {
+    final canProposeDeal =
+        _currentUserRole == 'factory' ||
+        _currentUserRole == 'seller' ||
+        _currentUserRole == 'middleman';
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -194,7 +300,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Start the conversation!',
+            canProposeDeal
+                ? 'Start the conversation or propose a deal! 💼'
+                : 'Start the conversation!',
             style: TextStyle(
               fontSize: 14,
               color: colorScheme.onSurface.withOpacity(0.5),
@@ -209,28 +317,62 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     ChatProvider chatProvider,
     ColorScheme colorScheme,
   ) {
+    // Combine messages and deal proposals
+    final allItems = <dynamic>[
+      ...chatProvider.dealProposals,
+      ...chatProvider.messages,
+    ];
+
+    // Sort by created_at (deal proposals have createdAt, messages have createdAt)
+    allItems.sort((a, b) {
+      final aTime = a is DealProposal
+          ? a.createdAt
+          : (a as ChatMessage).createdAt;
+      final bTime = b is DealProposal
+          ? b.createdAt
+          : (b as ChatMessage).createdAt;
+      return aTime.compareTo(bTime);
+    });
+
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      itemCount: chatProvider.messages.length,
+      itemCount: allItems.length,
       itemBuilder: (context, index) {
-        final message = chatProvider.messages[index];
-        final isFromCurrentUser = message.isFromCurrentUser(
-          chatProvider.currentUserId ?? '',
-        );
+        final item = allItems[index];
 
         // Show date separator if needed
+        final DateTime itemDate;
+        if (item is DealProposal) {
+          itemDate = item.createdAt;
+        } else {
+          itemDate = (item as ChatMessage).createdAt;
+        }
+
         final showDate =
-            index == 0 || !chatProvider.messages[index - 1].isToday;
+            index == 0 ||
+            (allItems[index - 1] is DealProposal
+                    ? (allItems[index - 1] as DealProposal).createdAt
+                    : (allItems[index - 1] as ChatMessage).createdAt)
+                .isBefore(
+                  DateTime(itemDate.year, itemDate.month, itemDate.day),
+                );
 
         return Column(
           children: [
             if (showDate) ...[
               const SizedBox(height: 16),
-              _buildDateSeparator(message.createdAt, colorScheme),
+              _buildDateSeparator(itemDate, colorScheme),
             ],
             const SizedBox(height: 8),
-            _buildMessageBubble(message, isFromCurrentUser, colorScheme),
+            if (item is DealProposal)
+              _buildDealProposalCard(item, chatProvider, colorScheme)
+            else
+              _buildMessageBubble(
+                item as ChatMessage,
+                item.isFromCurrentUser(chatProvider.currentUserId ?? ''),
+                colorScheme,
+              ),
           ],
         );
       },
@@ -402,6 +544,57 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDealProposalCard(
+    DealProposal proposal,
+    ChatProvider chatProvider,
+    ColorScheme colorScheme,
+  ) {
+    final isProposer = proposal.isProposer(chatProvider.currentUserId ?? '');
+
+    return DealProposalCard(
+      proposal: proposal,
+      isProposer: isProposer,
+      onAccept: () async {
+        final success = await chatProvider.respondToDeal(
+          dealProposalId: proposal.id,
+          conversationId: proposal.conversationId,
+          accepted: true,
+        );
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(success ? 'Deal accepted!' : 'Failed to accept deal'),
+            backgroundColor: success ? Colors.green : Colors.red,
+          ),
+        );
+
+        if (success) {
+          // Send confirmation message
+          await chatProvider.sendTextMessage(
+            conversationId: proposal.conversationId,
+            content: '✅ Deal accepted! Looking forward to our collaboration.',
+          );
+        }
+      },
+      onReject: () async {
+        final success = await chatProvider.respondToDeal(
+          dealProposalId: proposal.id,
+          conversationId: proposal.conversationId,
+          accepted: false,
+        );
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(success ? 'Deal rejected' : 'Failed to reject deal'),
+            backgroundColor: success ? Colors.orange : Colors.red,
+          ),
+        );
+      },
     );
   }
 

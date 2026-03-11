@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:aurora/models/chat/conversation.dart';
 import 'package:aurora/models/chat/message.dart';
+import 'package:aurora/models/chat/deal_proposal.dart';
 import 'package:aurora/services/supabase.dart';
+import 'package:aurora/services/deal_chat_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path/path.dart' as path;
@@ -12,7 +14,7 @@ import 'package:uuid/uuid.dart';
 // ============================================================================
 // Chat Provider - Manages chat state and real-time messaging
 // ============================================================================
-// 
+//
 // Features:
 // - Fetch and manage conversations
 // - Start new conversations (customer ↔ seller)
@@ -47,8 +49,19 @@ class ChatProvider extends ChangeNotifier {
   Timer? _typingTimer;
   bool _isLocalUserTyping = false;
 
+  // Deal proposals - lazy initialization
+  DealChatService? _dealService;
+  List<DealProposal> _dealProposals = [];
+  bool _isLoadingDeals = false;
+
   // Constructor
   ChatProvider(this._supabaseProvider);
+
+  // Get or create DealChatService instance
+  DealChatService get _dealServiceInstance {
+    _dealService ??= DealChatService(_supabaseProvider);
+    return _dealService!;
+  }
 
   // ==========================================================================
   // Getters
@@ -64,6 +77,10 @@ class ChatProvider extends ChangeNotifier {
   bool get hasActiveConversation => _activeConversation != null;
 
   String? get currentUserId => _supabaseProvider.currentUser?.id;
+
+  // Deal proposal getters
+  List<DealProposal> get dealProposals => _dealProposals;
+  bool get isLoadingDeals => _isLoadingDeals;
 
   // ==========================================================================
   // Conversations
@@ -92,10 +109,10 @@ class ChatProvider extends ChangeNotifier {
               role,
               last_read_message_id
             ),
-            product (
+            products (
               id,
-              name,
-              image_url
+              title,
+              images
             )
           ''')
           .order('last_message_at', ascending: false);
@@ -196,10 +213,10 @@ class ChatProvider extends ChangeNotifier {
               user_id,
               role
             ),
-            product (
+            products (
               id,
-              name,
-              image_url
+              title,
+              images
             )
           ''')
           .eq('product_id', productId)
@@ -209,8 +226,9 @@ class ChatProvider extends ChangeNotifier {
 
       for (final conv in response) {
         final participants = conv['conversation_participants'] as List? ?? [];
-        final participantIds =
-            participants.map((p) => p['user_id'] as String).toList();
+        final participantIds = participants
+            .map((p) => p['user_id'] as String)
+            .toList();
 
         if (participantIds.contains(currentUserId) &&
             participantIds.contains(sellerId)) {
@@ -280,10 +298,7 @@ class ChatProvider extends ChangeNotifier {
           .eq('conversation_id', conversationId);
 
       // Delete conversation
-      await _client
-          .from('conversations')
-          .delete()
-          .eq('id', conversationId);
+      await _client.from('conversations').delete().eq('id', conversationId);
 
       _conversations.removeWhere((c) => c.id == conversationId);
       if (_activeConversation?.id == conversationId) {
@@ -471,11 +486,11 @@ class ChatProvider extends ChangeNotifier {
 
       await _client.storage
           .from('chat-attachments')
-          .uploadBinary(filePath, fileBytes,
-              fileOptions: const FileOptions(
-                cacheControl: '3600',
-                upsert: false,
-              ));
+          .uploadBinary(
+            filePath,
+            fileBytes,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+          );
 
       final publicUrl = _client.storage
           .from('chat-attachments')
@@ -531,7 +546,7 @@ class ChatProvider extends ChangeNotifier {
 
     try {
       final oldestMessage = _messages.first;
-      
+
       final response = await _client
           .from('messages')
           .select()
@@ -588,6 +603,7 @@ class ChatProvider extends ChangeNotifier {
   void clearActiveConversation() {
     _activeConversation = null;
     _messages.clear();
+    _dealProposals.clear();
     unsubscribeFromMessages();
     notifyListeners();
   }
@@ -595,19 +611,21 @@ class ChatProvider extends ChangeNotifier {
   /// Get unread message count for a conversation
   int getUnreadCount(String conversationId) {
     if (currentUserId == null) return 0;
-    
+
     return _messages
-        .where((m) => 
-            m.conversationId == conversationId &&
-            !m.isFromCurrentUser(currentUserId!) &&
-            !m.isRead)
+        .where(
+          (m) =>
+              m.conversationId == conversationId &&
+              !m.isFromCurrentUser(currentUserId!) &&
+              !m.isRead,
+        )
         .length;
   }
 
   /// Get total unread count across all conversations
   int get totalUnreadCount {
     if (currentUserId == null) return 0;
-    
+
     return _conversations.fold(0, (sum, c) => sum + c.unreadCount);
   }
 
@@ -699,10 +717,9 @@ class ChatProvider extends ChangeNotifier {
             // Filter by conversation_id in callback
             final newConvId = payload.newRecord['conversation_id'] as String?;
             if (newConvId != conversationId) return;
-            
+
             final newMessage = ChatMessage.fromJson(payload.newRecord);
-            if (!newMessage.isDeleted &&
-                newMessage.senderId != currentUserId) {
+            if (!newMessage.isDeleted && newMessage.senderId != currentUserId) {
               // New message from other user
               if (!_messages.any((m) => m.id == newMessage.id)) {
                 _messages.add(newMessage);
@@ -719,13 +736,15 @@ class ChatProvider extends ChangeNotifier {
           schema: 'public',
           table: 'messages',
           callback: (payload) {
-            final updatedConvId = payload.newRecord['conversation_id'] as String?;
+            final updatedConvId =
+                payload.newRecord['conversation_id'] as String?;
             if (updatedConvId != conversationId) return;
-            
+
             // Handle message updates (read receipts, edits)
             final updatedMessage = ChatMessage.fromJson(payload.newRecord);
-            final index =
-                _messages.indexWhere((m) => m.id == updatedMessage.id);
+            final index = _messages.indexWhere(
+              (m) => m.id == updatedMessage.id,
+            );
             if (index != -1) {
               _messages[index] = updatedMessage;
               notifyListeners();
@@ -819,8 +838,7 @@ class ChatProvider extends ChangeNotifier {
     String conversationId,
     ChatMessage message,
   ) {
-    final index =
-        _conversations.indexWhere((c) => c.id == conversationId);
+    final index = _conversations.indexWhere((c) => c.id == conversationId);
     if (index != -1) {
       final conv = _conversations[index];
       _conversations[index] = conv.copyWith(
@@ -846,10 +864,13 @@ class ChatProvider extends ChangeNotifier {
 
     if (conversation != null) {
       await loadMessages(conversation.id);
+      await loadDealProposals(conversation.id);
       subscribeToMessages(conversation.id);
       subscribeToTyping(conversation.id);
+      subscribeToDealUpdates(conversation.id);
     } else {
       _messages.clear();
+      _dealProposals.clear();
       unsubscribeFromMessages();
     }
 
@@ -868,7 +889,7 @@ class ChatProvider extends ChangeNotifier {
   /// Check if current user is the seller in a conversation
   Future<bool> isCurrentUserSeller(ChatConversation conversation) async {
     if (currentUserId == null) return false;
-    
+
     try {
       final response = await _client
           .from('conversation_participants')
@@ -887,7 +908,7 @@ class ChatProvider extends ChangeNotifier {
   /// Get participant role in a conversation
   Future<String?> getParticipantRole(String conversationId) async {
     if (currentUserId == null) return null;
-    
+
     try {
       final response = await _client
           .from('conversation_participants')
@@ -906,7 +927,7 @@ class ChatProvider extends ChangeNotifier {
   /// Mute/unmute a conversation
   Future<void> toggleMuteConversation(String conversationId) async {
     if (currentUserId == null) return;
-    
+
     try {
       // First get current mute status
       final current = await _client
@@ -952,10 +973,16 @@ class ChatProvider extends ChangeNotifier {
   /// Get message statistics for current conversation
   Map<String, dynamic> getMessageStats() {
     final totalMessages = _messages.length;
-    final sentMessages = _messages.where((m) => m.isFromCurrentUser(currentUserId ?? '')).length;
+    final sentMessages = _messages
+        .where((m) => m.isFromCurrentUser(currentUserId ?? ''))
+        .length;
     final receivedMessages = totalMessages - sentMessages;
-    final imageMessages = _messages.where((m) => m.messageType == MessageType.image).length;
-    final fileMessages = _messages.where((m) => m.messageType == MessageType.file).length;
+    final imageMessages = _messages
+        .where((m) => m.messageType == MessageType.image)
+        .length;
+    final fileMessages = _messages
+        .where((m) => m.messageType == MessageType.file)
+        .length;
     final deletedMessages = _messages.where((m) => m.isDeleted).length;
 
     return {
@@ -965,9 +992,130 @@ class ChatProvider extends ChangeNotifier {
       'images': imageMessages,
       'files': fileMessages,
       'deleted': deletedMessages,
-      'first_message_at': _messages.isNotEmpty ? _messages.first.createdAt : null,
+      'first_message_at': _messages.isNotEmpty
+          ? _messages.first.createdAt
+          : null,
       'last_message_at': _messages.isNotEmpty ? _messages.last.createdAt : null,
     };
+  }
+
+  // ==========================================================================
+  // Deal Proposals
+  // ==========================================================================
+
+  /// Load deal proposals for a conversation
+  Future<void> loadDealProposals(String conversationId) async {
+    _isLoadingDeals = true;
+    notifyListeners();
+
+    try {
+      final deals = await _dealServiceInstance.getConversationDeals(conversationId);
+      _dealProposals = deals.map((d) => DealProposal.fromJson(d)).toList();
+    } catch (e) {
+      debugPrint('❌ [ChatProvider] Error loading deal proposals: $e');
+    } finally {
+      _isLoadingDeals = false;
+      notifyListeners();
+    }
+  }
+
+  /// Create a deal proposal
+  Future<bool> createDealProposal({
+    required String conversationId,
+    required String recipientId,
+    required double commissionRate,
+    int? minOrderQuantity,
+    String? terms,
+    DateTime? expiresAt,
+    List<String>? productIds,
+  }) async {
+    try {
+      final result = await _dealServiceInstance.createDealProposal(
+        conversationId: conversationId,
+        recipientId: recipientId,
+        commissionRate: commissionRate,
+        minOrderQuantity: minOrderQuantity,
+        terms: terms,
+        expiresAt: expiresAt,
+        productIds: productIds,
+      );
+
+      if (result != null) {
+        await loadDealProposals(conversationId);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('❌ [ChatProvider] Error creating deal proposal: $e');
+      return false;
+    }
+  }
+
+  /// Respond to a deal proposal (accept/reject)
+  Future<bool> respondToDeal({
+    required String dealProposalId,
+    required String conversationId,
+    required bool accepted,
+  }) async {
+    try {
+      final success = await _dealServiceInstance.respondToDeal(
+        dealProposalId: dealProposalId,
+        accepted: accepted,
+      );
+
+      if (success) {
+        await loadDealProposals(conversationId);
+      }
+      return success;
+    } catch (e) {
+      debugPrint('❌ [ChatProvider] Error responding to deal: $e');
+      return false;
+    }
+  }
+
+  /// Cancel a deal proposal
+  Future<bool> cancelDealProposal({
+    required String dealProposalId,
+    required String conversationId,
+  }) async {
+    try {
+      final success = await _dealServiceInstance.cancelDealProposal(dealProposalId);
+      if (success) {
+        await loadDealProposals(conversationId);
+      }
+      return success;
+    } catch (e) {
+      debugPrint('❌ [ChatProvider] Error cancelling deal: $e');
+      return false;
+    }
+  }
+
+  /// Get deal by ID
+  DealProposal? getDealById(String dealId) {
+    try {
+      return _dealProposals.firstWhere((d) => d.id == dealId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Clear deal proposals
+  void clearDealProposals() {
+    _dealProposals.clear();
+    notifyListeners();
+  }
+
+  /// Subscribe to deal updates for active conversation
+  StreamSubscription<Map<String, dynamic>>? _dealSubscription;
+
+  void subscribeToDealUpdates(String conversationId) {
+    _dealSubscription?.cancel();
+    _dealSubscription = _dealServiceInstance
+        .subscribeToDealUpdates(conversationId)
+        .stream
+        .listen((update) {
+          loadDealProposals(conversationId);
+        });
   }
 
   // ==========================================================================
@@ -978,6 +1126,7 @@ class ChatProvider extends ChangeNotifier {
   void dispose() {
     unsubscribeFromMessages();
     _typingTimer?.cancel();
+    clearDealProposals();
     super.dispose();
   }
 }

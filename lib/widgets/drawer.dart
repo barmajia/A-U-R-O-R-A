@@ -1,5 +1,6 @@
 import 'package:aurora/pages/analytics/analytics_page.dart';
 import 'package:aurora/pages/chat/chat_list.dart';
+import 'package:aurora/screens/chat/nearby_users_screen.dart';
 import 'package:aurora/pages/customers/customers_page.dart';
 import 'package:aurora/pages/factory/factory_pages.dart';
 import 'package:aurora/pages/product/product.dart';
@@ -8,6 +9,7 @@ import 'package:aurora/pages/seller/sellerProfile.dart';
 import 'package:aurora/pages/setting/setting.dart';
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/login.dart';
+import 'package:aurora/services/nearby_chat_service.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/theme/themeprovider.dart';
 import 'package:flutter/material.dart';
@@ -215,6 +217,28 @@ class AppDrawer extends StatelessWidget {
                           const ChatListScreen(),
                           'messages',
                         ),
+                      ),
+                      _buildMenuItem(
+                        context,
+                        icon: Icons.people_outline,
+                        activeIcon: Icons.people,
+                        title: 'Nearby Users',
+                        pageName: 'nearby_users',
+                        onTap: () {
+                          Navigator.pop(context); // Close drawer
+                          final supabaseProvider =
+                              context.read<SupabaseProvider>();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChangeNotifierProvider(
+                                create: (_) =>
+                                    NearbyChatService(supabaseProvider),
+                                child: const NearbyUsersScreen(),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       _buildMenuItem(
                         context,

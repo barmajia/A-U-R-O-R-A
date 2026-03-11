@@ -474,13 +474,15 @@ class SupabaseProvider extends ChangeNotifier {
 
   /// Get user's preferred language
   String get userLanguage {
-    return currentUser?.userMetadata?[SupabaseConstants.keyLanguage] as String? ??
+    return currentUser?.userMetadata?[SupabaseConstants.keyLanguage]
+            as String? ??
         'en';
   }
 
   /// Get user's currency
   String get userCurrency {
-    return currentUser?.userMetadata?[SupabaseConstants.keyCurrency] as String? ??
+    return currentUser?.userMetadata?[SupabaseConstants.keyCurrency]
+            as String? ??
         'USD';
   }
 
@@ -614,7 +616,9 @@ class SupabaseProvider extends ChangeNotifier {
         currency: currency,
         // Factory-specific fields
         companyName: accountType == AccountType.factory ? companyName : null,
-        businessLicense: accountType == AccountType.factory ? businessLicense : null,
+        businessLicense: accountType == AccountType.factory
+            ? businessLicense
+            : null,
         latitude: latitude,
         longitude: longitude,
       );
@@ -1736,7 +1740,10 @@ class SupabaseProvider extends ChangeNotifier {
     try {
       if (quantity <= 0) {
         // Remove item
-        await _client.from(SupabaseConstants.tableCart).delete().eq('id', cartId);
+        await _client
+            .from(SupabaseConstants.tableCart)
+            .delete()
+            .eq('id', cartId);
       } else {
         await _client
             .from(SupabaseConstants.tableCart)
@@ -2331,17 +2338,24 @@ class SupabaseProvider extends ChangeNotifier {
     try {
       final sellerId = currentUser!.id;
 
-      // Build base query with required filters
+      // Step 1: Fetch sales WITHOUT nested joins
       var query = _client
           .from('sales')
           .select('''
-            *,
-            customers (id, name, phone, age_range),
-            products (id, name, asin, image_url)
+            id,
+            seller_id,
+            customer_id,
+            product_id,
+            quantity,
+            total_price,
+            sale_date,
+            notes,
+            created_at,
+            updated_at
           ''')
           .eq('seller_id', sellerId);
 
-      // Apply optional filters - cast to dynamic to access filter methods
+      // Apply optional filters
       if (startDate != null) {
         query = (query as dynamic).gte(
           'sale_date',
@@ -2355,12 +2369,66 @@ class SupabaseProvider extends ChangeNotifier {
         query = (query as dynamic).eq('customer_id', customerId);
       }
 
-      // Apply order and limit, then execute
+      // Execute query
       final response = await (query as dynamic)
           .order('sale_date', ascending: false)
           .limit(limit);
 
-      return (response as List).map((json) => Sale.fromJson(json)).toList();
+      final salesList = response as List;
+      if (salesList.isEmpty) return [];
+
+      // Step 2: Fetch related customers and products separately
+      final customerIds = salesList
+          .where((s) => s['customer_id'] != null)
+          .map((s) => s['customer_id'] as String)
+          .toSet()
+          .toList();
+
+      final productIds = salesList
+          .where((s) => s['product_id'] != null)
+          .map((s) => s['product_id'] as String)
+          .toSet()
+          .toList();
+
+      Map<String, dynamic> customerMap = {};
+      Map<String, dynamic> productMap = {};
+
+      // Fetch customers
+      if (customerIds.isNotEmpty) {
+        final customers = await _client
+            .from('customers')
+            .select('id, name, phone, age_range')
+            .inFilter('id', customerIds);
+        
+        if (customers is List) {
+          customerMap = {for (var c in customers) c['id']: c};
+        }
+      }
+
+      // Fetch products
+      if (productIds.isNotEmpty) {
+        final products = await _client
+            .from('products')
+            .select('id, name, asin, image_url')
+            .inFilter('id', productIds);
+        
+        if (products is List) {
+          productMap = {for (var p in products) p['id']: p};
+        }
+      }
+
+      // Step 3: Combine data with sales
+      return salesList.map((saleJson) {
+        final saleData = Map<String, dynamic>.from(saleJson);
+        final customerId = saleData['customer_id'];
+        final productId = saleData['product_id'];
+
+        // Add nested data
+        saleData['customers'] = customerMap[customerId];
+        saleData['products'] = productMap[productId];
+
+        return Sale.fromJson(saleData);
+      }).toList();
     } catch (e) {
       _errorHandler.handleError(e, 'Get Sales');
       return [];

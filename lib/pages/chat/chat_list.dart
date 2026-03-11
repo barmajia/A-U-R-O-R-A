@@ -40,6 +40,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      drawerEdgeDragWidth: double.infinity,
+      drawerEnableOpenDragGesture: true,
       backgroundColor: colorScheme.surface,
       appBar: _buildAppBar(context, colorScheme),
       drawer: AppDrawer(currentPage: 'messages'),

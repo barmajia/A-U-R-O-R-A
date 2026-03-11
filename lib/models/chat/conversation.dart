@@ -30,14 +30,23 @@ class ChatConversation {
     // Extract participant info
     final participants = json['conversation_participants'] as List? ?? [];
     final currentUserId = json['current_user_id'] as String?;
-    
+
     final otherParticipant = participants.firstWhere(
       (p) => p['user_id'] != currentUserId,
       orElse: () => null,
     );
 
-    // Get product info if exists
-    final product = json['product'] as Map<String, dynamic>?;
+    // Get product info if exists (note: using 'products' not 'product')
+    final product = json['products'] as Map<String, dynamic>?;
+
+    // Extract first image from images JSONB array if available
+    String? productImageUrl;
+    if (product != null) {
+      final images = product['images'] as List?;
+      if (images != null && images.isNotEmpty) {
+        productImageUrl = images.first as String?;
+      }
+    }
 
     return ChatConversation(
       id: json['id'] as String,
@@ -51,8 +60,8 @@ class ChatConversation {
           : null,
       unreadCount: json['unread_count'] as int? ?? 0,
       isArchived: json['is_archived'] as bool? ?? false,
-      productName: product?['name'] as String?,
-      productImage: product?['image_url'] as String?,
+      productName: product?['title'] as String?,
+      productImage: productImageUrl,
     );
   }
 

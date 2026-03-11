@@ -22,8 +22,6 @@ class _MetadataFormBuilderState extends State<MetadataFormBuilder> {
   late Map<String, dynamic> _formData;
   late MetadataTemplate _template;
   final Map<String, TextEditingController> _controllers = {};
-  final Map<String, dynamic> _dropdownValues = {};
-  final Map<String, bool> _booleanValues = {};
 
   @override
   void initState() {
