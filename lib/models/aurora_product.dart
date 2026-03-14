@@ -99,18 +99,56 @@ class AuroraProduct {
   // Convenience getters
   double? get price => sellingPrice ?? listPrice;
   bool get isInStock => (quantity ?? 0) > 0;
-  String? get mainImage => images?.isNotEmpty == true ? images!.first.url : null;
+  String? get mainImage =>
+      images?.isNotEmpty == true ? images!.first.url : null;
 
-  // Generate QR data based on current product state
+  // Generate QR data with ALL product details
   String generateQRData() {
     return jsonEncode({
+      // Core identifiers
       'asin': asin ?? '',
       'sku': sku ?? '',
+
+      // Basic product info
       'title': title,
+      'description': description,
       'brand': brand,
-      'price': sellingPrice ?? listPrice,
+      'manufacturer': manufacturer,
+
+      // Category hierarchy
+      'category': category,
+      'subcategory': subcategory,
+      'product_type': productType,
+
+      // Pricing
+      'selling_price': sellingPrice ?? listPrice,
+      'list_price': listPrice,
+      'business_price': businessPrice,
       'currency': currency ?? 'USD',
+      'tax_code': taxCode,
+
+      // Inventory
       'quantity': quantity,
+      'fulfillment_channel': fulfillmentChannel,
+      'availability_status': availabilityStatus,
+      'lead_time_to_ship': leadTimeToShip,
+
+      // Attributes (flexible JSONB fields)
+      'attributes': attributes,
+
+      // Variations
+      'variations': variations?.toJson(),
+
+      // Images (main image URLs)
+      'images': images?.map((e) => e.toJson()).toList(),
+
+      // Compliance
+      'compliance': compliance?.toJson(),
+
+      // Metadata
+      'status': status,
+      'language': language,
+      'bullet_points': bulletPoints,
     });
   }
 
@@ -155,16 +193,20 @@ class AuroraProduct {
       // Images
       images: json['images'] != null
           ? (json['images'] as List)
-              .map((e) => ProductImage.fromJson(e as Map<String, dynamic>))
-              .toList()
+                .map((e) => ProductImage.fromJson(e as Map<String, dynamic>))
+                .toList()
           : null,
 
       // Variations & Compliance
       variations: json['variations'] != null
-          ? ProductVariations.fromJson(json['variations'] as Map<String, dynamic>)
+          ? ProductVariations.fromJson(
+              json['variations'] as Map<String, dynamic>,
+            )
           : null,
       compliance: json['compliance'] != null
-          ? ProductCompliance.fromJson(json['compliance'] as Map<String, dynamic>)
+          ? ProductCompliance.fromJson(
+              json['compliance'] as Map<String, dynamic>,
+            )
           : null,
 
       // Aurora Multi-Role Fields
@@ -232,7 +274,9 @@ class AuroraProduct {
       'subcategory': subcategory,
       'attributes': attributes,
       'created_at': metadata?.createdAt?.toIso8601String(),
-      'updated_at': metadata?.updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'updated_at':
+          metadata?.updatedAt?.toIso8601String() ??
+          DateTime.now().toIso8601String(),
       'version': metadata?.version,
     };
   }
@@ -274,14 +318,18 @@ class AuroraProduct {
       leadTimeToShip: json['lead_time_to_ship'] as String?,
       images: json['images'] != null
           ? (json['images'] as List)
-              .map((e) => ProductImage.fromJson(e as Map<String, dynamic>))
-              .toList()
+                .map((e) => ProductImage.fromJson(e as Map<String, dynamic>))
+                .toList()
           : null,
       variations: json['variations'] != null
-          ? ProductVariations.fromJson(json['variations'] as Map<String, dynamic>)
+          ? ProductVariations.fromJson(
+              json['variations'] as Map<String, dynamic>,
+            )
           : null,
       compliance: json['compliance'] != null
-          ? ProductCompliance.fromJson(json['compliance'] as Map<String, dynamic>)
+          ? ProductCompliance.fromJson(
+              json['compliance'] as Map<String, dynamic>,
+            )
           : null,
       allowChat: json['allow_chat'] as bool? ?? true,
       qrData: json['qr_data'] as String?,
@@ -386,10 +434,7 @@ class AuroraProduct {
 
   // Mark product as synced
   AuroraProduct markAsSynced() {
-    return copyWith(
-      isSynced: true,
-      syncedAt: DateTime.now(),
-    );
+    return copyWith(isSynced: true, syncedAt: DateTime.now());
   }
 }
 
@@ -431,10 +476,7 @@ class ProductVariations {
   final List<Map<String, dynamic>> variants;
   final String? variationTheme;
 
-  ProductVariations({
-    required this.variants,
-    this.variationTheme,
-  });
+  ProductVariations({required this.variants, this.variationTheme});
 
   factory ProductVariations.fromJson(Map<String, dynamic> json) {
     return ProductVariations(
@@ -444,10 +486,7 @@ class ProductVariations {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'variants': variants,
-      'variation_theme': variationTheme,
-    };
+    return {'variants': variants, 'variation_theme': variationTheme};
   }
 }
 
@@ -494,9 +533,5 @@ class ProductMetadata {
   final DateTime? updatedAt;
   final String? version;
 
-  ProductMetadata({
-    this.createdAt,
-    this.updatedAt,
-    this.version,
-  });
+  ProductMetadata({this.createdAt, this.updatedAt, this.version});
 }

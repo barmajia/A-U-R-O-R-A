@@ -9,6 +9,8 @@ import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:convert';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 class ProductPage extends StatefulWidget {
   const ProductPage({super.key});
 
@@ -223,7 +225,7 @@ class _ProductPageState extends State<ProductPage> {
       drawerEdgeDragWidth: double.infinity,
       drawerEnableOpenDragGesture: true,
       appBar: AppBar(
-        title: const Text('Products'),
+        title: Text('Products'),
         centerTitle: true,
         actions: [
           IconButton(
@@ -580,16 +582,8 @@ class ProductDetailsScreen extends StatelessWidget {
       decimalDigits: 2,
     );
 
-    // Generate QR data from product
-    final qrData = jsonEncode({
-      'asin': product.asin ?? '',
-      'sku': product.sku ?? '',
-      'title': product.title,
-      'brand': product.brand ?? '',
-      'price': product.price ?? 0,
-      'currency': product.currency ?? 'USD',
-      'quantity': product.quantity ?? 0,
-    });
+    // Generate QR data from product with ALL details
+    final qrData = product.generateQRData();
 
     return Scaffold(
       appBar: AppBar(
@@ -734,73 +728,386 @@ class ProductDetailsScreen extends StatelessWidget {
   }
 
   void _showQRCode(BuildContext context, String qrData) {
+    final hasSku = product.sku != null && product.sku!.isNotEmpty;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Product QR Code'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            QrImageView(
-              data: qrData,
-              version: QrVersions.auto,
-              size: 200.0,
-              backgroundColor: Colors.white,
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue[200]!),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'SKU (Scan QR to get product data)',
-                    style: TextStyle(
-                      color: Colors.blue[800],
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+      builder: (dialogContext) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(dialogContext).size.width * 0.85,
+            maxHeight: MediaQuery.of(dialogContext).size.height * 0.75,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Product QR Code',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                if (!hasSku) ...[
+                  // Show message and generate button when no SKU
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.amber[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber[200]!),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.amber[700],
+                          size: 48,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'This product does not have a SKU yet',
+                          style: TextStyle(
+                            color: Colors.amber[900],
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Generate a unique SKU and QR code with all product data',
+                          style: TextStyle(
+                            color: Colors.amber[800],
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () => _generateSKU(dialogContext),
+                          icon: const Icon(Icons.qr_code_sharp),
+                          label: const Text('Generate SKU & QR Code'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber[600],
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  SelectableText(
-                    product.sku ?? 'N/A',
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                ] else ...[
+                  // Show QR code when SKU exists
+                  Center(
+                    child: QrImageView(
+                      data: qrData,
+                      version: QrVersions.auto,
+                      size: 200.0,
+                      backgroundColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue[200]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'SKU',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        SelectableText(
+                          product.sku ?? 'N/A',
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green[200]!),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'QR Contains Full Product Data:',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildQRDataItem('Title', product.title ?? ''),
+                      _buildQRDataItem('Category', product.category ?? ''),
+                      _buildQRDataItem(
+                        'Subcategory',
+                        product.subcategory ?? '',
+                      ),
+                      _buildQRDataItem('Brand', product.brand ?? ''),
+                      _buildQRDataItem(
+                        'Price',
+                        product.sellingPrice?.toString() ?? '',
+                      ),
+                      _buildQRDataItem(
+                        'Quantity',
+                        product.quantity?.toString() ?? '',
+                      ),
+                      _buildQRDataItem(
+                        'Images',
+                        product.images != null
+                            ? '${product.images!.length} URLs'
+                            : '0',
+                      ),
+                      if (product.attributes != null &&
+                          product.attributes!.isNotEmpty)
+                        _buildQRDataItem(
+                          'Attributes',
+                          '${product.attributes!.length} fields',
+                        ),
+                      _buildQRDataItem(
+                        'Description',
+                        product.description?.isNotEmpty == true
+                            ? (product.description!.length > 50
+                                  ? '${product.description!.substring(0, 50)}...'
+                                  : product.description)
+                            : '',
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Scan to get all product information',
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: qrData));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Product data copied'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      child: const Text('Copy'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _generateSKU(BuildContext dialogContext) async {
+    // Get SupabaseProvider from dialog context
+    final supabaseProvider = dialogContext.read<SupabaseProvider>();
+
+    // Check if user is authenticated
+    if (supabaseProvider.currentUser == null) {
+      if (dialogContext.mounted) {
+        ScaffoldMessenger.of(dialogContext).showSnackBar(
+          const SnackBar(
+            content: Text('Please log in to generate SKU'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Check if product has ASIN
+    if (product.asin == null || product.asin!.isEmpty) {
+      if (dialogContext.mounted) {
+        ScaffoldMessenger.of(dialogContext).showSnackBar(
+          const SnackBar(
+            content: Text('Product must have an ASIN to generate SKU'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Show loading
+    showDialog(
+      context: dialogContext,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      // Refresh session to ensure valid JWT
+      await supabaseProvider.client.auth.refreshSession();
+
+      // Determine action based on whether product has SKU
+      // If product has no SKU, we just need to update with generated SKU
+      final response = await supabaseProvider.client.functions.invoke(
+        'manage-product',
+        body: {
+          'action': 'update',
+          'asin': product.asin,
+          'data': {
+            'title': product.title,
+            'description': product.description,
+            'brand': product.brand,
+            'category': product.category,
+            'subcategory': product.subcategory,
+            'selling_price': product.sellingPrice,
+            'list_price': product.listPrice,
+            'currency': product.currency,
+            'quantity': product.quantity,
+            'status': product.status,
+            'attributes': product.attributes,
+          },
+        },
+      );
+
+      print('SKU Generation Response: ${response.status} - ${response.data}');
+
+      // Close loading
+      if (dialogContext.mounted) {
+        Navigator.pop(dialogContext);
+      }
+
+      if (response.data?['success'] == true) {
+        final updatedSku = response.data?['sku'];
+        final updatedQrData = response.data?['qr_data'];
+
+        // Show success dialog with new QR code
+        showDialog(
+          context: dialogContext,
+          builder: (context) => AlertDialog(
+            title: const Text('SKU Generated!'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Your unique SKU and QR code have been generated successfully!',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                if (updatedSku != null)
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'New SKU:',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        SelectableText(
+                          updatedSku,
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+
+        // TODO: Update local product and refresh UI
+        // setState(() {});
+      } else {
+        throw Exception(response.data?['message'] ?? 'Failed to generate SKU');
+      }
+    } catch (e) {
+      // Close loading if still open
+      if (dialogContext.mounted) {
+        Navigator.pop(dialogContext);
+      }
+      if (dialogContext.mounted) {
+        ScaffoldMessenger.of(dialogContext).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildQRDataItem(String label, String? value) {
+    if (value == null || value.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.green[700],
+                fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Scan this QR code to get all product information',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: qrData));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Product data copied to clipboard'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-            child: const Text('Copy Data'),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+          Flexible(
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 11, color: Colors.green[900]),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),

@@ -8,6 +8,8 @@ import 'package:aurora/models/customer.dart'; // Deprecated - kept for seller-ma
 import 'package:aurora/models/sale.dart';
 import 'package:aurora/services/queue_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
@@ -400,6 +402,11 @@ class SupabaseProvider extends ChangeNotifier {
       _productsDb = productsDb {
     queue = QueueService(_client);
     _initProvider();
+  }
+
+  /// Retrieves the SupabaseProvider from the nearest BuildContext.
+  static SupabaseProvider of(BuildContext context) {
+    return Provider.of<SupabaseProvider>(context, listen: false);
   }
 
   // Queue Service for PGMQ
