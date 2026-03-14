@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:aurora/config/performance_config.dart';
 
 // ============================================================================
 // 1. Constants & Design System
@@ -50,9 +51,7 @@ class AppTheme {
     final surfaceColor = isDark
         ? AppColors.darkSurface
         : AppColors.lightSurface;
-    final cardColor = isDark
-        ? const Color(0xFF2A2A30)
-        : Colors.white;
+    final cardColor = isDark ? const Color(0xFF2A2A30) : Colors.white;
     final snackBarColor = isDark
         ? const Color(0xFF3C3C41)
         : const Color(0xFF323232);
@@ -138,10 +137,7 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: primaryColor,
           disabledForegroundColor: Colors.grey[400],
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
 
@@ -163,10 +159,7 @@ class AppTheme {
           color: isDark ? Colors.grey[200] : Colors.grey[800],
           fontWeight: FontWeight.w500,
         ),
-        hintStyle: TextStyle(
-          color: textMuted,
-          fontWeight: FontWeight.normal,
-        ),
+        hintStyle: TextStyle(color: textMuted, fontWeight: FontWeight.normal),
         // ✅ Error text color
         errorStyle: const TextStyle(
           color: Colors.red,
@@ -174,10 +167,7 @@ class AppTheme {
           fontWeight: FontWeight.w500,
         ),
         // ✅ Helper text
-        helperStyle: TextStyle(
-          color: textSecondary,
-          fontSize: 12,
-        ),
+        helperStyle: TextStyle(color: textSecondary, fontSize: 12),
       ),
 
       // ✅ FIXED: Icon theme with high contrast
@@ -185,10 +175,7 @@ class AppTheme {
         color: isDark ? Colors.grey[100] : Colors.grey[900],
         size: 24,
       ),
-      primaryIconTheme: const IconThemeData(
-        color: Colors.white,
-        size: 24,
-      ),
+      primaryIconTheme: const IconThemeData(color: Colors.white, size: 24),
 
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: primaryColor,
@@ -262,9 +249,7 @@ class AppTheme {
           fillColor: inputFill,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: borderDefault,
-            ),
+            borderSide: BorderSide(color: borderDefault),
           ),
           labelStyle: TextStyle(
             color: isDark ? Colors.grey[200] : Colors.grey[800],
@@ -288,10 +273,7 @@ class AppTheme {
           fontSize: 16,
           fontWeight: FontWeight.w500,
         ),
-        subtitleTextStyle: TextStyle(
-          color: textSecondary,
-          fontSize: 14,
-        ),
+        subtitleTextStyle: TextStyle(color: textSecondary, fontSize: 14),
       ),
     );
   }
@@ -392,8 +374,12 @@ class AppTheme {
 
 class ThemeProvider extends ChangeNotifier {
   bool _isDarkMode = false;
+  bool _useSystemTheme = false;
+  Brightness? _systemBrightness;
 
   bool get isDarkMode => _isDarkMode;
+  bool get useSystemTheme => _useSystemTheme;
+  Brightness? get systemBrightness => _systemBrightness;
 
   ThemeData get themeData =>
       _isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme;
@@ -406,6 +392,7 @@ class ThemeProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+      _useSystemTheme = prefs.getBool('useSystemTheme') ?? false;
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading theme preference: $e');
@@ -418,8 +405,44 @@ class ThemeProvider extends ChangeNotifier {
     await _loadTheme();
   }
 
+  /// Enable/disable system theme detection
+  Future<void> setUseSystemTheme(bool value) async {
+    try {
+      _useSystemTheme = value;
+      notifyListeners();
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('useSystemTheme', value);
+
+      if (value && _systemBrightness != null) {
+        _isDarkMode = _systemBrightness == Brightness.dark;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error saving system theme preference: $e');
+    }
+  }
+
+  /// Update system brightness (call this from MaterialApp builder)
+  void updateSystemBrightness(Brightness brightness) {
+    if (_systemBrightness != brightness) {
+      _systemBrightness = brightness;
+
+      // Auto-switch if using system theme
+      if (_useSystemTheme) {
+        _isDarkMode = brightness == Brightness.dark;
+        notifyListeners();
+      }
+    }
+  }
+
   Future<void> toggleTheme() async {
     try {
+      // Disable system theme if manually toggling
+      if (_useSystemTheme) {
+        await setUseSystemTheme(false);
+      }
+
       _isDarkMode = !_isDarkMode;
       notifyListeners();
 

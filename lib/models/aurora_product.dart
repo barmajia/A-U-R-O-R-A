@@ -181,8 +181,11 @@ class AuroraProduct {
 
       // Pricing
       currency: json['currency'] as String?,
+      // Support both 'price' (Supabase column) and 'selling_price' (API response)
       listPrice: (json['list_price'] as num?)?.toDouble(),
-      sellingPrice: (json['selling_price'] as num?)?.toDouble(),
+      sellingPrice:
+          (json['selling_price'] as num?)?.toDouble() ??
+          (json['price'] as num?)?.toDouble(),
       businessPrice: (json['business_price'] as num?)?.toDouble(),
       taxCode: json['tax_code'] as String?,
 

@@ -1,5 +1,10 @@
 // Aurora Products Database - Local SQLite Storage
 // Manages product storage with Supabase sync support
+// Features:
+// - Transaction-based operations with rollback
+// - Offline-first architecture
+// - Batch operations support
+// - Comprehensive error handling
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -7,6 +12,7 @@ import 'package:sqlite3/sqlite3.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:aurora/models/aurora_product.dart';
+import 'package:aurora/services/error_handler.dart';
 
 /// Local SQLite database for product storage
 /// Supports offline-first architecture with Supabase sync
@@ -14,6 +20,7 @@ class ProductsDB extends ChangeNotifier {
   Database? _db;
   static const String _tableName = 'products';
   static const String _dbFile = 'aurora_products.db';
+  final ErrorHandler _errorHandler = ErrorHandler();
 
   ProductsDB() {
     _initDatabase();
@@ -137,7 +144,9 @@ class ProductsDB extends ChangeNotifier {
       // Check if product already exists
       final existing = await getProductByAsin(product.asin!);
       if (existing != null) {
-        debugPrint('[ProductsDB] Product ${product.asin} already exists, updating instead');
+        debugPrint(
+          '[ProductsDB] Product ${product.asin} already exists, updating instead',
+        );
         await updateProduct(product);
         return;
       }
@@ -230,10 +239,9 @@ class ProductsDB extends ChangeNotifier {
   /// Get product by ASIN
   Future<AuroraProduct?> getProductByAsin(String asin) async {
     try {
-      final results = db.select(
-        'SELECT * FROM $_tableName WHERE asin = ?',
-        [asin],
-      );
+      final results = db.select('SELECT * FROM $_tableName WHERE asin = ?', [
+        asin,
+      ]);
 
       if (results.isEmpty) return null;
       return _rowToProduct(results.first);
@@ -261,7 +269,8 @@ class ProductsDB extends ChangeNotifier {
   Future<List<AuroraProduct>> searchProducts(String query) async {
     try {
       final searchPattern = '%$query%';
-      final results = db.select('''
+      final results = db.select(
+        '''
         SELECT * FROM $_tableName
         WHERE title LIKE ?
            OR description LIKE ?
@@ -272,15 +281,17 @@ class ProductsDB extends ChangeNotifier {
         ORDER BY 
           CASE WHEN title LIKE ? THEN 0 ELSE 1 END,
           local_created_at DESC
-      ''', [
-        searchPattern,
-        searchPattern,
-        searchPattern,
-        searchPattern,
-        searchPattern,
-        searchPattern,
-        searchPattern,
-      ]);
+      ''',
+        [
+          searchPattern,
+          searchPattern,
+          searchPattern,
+          searchPattern,
+          searchPattern,
+          searchPattern,
+          searchPattern,
+        ],
+      );
 
       return results.map((row) => _rowToProduct(row)).toList();
     } catch (e) {
@@ -365,11 +376,14 @@ class ProductsDB extends ChangeNotifier {
   /// Mark product as synced
   Future<void> markAsSynced(String asin) async {
     try {
-      db.execute('''
+      db.execute(
+        '''
         UPDATE $_tableName
         SET is_synced = 1, synced_at = ?
         WHERE asin = ?
-      ''', [DateTime.now().toIso8601String(), asin]);
+      ''',
+        [DateTime.now().toIso8601String(), asin],
+      );
 
       notifyListeners();
       debugPrint('[ProductsDB] Marked product as synced: $asin');
@@ -452,29 +466,6 @@ class ProductsDB extends ChangeNotifier {
     }
   }
 
-  /// Sync all unsynced products to Supabase
-  Future<int> syncAllProducts() async {
-    try {
-      final unsyncedProducts = await getUnsyncedProducts();
-      int syncedCount = 0;
-
-      for (final product in unsyncedProducts) {
-        try {
-          await syncProductToSupabase(product);
-          syncedCount++;
-        } catch (e) {
-          debugPrint('[ProductsDB] Error syncing product ${product.asin}: $e');
-        }
-      }
-
-      debugPrint('[ProductsDB] Synced $syncedCount/${unsyncedProducts.length} products');
-      return syncedCount;
-    } catch (e) {
-      debugPrint('[ProductsDB] Error in sync all products: $e');
-      return 0;
-    }
-  }
-
   // ==========================================================================
   // Sync Operations
   // ==========================================================================
@@ -493,9 +484,331 @@ class ProductsDB extends ChangeNotifier {
       // Mark as synced
       await markAsSynced(product.asin!);
       debugPrint('[ProductsDB] Synced product to Supabase: ${product.asin}');
-    } catch (e) {
-      debugPrint('[ProductsDB] Error syncing product: $e');
+    } catch (e, stackTrace) {
+      _errorHandler.handleError(
+        e,
+        'syncProductToSupabase',
+        context: {'asin': product.asin},
+        stackTrace: stackTrace,
+      );
       rethrow;
+    }
+  }
+
+  // ==========================================================================
+  // Transaction-Based Operations
+  // ==========================================================================
+
+  /// Execute multiple database operations in a transaction
+  ///
+  /// If any operation fails, all changes are rolled back
+  ///
+  /// Example:
+  /// ```dart
+  /// await productsDB.executeTransaction([
+  ///   () => addProduct(product1),
+  ///   () => addProduct(product2),
+  ///   () => updateProduct(product3),
+  /// ]);
+  /// ```
+  Future<void> executeTransaction(
+    List<Future<void> Function()> operations,
+  ) async {
+    // SQLite doesn't support nested transactions, so we use SAVEPOINT
+    final savepointName = 'sp_${DateTime.now().millisecondsSinceEpoch}';
+
+    try {
+      // Begin savepoint (nested transaction)
+      db.execute('SAVEPOINT $savepointName');
+
+      // Execute all operations
+      for (final operation in operations) {
+        await operation();
+      }
+
+      // Release savepoint (commit)
+      db.execute('RELEASE SAVEPOINT $savepointName');
+
+      notifyListeners();
+      debugPrint(
+        '[ProductsDB] Transaction completed successfully: $savepointName',
+      );
+    } catch (e, stackTrace) {
+      // Rollback to savepoint on error
+      try {
+        db.execute('ROLLBACK TO SAVEPOINT $savepointName');
+        debugPrint('[ProductsDB] Transaction rolled back: $savepointName');
+      } catch (rollbackError) {
+        debugPrint('[ProductsDB] Rollback failed: $rollbackError');
+      }
+
+      _errorHandler.handleError(
+        e,
+        'executeTransaction',
+        context: {
+          'savepointName': savepointName,
+          'operationsCount': operations.length,
+        },
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
+    }
+  }
+
+  /// Sync all unsynced products to Supabase with transaction support
+  ///
+  /// Uses batch processing with rollback on failure
+  /// Returns the number of successfully synced products
+  Future<int> syncAllProducts({int batchSize = 10}) async {
+    try {
+      final unsyncedProducts = await getUnsyncedProducts();
+      if (unsyncedProducts.isEmpty) {
+        debugPrint('[ProductsDB] No unsynced products found');
+        return 0;
+      }
+
+      int syncedCount = 0;
+      int failedCount = 0;
+      final failedProducts = <String>[];
+
+      // Process in batches
+      for (var i = 0; i < unsyncedProducts.length; i += batchSize) {
+        final batch = unsyncedProducts.skip(i).take(batchSize).toList();
+
+        // Create transaction operations for this batch
+        final operations = <Future<void> Function()>[];
+
+        for (final product in batch) {
+          operations.add(() => syncProductToSupabase(product));
+        }
+
+        // Execute batch transaction
+        try {
+          await executeTransaction(operations);
+          syncedCount += batch.length;
+          debugPrint('[ProductsDB] Batch synced: ${batch.length} products');
+        } catch (e) {
+          // If batch fails, try individual products
+          debugPrint('[ProductsDB] Batch failed, trying individual sync');
+          for (final product in batch) {
+            try {
+              await syncProductToSupabase(product);
+              syncedCount++;
+            } catch (e) {
+              failedCount++;
+              failedProducts.add(product.asin ?? 'unknown');
+              debugPrint(
+                '[ProductsDB] Failed to sync product: ${product.asin}',
+              );
+            }
+          }
+        }
+      }
+
+      debugPrint(
+        '[ProductsDB] Sync complete: $syncedCount synced, $failedCount failed',
+      );
+
+      if (failedProducts.isNotEmpty) {
+        debugPrint('[ProductsDB] Failed ASINs: $failedProducts');
+      }
+
+      return syncedCount;
+    } catch (e, stackTrace) {
+      _errorHandler.handleError(e, 'syncAllProducts', stackTrace: stackTrace);
+      return 0;
+    }
+  }
+
+  /// Batch add multiple products with transaction
+  ///
+  /// All products are added atomically - if any fails, all are rolled back
+  Future<void> batchAddProducts(List<AuroraProduct> products) async {
+    if (products.isEmpty) return;
+
+    try {
+      final operations = <Future<void> Function()>[];
+
+      for (final product in products) {
+        operations.add(() => addProduct(product));
+      }
+
+      await executeTransaction(operations);
+      debugPrint('[ProductsDB] Batch added ${products.length} products');
+    } catch (e, stackTrace) {
+      _errorHandler.handleError(
+        e,
+        'batchAddProducts',
+        context: {'productCount': products.length},
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Batch update multiple products with transaction
+  Future<void> batchUpdateProducts(List<AuroraProduct> products) async {
+    if (products.isEmpty) return;
+
+    try {
+      final operations = <Future<void> Function()>[];
+
+      for (final product in products) {
+        operations.add(() => updateProduct(product));
+      }
+
+      await executeTransaction(operations);
+      debugPrint('[ProductsDB] Batch updated ${products.length} products');
+    } catch (e, stackTrace) {
+      _errorHandler.handleError(
+        e,
+        'batchUpdateProducts',
+        context: {'productCount': products.length},
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Batch delete multiple products with transaction
+  Future<void> batchDeleteProducts(List<String> asins) async {
+    if (asins.isEmpty) return;
+
+    try {
+      final operations = <Future<void> Function()>[];
+
+      for (final asin in asins) {
+        operations.add(() => deleteProduct(asin));
+      }
+
+      await executeTransaction(operations);
+      debugPrint('[ProductsDB] Batch deleted ${asins.length} products');
+    } catch (e, stackTrace) {
+      _errorHandler.handleError(
+        e,
+        'batchDeleteProducts',
+        context: {'asinCount': asins.length},
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Mark multiple products as synced with transaction
+  Future<void> batchMarkAsSynced(List<String> asins) async {
+    if (asins.isEmpty) return;
+
+    try {
+      final operations = <Future<void> Function()>[];
+
+      for (final asin in asins) {
+        operations.add(() => markAsSynced(asin));
+      }
+
+      await executeTransaction(operations);
+      debugPrint(
+        '[ProductsDB] Batch marked ${asins.length} products as synced',
+      );
+    } catch (e, stackTrace) {
+      _errorHandler.handleError(
+        e,
+        'batchMarkAsSynced',
+        context: {'asinCount': asins.length},
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Import products from external source with rollback
+  ///
+  /// If any product fails to import, the entire import is rolled back
+  Future<bool> importProducts({
+    required List<AuroraProduct> products,
+    bool continueOnError = false,
+  }) async {
+    if (products.isEmpty) return true;
+
+    try {
+      if (!continueOnError) {
+        // Strict mode: rollback all on any error
+        await batchAddProducts(products);
+        return true;
+      } else {
+        // Lenient mode: continue on error, track failures
+        final failedProducts = <String>[];
+
+        for (final product in products) {
+          try {
+            await addProduct(product);
+          } catch (e) {
+            failedProducts.add(product.asin ?? 'unknown');
+            debugPrint('[ProductsDB] Import failed for ${product.asin}: $e');
+          }
+        }
+
+        if (failedProducts.isNotEmpty) {
+          debugPrint(
+            '[ProductsDB] Import completed with ${failedProducts.length} failures',
+          );
+          return false;
+        }
+
+        return true;
+      }
+    } catch (e, stackTrace) {
+      _errorHandler.handleError(
+        e,
+        'importProducts',
+        context: {
+          'productCount': products.length,
+          'continueOnError': continueOnError,
+        },
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  /// Export all products to JSON
+  Future<String> exportProductsToJson() async {
+    try {
+      final products = await getAllProducts();
+      final jsonList = products.map((p) => p.toLocalJson()).toList();
+      return jsonEncode(jsonList);
+    } catch (e, stackTrace) {
+      _errorHandler.handleError(
+        e,
+        'exportProductsToJson',
+        stackTrace: stackTrace,
+      );
+      return '[]';
+    }
+  }
+
+  /// Import products from JSON string
+  Future<bool> importProductsFromJson(
+    String jsonString, {
+    bool continueOnError = false,
+  }) async {
+    try {
+      final jsonList = jsonDecode(jsonString) as List;
+      final products = jsonList
+          .map((j) => AuroraProduct.fromLocalJson(j as Map<String, dynamic>))
+          .toList();
+
+      return await importProducts(
+        products: products,
+        continueOnError: continueOnError,
+      );
+    } catch (e, stackTrace) {
+      _errorHandler.handleError(
+        e,
+        'importProductsFromJson',
+        stackTrace: stackTrace,
+      );
+      return false;
     }
   }
 
@@ -527,9 +840,15 @@ class ProductsDB extends ChangeNotifier {
       product.fulfillmentChannel,
       product.availabilityStatus,
       product.leadTimeToShip,
-      product.images != null ? jsonEncode(product.images!.map((e) => e.toJson()).toList()) : null,
-      product.variations != null ? jsonEncode(product.variations!.toJson()) : null,
-      product.compliance != null ? jsonEncode(product.compliance!.toJson()) : null,
+      product.images != null
+          ? jsonEncode(product.images!.map((e) => e.toJson()).toList())
+          : null,
+      product.variations != null
+          ? jsonEncode(product.variations!.toJson())
+          : null,
+      product.compliance != null
+          ? jsonEncode(product.compliance!.toJson())
+          : null,
       product.allowChat ? 1 : 0,
       product.qrData,
       product.brandId,
@@ -539,7 +858,8 @@ class ProductsDB extends ChangeNotifier {
       product.subcategory,
       product.attributes != null ? jsonEncode(product.attributes) : null,
       product.metadata?.createdAt?.toIso8601String(),
-      product.metadata?.updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      product.metadata?.updatedAt?.toIso8601String() ??
+          DateTime.now().toIso8601String(),
       product.metadata?.version,
       product.isSynced ? 1 : 0,
       product.syncedAt?.toIso8601String(),
@@ -574,14 +894,18 @@ class ProductsDB extends ChangeNotifier {
       leadTimeToShip: row['lead_time_to_ship'] as String?,
       images: row['images'] != null
           ? (jsonDecode(row['images'] as String) as List)
-              .map((e) => ProductImage.fromJson(e as Map<String, dynamic>))
-              .toList()
+                .map((e) => ProductImage.fromJson(e as Map<String, dynamic>))
+                .toList()
           : null,
       variations: row['variations'] != null
-          ? ProductVariations.fromJson(jsonDecode(row['variations'] as String) as Map<String, dynamic>)
+          ? ProductVariations.fromJson(
+              jsonDecode(row['variations'] as String) as Map<String, dynamic>,
+            )
           : null,
       compliance: row['compliance'] != null
-          ? ProductCompliance.fromJson(jsonDecode(row['compliance'] as String) as Map<String, dynamic>)
+          ? ProductCompliance.fromJson(
+              jsonDecode(row['compliance'] as String) as Map<String, dynamic>,
+            )
           : null,
       allowChat: (row['allow_chat'] as int? ?? 1) == 1,
       qrData: row['qr_data'] as String?,

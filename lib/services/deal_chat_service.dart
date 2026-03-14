@@ -1,19 +1,19 @@
 import 'dart:async';
 
 import 'package:aurora/models/chat/deal_proposal.dart';
-import 'package:aurora/services/supabase.dart';
+import 'package:aurora/services/auth_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Service for handling deal proposals in chat conversations
 class DealChatService {
-  final SupabaseProvider _supabaseProvider;
-  SupabaseClient get _client => _supabaseProvider.client;
+  final AuthProvider _authProvider;
+  SupabaseClient get _client => _authProvider.client;
 
-  DealChatService(this._supabaseProvider);
+  DealChatService(this._authProvider);
 
   /// Get current user ID
-  String? get currentUserId => _supabaseProvider.currentUser?.id;
+  String? get currentUserId => _authProvider.userId;
 
   /// Check if user can propose a deal to another user
   Future<bool> _canProposeDeal(String recipientId) async {

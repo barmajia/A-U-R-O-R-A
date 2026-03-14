@@ -18,6 +18,8 @@ dependencies:
   # Authentication & Security
   flutter_secure_storage: ^10.0.0
   local_auth: ^2.3.0
+  encrypt: ^5.0.3
+  crypto: ^3.0.3
 
   # Location Services
   geolocator: ^14.0.2
@@ -34,6 +36,7 @@ dependencies:
   image_cropper: ^8.0.2
   image: ^4.5.2 # For image optimization
   cached_network_image: ^3.3.1 # For caching network images
+  flutter_cache_manager: ^3.3.1 # For advanced cache management
 
   # Storage & Caching
   shared_preferences: ^2.2.2

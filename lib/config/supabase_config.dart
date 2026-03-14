@@ -1,15 +1,39 @@
 // lib/config/supabase_config.dart
 // Secure Supabase configuration with environment variable support
 // Date: 2026-03-08
-// Status: ✅ PRODUCTION READY
+// Updated: 2026-03-14 - SECURITY: Removed hardcoded credentials
 
 /// Secure configuration for Supabase credentials
 ///
-/// Use environment variables for production:
+/// ## Setup Instructions:
+///
+/// ### Option 1: Using .env file (Recommended for development)
+/// ```bash
+/// # 1. Copy .env.example to .env
+/// cp .env.example .env
+/// # 2. Edit .env with your credentials
+/// # 3. Run with:
+/// flutter run --dart-define-from-file=.env
+/// ```
+///
+/// ### Option 2: Using command line arguments
 /// ```bash
 /// flutter run --dart-define=SUPABASE_URL=your_url --dart-define=SUPABASE_ANON_KEY=your_key
 /// flutter build apk --dart-define=SUPABASE_URL=your_url --dart-define=SUPABASE_ANON_KEY=your_key
 /// ```
+///
+/// ### Option 3: Using environment variables
+/// ```bash
+/// export SUPABASE_URL=your_url
+/// export SUPABASE_ANON_KEY=your_key
+/// flutter run
+/// ```
+///
+/// ⚠️ **SECURITY WARNINGS**:
+/// - NEVER commit .env files with real credentials to version control
+/// - NEVER hardcode credentials in source files
+/// - Use secret management services in production (GitHub Secrets, etc.)
+/// - Rotate keys regularly
 class SupabaseConfig {
   SupabaseConfig._(); // Private constructor to prevent instantiation
 
@@ -19,34 +43,23 @@ class SupabaseConfig {
 
   /// Supabase project URL
   ///
-  /// Set via: flutter run --dart-define=SUPABASE_URL=your_url
+  /// ⚠️ **SECURITY**: No default value - MUST be provided via:
+  /// - `--dart-define=SUPABASE_URL=your_url`
+  /// - `--dart-define-from-file=.env`
+  /// - Environment variable `SUPABASE_URL`
   ///
-  /// ⚠️ SECURITY: This defaultValue is for LOCAL DEVELOPMENT ONLY!
-  /// For production/CI/CD, ALWAYS use --dart-define parameter
-  static const String url = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://ofovfxsfazlwvcakpuer.supabase.co', // ⚠️ DEV ONLY
-  );
+  /// If this is empty, check your configuration setup.
+  static const String url = String.fromEnvironment('SUPABASE_URL');
 
   /// Supabase anonymous/public key
   ///
-  /// Set via: flutter run --dart-define=SUPABASE_ANON_KEY=your_key
+  /// ⚠️ **SECURITY**: No default value - MUST be provided via:
+  /// - `--dart-define=SUPABASE_ANON_KEY=your_key`
+  /// - `--dart-define-from-file=.env`
+  /// - Environment variable `SUPABASE_ANON_KEY`
   ///
-  /// ⚠️ SECURITY WARNING:
-  /// - This defaultValue contains the REAL key for LOCAL DEVELOPMENT
-  /// - NEVER commit this file with real keys to public repositories
-  /// - For production/CI/CD, ALWAYS use --dart-define parameter
-  /// - The key will be overridden by --dart-define if provided
-  ///
-  /// Production usage:
-  /// ```bash
-  /// flutter build apk --dart-define=SUPABASE_ANON_KEY=your_secure_key
-  /// ```
-  static const String anonKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-    defaultValue:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mb3ZmeHNmYXpsd3ZjYWtwdWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMjY0MDcsImV4cCI6MjA4NzcwMjQwN30.QYx8-c9IiSMpuHeikKz25MKO5o6g112AKj4Tnr4aWzI', // ⚠️ REAL KEY - DEV ONLY!
-  );
+  /// This is the public anon key (not the service role key).
+  static const String anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
   // ============================================================================
   // CACHE CONFIGURATION
@@ -156,13 +169,47 @@ class SupabaseConfig {
   }
 
   /// Validate configuration
+  ///
+  /// Returns null if valid, or an error message if invalid.
   static String? validate() {
     if (url.isEmpty) {
-      return 'Supabase URL is empty. Set SUPABASE_URL environment variable.';
+      return '''
+Supabase URL is empty. 
+
+To fix this, use one of these methods:
+
+1. Using .env file (Recommended):
+   - Copy .env.example to .env
+   - Add your SUPABASE_URL to .env
+   - Run: flutter run --dart-define-from-file=.env
+
+2. Using command line:
+   flutter run --dart-define=SUPABASE_URL=your_url
+
+3. Using environment variable:
+   export SUPABASE_URL=your_url
+   flutter run
+''';
     }
 
     if (anonKey.isEmpty) {
-      return 'Supabase anonymous key is empty. Set SUPABASE_ANON_KEY environment variable.';
+      return '''
+Supabase anonymous key is empty.
+
+To fix this, use one of these methods:
+
+1. Using .env file (Recommended):
+   - Copy .env.example to .env
+   - Add your SUPABASE_ANON_KEY to .env
+   - Run: flutter run --dart-define-from-file=.env
+
+2. Using command line:
+   flutter run --dart-define=SUPABASE_ANON_KEY=your_key
+
+3. Using environment variable:
+   export SUPABASE_ANON_KEY=your_key
+   flutter run
+''';
     }
 
     // Validate URL format

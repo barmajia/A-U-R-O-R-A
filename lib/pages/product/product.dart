@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 class ProductPage extends StatefulWidget {
   const ProductPage({super.key});
@@ -23,6 +22,10 @@ class _ProductPageState extends State<ProductPage> {
   String? _errorMessage;
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'all'; // all, instock, lowstock, draft
+
+  // Selection mode for bulk delete
+  bool _isSelectionMode = false;
+  Set<String> _selectedProducts = {};
 
   // Cache to prevent repeated loading
   DateTime? _lastLoadedTime;
@@ -222,27 +225,7 @@ class _ProductPageState extends State<ProductPage> {
     return Scaffold(
       drawerEdgeDragWidth: double.infinity,
       drawerEnableOpenDragGesture: true,
-      appBar: AppBar(
-        title: Text('Products'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: _isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh),
-            onPressed: _isLoading
-                ? null
-                : () async {
-                    await _loadProducts();
-                  },
-            tooltip: 'Refresh from server',
-          ),
-        ],
-      ),
+      appBar: _isSelectionMode ? _buildSelectionAppBar() : _buildNormalAppBar(),
       drawer: const AppDrawer(currentPage: 'products'),
       body: RefreshIndicator(
         onRefresh: () async => await _loadProducts(),
@@ -259,11 +242,169 @@ class _ProductPageState extends State<ProductPage> {
                 ],
               ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToProductForm(),
-        child: const Icon(Icons.add),
+      floatingActionButton: _isSelectionMode
+          ? null
+          : FloatingActionButton(
+              onPressed: () => _navigateToProductForm(),
+              child: const Icon(Icons.add),
+            ),
+    );
+  }
+
+  PreferredSizeWidget _buildNormalAppBar() {
+    return AppBar(
+      title: Text('Products'),
+      centerTitle: true,
+      actions: [
+        IconButton(
+          icon: _isLoading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.refresh),
+          onPressed: _isLoading
+              ? null
+              : () async {
+                  await _loadProducts();
+                },
+          tooltip: 'Refresh from server',
+        ),
+      ],
+    );
+  }
+
+  PreferredSizeWidget _buildSelectionAppBar() {
+    return AppBar(
+      title: Text('${_selectedProducts.length} selected'),
+      centerTitle: true,
+      backgroundColor: Colors.red,
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: _exitSelectionMode,
+      ),
+      actions: [
+        if (_selectedProducts.isNotEmpty)
+          IconButton(
+            icon: const Icon(Icons.select_all),
+            onPressed: _selectAllProducts,
+            tooltip: 'Select All',
+          ),
+        if (_selectedProducts.isNotEmpty)
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: _deleteSelectedProducts,
+            tooltip: 'Delete Selected',
+          ),
+      ],
+    );
+  }
+
+  void _enterSelectionMode() {
+    setState(() {
+      _isSelectionMode = true;
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedProducts.clear();
+    });
+  }
+
+  void _toggleProductSelection(String asin) {
+    setState(() {
+      if (_selectedProducts.contains(asin)) {
+        _selectedProducts.remove(asin);
+        if (_selectedProducts.isEmpty) {
+          _isSelectionMode = false;
+        }
+      } else {
+        _selectedProducts.add(asin);
+      }
+    });
+  }
+
+  void _selectAllProducts() {
+    setState(() {
+      _selectedProducts = _products
+          .where((p) => p.asin != null)
+          .map((p) => p.asin!)
+          .toSet();
+    });
+  }
+
+  Future<void> _deleteSelectedProducts() async {
+    if (_selectedProducts.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red),
+            SizedBox(width: 12),
+            Text('Delete Products'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to delete ${_selectedProducts.length} product${_selectedProducts.length != 1 ? 's' : ''}?',
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'This action cannot be undone. All product images will also be deleted.',
+              style: TextStyle(fontSize: 13, color: Colors.red),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
+
+    if (confirmed != true) return;
+
+    // Delete all selected products
+    for (final asin in _selectedProducts) {
+      try {
+        final supabaseProvider = context.read<SupabaseProvider>();
+        await supabaseProvider.deleteProduct(asin);
+      } catch (e) {
+        debugPrint('Error deleting product $asin: $e');
+      }
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Deleted ${_selectedProducts.length} product${_selectedProducts.length != 1 ? 's' : ''}',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _exitSelectionMode();
+      _loadProducts();
+    }
   }
 
   Widget _buildSearchBar() {
@@ -334,9 +475,24 @@ class _ProductPageState extends State<ProductPage> {
   Widget _buildProductCount() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Text(
-        '${_products.length} product${_products.length != 1 ? 's' : ''} found',
-        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '${_products.length} product${_products.length != 1 ? 's' : ''} found',
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            ),
+          ),
+          if (!_isSelectionMode && _products.isNotEmpty)
+            Text(
+              'Long-press to select',
+              style: TextStyle(
+                color: Theme.of(context).primaryColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -386,16 +542,34 @@ class _ProductPageState extends State<ProductPage> {
       decimalDigits: 2,
     );
 
+    final isSelected =
+        product.asin != null && _selectedProducts.contains(product.asin);
+
     return Card(
       margin: EdgeInsets.zero,
       elevation: 2,
       shadowColor: Colors.black26,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey[200]!, width: 1),
+        side: BorderSide(
+          color: isSelected ? Colors.red : Colors.grey[200]!,
+          width: isSelected ? 3 : 1,
+        ),
       ),
       child: InkWell(
-        onTap: () => _navigateToProductDetails(product),
+        onTap: () {
+          if (_isSelectionMode && product.asin != null) {
+            _toggleProductSelection(product.asin!);
+          } else {
+            _navigateToProductDetails(product);
+          }
+        },
+        onLongPress: () {
+          if (product.asin != null) {
+            _enterSelectionMode();
+            _toggleProductSelection(product.asin!);
+          }
+        },
         borderRadius: BorderRadius.circular(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,7 +579,7 @@ class _ProductPageState extends State<ProductPage> {
               width: double.infinity,
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: isSelected ? Colors.red[50] : Colors.grey[100],
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(12),
                 ),
@@ -445,6 +619,29 @@ class _ProductPageState extends State<ProductPage> {
                         Icons.image_outlined,
                         size: 40,
                         color: Colors.grey[400],
+                      ),
+                    ),
+                  // Selection Overlay
+                  if (isSelected)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.3),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.check_circle,
+                            color: Colors.white,
+                            size: 40,
+                          ),
+                        ),
                       ),
                     ),
                   // Stock Status Badge (smaller)
@@ -583,6 +780,27 @@ class _ProductPageState extends State<ProductPage> {
                             ),
                           ),
                         ),
+                        const SizedBox(width: 4),
+                        // Delete Button
+                        InkWell(
+                          onTap: product.asin != null
+                              ? () => _deleteProduct(product.asin!)
+                              : null,
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.red[50],
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.red[200]!),
+                            ),
+                            child: Icon(
+                              Icons.delete_outline,
+                              size: 16,
+                              color: Colors.red[700],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -649,37 +867,40 @@ class _ProductPageState extends State<ProductPage> {
 // Product Details Screen (Updated)
 // ============================================================================
 
-class ProductDetailsScreen extends StatelessWidget {
+class ProductDetailsScreen extends StatefulWidget {
   final AuroraProduct product; // Changed type
 
   const ProductDetailsScreen({super.key, required this.product});
 
   @override
+  State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
+}
+
+class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
+  @override
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(
-      symbol: product.currency ?? '\$',
+      symbol: widget.product.currency ?? '\$',
       decimalDigits: 2,
     );
-
-    // Use stored QR data from product, or generate if not available
-    final qrData = product.qrData ?? product.generateQRData();
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          product.title?.isNotEmpty == true
-              ? product.title!
+          widget.product.title?.isNotEmpty == true
+              ? widget.product.title!
               : 'Product Details',
         ),
         actions: [
           IconButton(
             icon: Badge(
-              isLabelVisible: product.sku == null || product.sku!.isEmpty,
+              isLabelVisible:
+                  widget.product.sku == null || widget.product.sku!.isEmpty,
               label: const Icon(Icons.warning, size: 16),
               child: const Icon(Icons.qr_code),
             ),
-            onPressed: () => ProductQRCodeDialog.show(context, product),
-            tooltip: product.sku == null || product.sku!.isEmpty
+            onPressed: () => ProductQRCodeDialog.show(context, widget.product),
+            tooltip: widget.product.sku == null || widget.product.sku!.isEmpty
                 ? 'Show QR Code (No SKU - Legacy Product)'
                 : 'Show QR Code',
           ),
@@ -689,13 +910,13 @@ class ProductDetailsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           // Product Image
-          if (product.mainImage != null)
+          if (widget.product.mainImage != null)
             AspectRatio(
               aspectRatio: 1,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.network(
-                  product.mainImage!,
+                  widget.product.mainImage!,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
@@ -711,16 +932,16 @@ class ProductDetailsScreen extends StatelessWidget {
 
           // Title
           Text(
-            product.title ?? 'Untitled',
+            widget.product.title ?? 'Untitled',
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 8),
 
           // Brand
-          if (product.brand != null)
+          if (widget.product.brand != null)
             Text(
-              'Brand: ${product.brand}',
+              'Brand: ${widget.product.brand}',
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
 
@@ -730,7 +951,7 @@ class ProductDetailsScreen extends StatelessWidget {
           Row(
             children: [
               Text(
-                currencyFormat.format(product.price ?? 0),
+                currencyFormat.format(widget.product.price ?? 0),
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -744,16 +965,16 @@ class ProductDetailsScreen extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: product.isInStock
+                  color: widget.product.isInStock
                       ? Colors.green[100]
                       : Colors.red[100],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  product.isInStock ? 'In Stock' : 'Out of Stock',
+                  widget.product.isInStock ? 'In Stock' : 'Out of Stock',
                   style: TextStyle(
                     fontSize: 14,
-                    color: product.isInStock
+                    color: widget.product.isInStock
                         ? Colors.green[800]
                         : Colors.red[800],
                     fontWeight: FontWeight.bold,
@@ -776,20 +997,23 @@ class ProductDetailsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildDetailRow('ASIN', product.asin ?? 'N/A'),
+                  _buildDetailRow('ASIN', widget.product.asin ?? 'N/A'),
                   const Divider(height: 24),
                   _buildSKURow(context),
                   const Divider(height: 24),
-                  _buildDetailRow('Quantity', '${product.quantity ?? 0} units'),
+                  _buildDetailRow(
+                    'Quantity',
+                    '${widget.product.quantity ?? 0} units',
+                  ),
                   const Divider(height: 24),
-                  _buildDetailRow('Status', product.status ?? 'N/A'),
+                  _buildDetailRow('Status', widget.product.status ?? 'N/A'),
                   const Divider(height: 24),
                   _buildDetailRow(
                     'Last Updated',
-                    product.metadata?.updatedAt != null
+                    widget.product.metadata?.updatedAt != null
                         ? DateFormat(
                             'MMM dd, yyyy',
-                          ).format(product.metadata!.updatedAt!)
+                          ).format(widget.product.metadata!.updatedAt!)
                         : 'N/A',
                   ),
                 ],
@@ -806,394 +1030,128 @@ class ProductDetailsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            product.description?.isEmpty ?? true
+            widget.product.description?.isEmpty ?? true
                 ? 'No description available'
-                : product.description!,
+                : widget.product.description!,
             style: const TextStyle(fontSize: 16),
           ),
+
+          const SizedBox(height: 32),
+
+          // Delete Button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _confirmAndDeleteProduct(),
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              label: const Text(
+                'Delete Product',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                side: const BorderSide(color: Colors.red, width: 2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  void _showQRCode(BuildContext context, String qrData) {
-    final hasSku = product.sku != null && product.sku!.isNotEmpty;
-
-    showDialog(
+  void _confirmAndDeleteProduct() async {
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(dialogContext).size.width * 0.85,
-            maxHeight: MediaQuery.of(dialogContext).size.height * 0.75,
-          ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Product QR Code',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                if (!hasSku) ...[
-                  // Show message and generate button when no SKU
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.amber[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.amber[200]!),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: Colors.amber[700],
-                          size: 48,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Legacy Product (No SKU)',
-                          style: TextStyle(
-                            color: Colors.amber[900],
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'This product was created before automatic SKU generation.\nGenerate a SKU now to enable QR code features.',
-                          style: TextStyle(
-                            color: Colors.amber[800],
-                            fontSize: 12,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: () => _generateSKU(dialogContext),
-                          icon: const Icon(Icons.qr_code_outlined),
-                          label: const Text('Generate SKU for Legacy Product'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.amber[600],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
-                      ],
+      builder: (dialogContext) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red),
+            SizedBox(width: 12),
+            Text('Delete Product'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to delete:',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.product.title ?? 'Untitled Product',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
                     ),
                   ),
-                ] else ...[
-                  // Show QR code when SKU exists
-                  Center(
-                    child: QrImageView(
-                      data: qrData,
-                      version: QrVersions.auto,
-                      size: 200.0,
-                      backgroundColor: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue[200]!),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'SKU',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        SelectableText(
-                          product.sku ?? 'N/A',
-                          style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'ASIN: ${widget.product.asin ?? 'N/A'}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.green[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green[200]!),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'QR Contains Full Product Data:',
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildQRDataItem('Title', product.title ?? ''),
-                      _buildQRDataItem('Category', product.category ?? ''),
-                      _buildQRDataItem(
-                        'Subcategory',
-                        product.subcategory ?? '',
-                      ),
-                      _buildQRDataItem('Brand', product.brand ?? ''),
-                      _buildQRDataItem(
-                        'Price',
-                        product.sellingPrice?.toString() ?? '',
-                      ),
-                      _buildQRDataItem(
-                        'Quantity',
-                        product.quantity?.toString() ?? '',
-                      ),
-                      _buildQRDataItem(
-                        'Images',
-                        product.images != null
-                            ? '${product.images!.length} URLs'
-                            : '0',
-                      ),
-                      if (product.attributes != null &&
-                          product.attributes!.isNotEmpty)
-                        _buildQRDataItem(
-                          'Attributes',
-                          '${product.attributes!.length} fields',
-                        ),
-                      _buildQRDataItem(
-                        'Description',
-                        product.description?.isNotEmpty == true
-                            ? (product.description!.length > 50
-                                  ? '${product.description!.substring(0, 50)}...'
-                                  : product.description)
-                            : '',
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Scan to get all product information',
-                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: qrData));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Product data copied'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                      child: const Text('Copy'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Close'),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
+            const SizedBox(height: 16),
+            const Text(
+              'This action cannot be undone. All product images will also be deleted.',
+              style: TextStyle(fontSize: 13, color: Colors.red),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Future<void> _generateSKU(BuildContext dialogContext) async {
-    // Get SupabaseProvider from dialog context
-    final supabaseProvider = dialogContext.read<SupabaseProvider>();
-
-    // Check if user is authenticated
-    if (supabaseProvider.currentUser == null) {
-      if (dialogContext.mounted) {
-        ScaffoldMessenger.of(dialogContext).showSnackBar(
-          const SnackBar(
-            content: Text('Please log in to generate SKU'),
-            backgroundColor: Colors.red,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
           ),
-        );
-      }
-      return;
-    }
-
-    // Check if product has ASIN
-    if (product.asin == null || product.asin!.isEmpty) {
-      if (dialogContext.mounted) {
-        ScaffoldMessenger.of(dialogContext).showSnackBar(
-          const SnackBar(
-            content: Text('Product must have an ASIN to generate SKU'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-      return;
-    }
-
-    // Show loading
-    showDialog(
-      context: dialogContext,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      // Use the provider's edge function wrapper which handles auth properly
-      final result = await supabaseProvider.callManageProduct(
-        action: 'update',
-        asin: product.asin,
-        data: {
-          'title': product.title,
-          'description': product.description,
-          'brand': product.brand,
-          'category': product.category,
-          'subcategory': product.subcategory,
-          'selling_price': product.sellingPrice,
-          'list_price': product.listPrice,
-          'currency': product.currency,
-          'quantity': product.quantity,
-          'status': product.status,
-          'attributes': product.attributes,
-        },
-      );
-
-      print('SKU Generation Result: ${result.success} - ${result.message}');
-
-      // Close loading
-      if (dialogContext.mounted) {
-        Navigator.pop(dialogContext);
-      }
-
-      if (result.success && result.data != null) {
-        final updatedSku = result.data!['sku'] as String?;
-        final updatedQrData = result.data!['qr_data'] as String?;
-
-        // Show success dialog with new QR code
-        showDialog(
-          context: dialogContext,
-          builder: (context) => AlertDialog(
-            title: const Text('SKU Generated!'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Your unique SKU and QR code have been generated successfully!',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                if (updatedSku != null)
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.green[50],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'New SKU:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        SelectableText(
-                          updatedSku,
-                          style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-
-        // TODO: Update local product and refresh UI
-        // setState(() {});
-      } else {
-        throw Exception(result.message ?? 'Failed to generate SKU');
-      }
-    } catch (e) {
-      // Close loading if still open
-      if (dialogContext.mounted) {
-        Navigator.pop(dialogContext);
-      }
-      if (dialogContext.mounted) {
-        ScaffoldMessenger.of(dialogContext).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Widget _buildQRDataItem(String label, String? value) {
-    if (value == null || value.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.green[700],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Flexible(
-            child: Text(
-              value,
-              style: TextStyle(fontSize: 11, color: Colors.green[900]),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: const Text('Delete'),
           ),
         ],
       ),
     );
+
+    if (confirmed == true && widget.product.asin != null) {
+      // Navigate back to products list
+      if (mounted) Navigator.pop(context);
+      // Delete the product
+      final supabaseProvider = context.read<SupabaseProvider>();
+      await supabaseProvider.deleteProduct(widget.product.asin!);
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Product deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildDetailRow(String label, String value) {
@@ -1203,61 +1161,43 @@ class ProductDetailsScreen extends StatelessWidget {
         SizedBox(
           width: 120,
           child: Text(
-            label,
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            '$label:',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
         ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-        ),
+        Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
       ],
     );
   }
 
   Widget _buildSKURow(BuildContext context) {
-    final hasSku = product.sku != null && product.sku!.isNotEmpty;
-    final skuText = hasSku ? product.sku! : 'N/A';
+    final hasSku = widget.product.sku != null && widget.product.sku!.isNotEmpty;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
+        const SizedBox(
           width: 120,
           child: Text(
-            'SKU',
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            'SKU:',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
         ),
         Expanded(
-          child: Text(
-            skuText,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: hasSku ? Theme.of(context).primaryColor : null,
-            ),
-          ),
-        ),
-        if (hasSku)
-          IconButton(
-            icon: const Icon(Icons.copy, size: 20),
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: product.sku!));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('SKU copied to clipboard'),
-                  duration: Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
+          child: hasSku
+              ? SelectableText(
+                  widget.product.sku ?? 'N/A',
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                )
+              : const Text(
+                  'Not available',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
-              );
-            },
-            tooltip: 'Copy SKU',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
+        ),
       ],
     );
   }

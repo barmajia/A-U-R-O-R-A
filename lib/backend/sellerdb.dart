@@ -106,16 +106,46 @@ class SellerDB extends ChangeNotifier {
   /// Get seller by user_id
   Future<Map<String, dynamic>?> getSellerByUserId(String userId) async {
     try {
+      debugPrint('[SellerDB] Querying seller for user_id: $userId');
       final results = db.select('SELECT * FROM $tableName WHERE user_id = ?', [
         userId,
       ]);
 
+      debugPrint('[SellerDB] Query results count: ${results.length}');
+
       if (results.isNotEmpty) {
-        return results.first;
+        final seller = results.first;
+        debugPrint('[SellerDB] Raw seller data: $seller');
+        debugPrint('[SellerDB] firstname field: "${seller['firstname']}"');
+        debugPrint('[SellerDB] full_name field: "${seller['full_name']}"');
+
+        // If firstname is empty but full_name exists, extract firstname
+        if ((seller['firstname'] == null ||
+                seller['firstname'].toString().isEmpty) &&
+            seller['full_name'] != null &&
+            seller['full_name'].toString().isNotEmpty) {
+          final nameParts = seller['full_name'].toString().split(' ');
+          final extractedFirstname = nameParts.isNotEmpty ? nameParts[0] : '';
+          seller['firstname'] = extractedFirstname;
+          debugPrint(
+            '[SellerDB] Extracted firstname from full_name: "$extractedFirstname"',
+          );
+        } else {
+          debugPrint(
+            '[SellerDB] Using existing firstname: "${seller['firstname']}"',
+          );
+        }
+
+        debugPrint(
+          '[SellerDB] Returning seller with firstname: "${seller['firstname']}"',
+        );
+        return seller;
       }
+
+      debugPrint('[SellerDB] No seller found for user_id: $userId');
       return null;
     } catch (e) {
-      debugPrint('Error getting seller: $e');
+      debugPrint('[SellerDB] Error getting seller: $e');
       return null;
     }
   }
@@ -155,7 +185,11 @@ class SellerDB extends ChangeNotifier {
   }
 
   /// Update seller location
-  Future<void> updateSellerLocation(String userId, double latitude, double longitude) async {
+  Future<void> updateSellerLocation(
+    String userId,
+    double latitude,
+    double longitude,
+  ) async {
     try {
       final stmt = db.prepare('''
         UPDATE $tableName

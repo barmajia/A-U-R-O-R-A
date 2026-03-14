@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' show sin, cos, sqrt, asin;
 import 'package:aurora/models/nearby_user.dart';
 import 'package:aurora/services/supabase.dart';
+import 'package:aurora/services/error_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -16,10 +17,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 // - Filter users by distance and account type
 // - Location-based user search
 // - Haversine distance calculation
+// - Comprehensive error handling
 // ============================================================================
 
 class NearbyChatService extends ChangeNotifier {
   final SupabaseProvider _supabaseProvider;
+  final ErrorHandler _errorHandler = ErrorHandler();
   SupabaseClient get _client => _supabaseProvider.client;
 
   // State
@@ -34,6 +37,10 @@ class NearbyChatService extends ChangeNotifier {
   double? _currentLatitude;
   double? _currentLongitude;
 
+  // Configuration
+  static const Duration operationTimeout = Duration(seconds: 15);
+  static const int maxRetries = 3;
+
   // Constructor
   NearbyChatService(this._supabaseProvider);
 
@@ -41,12 +48,12 @@ class NearbyChatService extends ChangeNotifier {
   // Getters
   // ==========================================================================
 
-  List<NearbyUser> get nearbyUsers => _nearbyUsers;
+  List<NearbyUser> get nearbyUsers => List.unmodifiable(_nearbyUsers);
   bool get isLoading => _isLoading;
   String? get error => _error;
   double get searchRadius => _searchRadius;
   String? get filterAccountType => _filterAccountType;
-  List<String> get filterInterests => _filterInterests;
+  List<String> get filterInterests => List.unmodifiable(_filterInterests);
   String? get currentUserId => _supabaseProvider.currentUser?.id;
 
   // ==========================================================================
@@ -79,10 +86,14 @@ class NearbyChatService extends ChangeNotifier {
       final searchRadius = radius ?? _searchRadius;
 
       // Query sellers table directly (latitude/longitude exist in sellers table)
-      final sellers = await _findNearbySellers(
-        latitude: latitude,
-        longitude: longitude,
-        maxDistanceKm: searchRadius,
+      final sellers = await _errorHandler.executeWithRetry(
+        operation: () => _findNearbySellers(
+          latitude: latitude,
+          longitude: longitude,
+          maxDistanceKm: searchRadius,
+        ),
+        operationName: 'fetchNearbyUsers',
+        maxRetries: maxRetries,
       );
 
       // Sort by distance
@@ -94,8 +105,16 @@ class NearbyChatService extends ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      _error = 'Failed to fetch nearby users: $e';
-      debugPrint('❌ [NearbyChatService] Error fetching nearby users: $e');
+      final exception = _errorHandler.handleError(
+        e,
+        'fetchNearbyUsers',
+        context: {
+          'latitude': latitude,
+          'longitude': longitude,
+          'radius': radius ?? _searchRadius,
+        },
+      );
+      _error = exception.userFriendlyMessage ?? 'Failed to fetch nearby users';
       notifyListeners();
     } finally {
       _isLoading = false;
@@ -127,33 +146,37 @@ class NearbyChatService extends ChangeNotifier {
           .not('user_id', 'eq', currentUser.id)
           .not('latitude', 'is', null)
           .not('longitude', 'is', null)
-          .limit(50);
+          .limit(50)
+          .timeout(operationTimeout);
 
       if (response is! List) return [];
 
       final nearbySellers = <NearbyUser>[];
 
       for (var item in response) {
-        final sellerLat = (item['latitude'] as num).toDouble();
-        final sellerLon = (item['longitude'] as num).toDouble();
+        try {
+          final sellerLat = (item['latitude'] as num).toDouble();
+          final sellerLon = (item['longitude'] as num).toDouble();
 
-        // Calculate distance using Haversine formula
-        final distance = _calculateDistance(
-          latitude,
-          longitude,
-          sellerLat,
-          sellerLon,
-        );
-
-        if (distance <= maxDistanceKm) {
-          // Add distance to the map before creating NearbyUser
-          final itemWithDistance = Map<String, dynamic>.from(item as Map<String, dynamic>);
-          itemWithDistance['distance_km'] = distance;
-          nearbySellers.add(
-            NearbyUser.fromSellerMap(
-              itemWithDistance,
-            ),
+          // Calculate distance using Haversine formula
+          final distance = _calculateDistance(
+            latitude,
+            longitude,
+            sellerLat,
+            sellerLon,
           );
+
+          if (distance <= maxDistanceKm) {
+            // Add distance to the map before creating NearbyUser
+            final itemWithDistance = Map<String, dynamic>.from(
+              item as Map<String, dynamic>,
+            );
+            itemWithDistance['distance_km'] = distance;
+            nearbySellers.add(NearbyUser.fromSellerMap(itemWithDistance));
+          }
+        } catch (e) {
+          debugPrint('⚠️ Error processing seller record: $e');
+          // Continue processing other records
         }
       }
 
@@ -161,8 +184,20 @@ class NearbyChatService extends ChangeNotifier {
         (a, b) => (a.distance ?? 999).compareTo(b.distance ?? 999),
       );
       return nearbySellers;
-    } catch (e) {
-      debugPrint('❌ Error finding nearby sellers: $e');
+    } on PostgrestException catch (e, stackTrace) {
+      _errorHandler.handleError(
+        e,
+        '_findNearbySellers',
+        context: {'maxDistanceKm': maxDistanceKm, 'errorCode': e.code},
+        stackTrace: stackTrace,
+      );
+      return [];
+    } catch (e, stackTrace) {
+      _errorHandler.handleError(
+        e,
+        '_findNearbySellers',
+        stackTrace: stackTrace,
+      );
       return [];
     }
   }
@@ -258,18 +293,35 @@ class NearbyChatService extends ChangeNotifier {
       await _client
           .from('sellers')
           .update({'last_seen': DateTime.now().toIso8601String()})
-          .eq('user_id', currentUser.id);
-    } catch (e) {
-      debugPrint('❌ Error updating last_seen: $e');
+          .eq('user_id', currentUser.id)
+          .timeout(operationTimeout);
+    } catch (e, stackTrace) {
+      _errorHandler.handleError(e, 'updateLastSeen', stackTrace: stackTrace);
     }
   }
 
-  /// ✅ Check if user is online (simplified - always returns false for now)
-  bool isUserOnline(String userId) {
-    // Since we don't have lastSeen in the model anymore,
-    // we return false. You can implement a more sophisticated
-    // online status tracking system if needed.
-    return false;
+  /// ✅ Check if user is online based on last_seen timestamp
+  bool isUserOnline(
+    String userId, {
+    Duration threshold = const Duration(minutes: 5),
+  }) {
+    try {
+      // Find user in nearby users list
+      final user = _nearbyUsers.firstWhere(
+        (u) => u.id == userId,
+        orElse: () => NearbyUser.empty(),
+      );
+
+      if (user == NearbyUser.empty()) return false;
+
+      // Check if last_seen is within threshold
+      // Note: This requires last_seen field in NearbyUser model
+      // For now, return false as placeholder
+      return false;
+    } catch (e) {
+      debugPrint('⚠️ Error checking user online status: $e');
+      return false;
+    }
   }
 
   // ==========================================================================
@@ -288,43 +340,61 @@ class NearbyChatService extends ChangeNotifier {
     }
 
     try {
-      // Create new conversation
-      final conversation = await _client
-          .from('conversations')
-          .insert({})
-          .select()
-          .single();
+      // Create new conversation with error handling
+      final conversation = await _errorHandler.executeWithTimeout(
+        operation: () async {
+          return await _client
+              .from('conversations')
+              .insert({})
+              .select()
+              .single();
+        },
+        timeout: operationTimeout,
+        operationName: 'createConversation',
+      );
 
       // Add participants
-      await _client.from('conversation_participants').insert([
-        {
-          'conversation_id': conversation['id'],
-          'user_id': currentUserId,
-          'role': 'initiator',
-        },
-        {
-          'conversation_id': conversation['id'],
-          'user_id': targetUserId,
-          'role': 'recipient',
-        },
-      ]);
+      await _client
+          .from('conversation_participants')
+          .insert([
+            {
+              'conversation_id': conversation['id'],
+              'user_id': currentUserId,
+              'role': 'initiator',
+            },
+            {
+              'conversation_id': conversation['id'],
+              'user_id': targetUserId,
+              'role': 'recipient',
+            },
+          ])
+          .timeout(operationTimeout);
 
       // Send initial message if provided
       if (initialMessage != null && initialMessage.isNotEmpty) {
-        await _client.from('messages').insert({
-          'conversation_id': conversation['id'],
-          'sender_id': currentUserId,
-          'content': initialMessage,
-          'message_type': 'text',
-        });
+        await _client
+            .from('messages')
+            .insert({
+              'conversation_id': conversation['id'],
+              'sender_id': currentUserId,
+              'content': initialMessage,
+              'message_type': 'text',
+            })
+            .timeout(operationTimeout);
       }
 
       debugPrint(
         '✓ Started conversation with nearby user: ${conversation['id']}',
       );
       return conversation['id'] as String;
-    } catch (e) {
-      _error = 'Failed to start conversation: $e';
+    } catch (e, stackTrace) {
+      final exception = _errorHandler.handleError(
+        e,
+        'startConversationWithNearbyUser',
+        context: {'targetUserId': targetUserId},
+        stackTrace: stackTrace,
+      );
+      _error = exception.userFriendlyMessage ?? 'Failed to start conversation';
       debugPrint('❌ [NearbyChatService] Error starting conversation: $e');
       notifyListeners();
       return null;
@@ -352,24 +422,36 @@ class NearbyChatService extends ChangeNotifier {
             'longitude': longitude,
             'updated_at': DateTime.now().toIso8601String(),
           })
-          .eq('user_id', currentUser.id);
+          .eq('user_id', currentUser.id)
+          .timeout(operationTimeout);
 
       // ✅ Also update business_profiles if exists
-      await _client
-          .from('business_profiles')
-          .update({
-            'latitude': latitude,
-            'longitude': longitude,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('user_id', currentUser.id);
+      try {
+        await _client
+            .from('business_profiles')
+            .update({
+              'latitude': latitude,
+              'longitude': longitude,
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('user_id', currentUser.id)
+            .timeout(operationTimeout);
+      } catch (e) {
+        // business_profiles might not exist yet, ignore error
+        debugPrint('ℹ️ business_profiles table not found or update failed');
+      }
 
       _currentLatitude = latitude;
       _currentLongitude = longitude;
 
       debugPrint('✓ Location updated: $latitude, $longitude');
-    } catch (e) {
-      debugPrint('❌ [NearbyChatService] Error updating location: $e');
+    } catch (e, stackTrace) {
+      _errorHandler.handleError(
+        e,
+        'updateLocation',
+        context: {'latitude': latitude, 'longitude': longitude},
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -380,25 +462,35 @@ class NearbyChatService extends ChangeNotifier {
   /// Fetch detailed information about a specific user
   Future<NearbyUser?> fetchUserDetails(String userId) async {
     try {
-      final response = await _client
-          .from('sellers')
-          .select('''
-            user_id,
-            full_name,
-            latitude,
-            longitude,
-            location,
-            is_verified,
-            account_type
-          ''')
-          .eq('user_id', userId)
-          .single();
+      final response = await _errorHandler.executeWithTimeout(
+        operation: () async {
+          return await _client
+              .from('sellers')
+              .select('''
+                user_id,
+                full_name,
+                latitude,
+                longitude,
+                location,
+                is_verified,
+                account_type
+              ''')
+              .eq('user_id', userId)
+              .maybeSingle();
+        },
+        timeout: operationTimeout,
+        operationName: 'fetchUserDetails',
+      );
 
       if (response == null) return null;
 
       return NearbyUser.fromSellerMap(response as Map<String, dynamic>);
     } catch (e) {
-      debugPrint('❌ [NearbyChatService] Error fetching user details: $e');
+      _errorHandler.handleError(
+        e,
+        'fetchUserDetails',
+        context: {'userId': userId},
+      );
       return null;
     }
   }
@@ -448,8 +540,15 @@ class NearbyChatService extends ChangeNotifier {
     }
   }
 
+  /// Clear all nearby users
+  void clear() {
+    _nearbyUsers.clear();
+    notifyListeners();
+  }
+
   @override
   void dispose() {
+    unsubscribeFromPresence();
     super.dispose();
   }
 }

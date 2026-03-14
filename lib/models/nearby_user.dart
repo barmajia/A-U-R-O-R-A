@@ -26,7 +26,10 @@ class NearbyUser {
   factory NearbyUser.fromFactoryMap(Map<String, dynamic> map) {
     return NearbyUser(
       id: map['factory_id'] as String? ?? map['user_id'] as String,
-      displayName: map['factory_name'] as String? ?? map['store_name'] as String? ?? 'Unknown Factory',
+      displayName:
+          map['factory_name'] as String? ??
+          map['store_name'] as String? ??
+          'Unknown Factory',
       accountType: 'factory',
       latitude: (map['latitude'] as num?)?.toDouble() ?? 0,
       longitude: (map['longitude'] as num?)?.toDouble() ?? 0,
@@ -107,4 +110,21 @@ class NearbyUser {
       isVerified: isVerified ?? this.isVerified,
     );
   }
+
+  /// Create an empty NearbyUser instance for error cases
+  static NearbyUser empty() {
+    return NearbyUser(
+      id: '',
+      displayName: '',
+      accountType: '',
+      latitude: 0,
+      longitude: 0,
+    );
+  }
+
+  /// Check if this is an empty instance
+  bool get isEmpty => id.isEmpty;
+
+  /// Check if this is not an empty instance
+  bool get isNotEmpty => id.isNotEmpty;
 }

@@ -472,6 +472,9 @@ class SupabaseProvider extends ChangeNotifier {
         'USD';
   }
 
+  /// Get seller database instance for local seller operations
+  SellerDB? get sellerDb => _sellerDb;
+
   // --------------------------------------------------------------------------
   // Authentication: Login
   // --------------------------------------------------------------------------
@@ -2221,7 +2224,7 @@ class SupabaseProvider extends ChangeNotifier {
     try {
       final sellerId = currentUser!.id;
 
-      // Step 1: Fetch sales WITHOUT nested joins
+      // Step 1: Fetch sales - using minimal columns to avoid missing column errors
       var query = _client
           .from('sales')
           .select('''
@@ -2232,9 +2235,7 @@ class SupabaseProvider extends ChangeNotifier {
             quantity,
             total_price,
             sale_date,
-            notes,
-            created_at,
-            updated_at
+            created_at
           ''')
           .eq('seller_id', sellerId);
 

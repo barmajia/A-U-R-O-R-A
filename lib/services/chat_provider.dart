@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:aurora/models/chat/conversation.dart';
 import 'package:aurora/models/chat/message.dart';
 import 'package:aurora/models/chat/deal_proposal.dart';
-import 'package:aurora/services/supabase.dart';
+import 'package:aurora/services/auth_provider.dart';
 import 'package:aurora/services/deal_chat_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -32,8 +32,8 @@ import 'package:uuid/uuid.dart';
 // ============================================================================
 
 class ChatProvider extends ChangeNotifier {
-  final SupabaseProvider _supabaseProvider;
-  SupabaseClient get _client => _supabaseProvider.client;
+  final AuthProvider _authProvider;
+  SupabaseClient get _client => _authProvider.client;
 
   // State
   List<ChatConversation> _conversations = [];
@@ -55,11 +55,11 @@ class ChatProvider extends ChangeNotifier {
   bool _isLoadingDeals = false;
 
   // Constructor
-  ChatProvider(this._supabaseProvider);
+  ChatProvider(this._authProvider);
 
   // Get or create DealChatService instance
   DealChatService get _dealServiceInstance {
-    _dealService ??= DealChatService(_supabaseProvider);
+    _dealService ??= DealChatService(_authProvider);
     return _dealService!;
   }
 
@@ -76,7 +76,7 @@ class ChatProvider extends ChangeNotifier {
   Map<String, TypingStatus> get typingUsers => _typingUsers;
   bool get hasActiveConversation => _activeConversation != null;
 
-  String? get currentUserId => _supabaseProvider.currentUser?.id;
+  String? get currentUserId => _authProvider.currentUser?.id;
 
   // Deal proposal getters
   List<DealProposal> get dealProposals => _dealProposals;
@@ -1009,7 +1009,9 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final deals = await _dealServiceInstance.getConversationDeals(conversationId);
+      final deals = await _dealServiceInstance.getConversationDeals(
+        conversationId,
+      );
       _dealProposals = deals.map((d) => DealProposal.fromJson(d)).toList();
     } catch (e) {
       debugPrint('❌ [ChatProvider] Error loading deal proposals: $e');
@@ -1079,7 +1081,9 @@ class ChatProvider extends ChangeNotifier {
     required String conversationId,
   }) async {
     try {
-      final success = await _dealServiceInstance.cancelDealProposal(dealProposalId);
+      final success = await _dealServiceInstance.cancelDealProposal(
+        dealProposalId,
+      );
       if (success) {
         await loadDealProposals(conversationId);
       }

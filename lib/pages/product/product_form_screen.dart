@@ -697,6 +697,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             debugPrint('========================================');
           } catch (e) {
             debugPrint('✗ Error saving QR code: $e');
+            debugPrint(
+              'Note: The qr_data column may not exist in your products table.',
+            );
+            debugPrint(
+              'Product created successfully anyway. QR data is stored locally.',
+            );
           }
 
           // Show success with ASIN and SKU
