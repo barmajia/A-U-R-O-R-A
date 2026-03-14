@@ -79,14 +79,19 @@ A comprehensive Flutter-based e-commerce application with multi-vendor marketpla
 - Seller-buyer communication
 - Chat history persistence
 - Message notifications
+- Deal proposals and negotiations
 
 ### 📦 Product Management
 
-- Complete product catalog
-- ASIN generation and tracking
-- QR code / SKU integration
-- Image upload support
+- Complete product catalog with ASIN generation
+- **QR Code / SKU integration** with sharing capabilities
+- Product images upload and management
 - Product variants management
+- **Product link sharing** for deals
+- **Share QR codes** via WhatsApp, Messenger, SMS, Email
+- **Copy SKU to clipboard** for easy reference
+- Brand and category management
+- Inventory tracking
 
 ### 🏠 User Features
 
@@ -110,6 +115,7 @@ A comprehensive Flutter-based e-commerce application with multi-vendor marketpla
 - Geolocation integration
 - Geocoding support
 - Location-based features
+- Nearby sellers/factories discovery
 
 ### 🎨 User Experience
 
@@ -118,6 +124,7 @@ A comprehensive Flutter-based e-commerce application with multi-vendor marketpla
 - Smooth animations
 - Intuitive navigation
 - Dark/Light theme support
+- **Enhanced product details** with copy/share features
 
 ---
 
@@ -154,6 +161,11 @@ A comprehensive Flutter-based e-commerce application with multi-vendor marketpla
 | `shared_preferences`     | Local caching                  |
 | `intl`                   | Internationalization           |
 | `uuid`                   | UUID generation                |
+| `share_plus`             | Product/QR code sharing        |
+| `country_picker`         | Country selection              |
+| `cached_network_image`   | Image caching                  |
+| `path_provider`          | File path management           |
+| `sqlite3`                | Local database                 |
 
 ---
 
@@ -366,7 +378,14 @@ const String supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
 ### Product Module
 
 - [`products_page.dart`](lib/pages/product/products_page.dart) - Product catalog management
-- [`product_details_screen.dart`](lib/pages/product/product_details_screen.dart) - Product details and editing
+- [`product_details_screen.dart`](lib/pages/product/product_details_screen.dart) - Product details with SKU/QR display
+- [`product_form_screen.dart`](lib/pages/product/product_form_screen.dart) - Create/edit product form
+- **Features:**
+  - View/copy SKU to clipboard
+  - Share product QR codes
+  - Share product links
+  - Product image management
+  - Real-time sync with Supabase
 
 ### Factory Module
 
@@ -433,44 +452,273 @@ USING (seller_id = auth.uid());
 
 Additional documentation files:
 
+### Core Implementation
+
+| Document                                                                   | Description                      |
+| -------------------------------------------------------------------------- | -------------------------------- |
+| [`COMPLETE_IMPLEMENTATION_SUMMARY.md`](COMPLETE_IMPLEMENTATION_SUMMARY.md) | Full implementation overview     |
+| [`SQL_IMPLEMENTATION_GUIDE.md`](SQL_IMPLEMENTATION_GUIDE.md)               | Database setup guide             |
+| [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md)                               | Production deployment            |
+| [`COMPLETE_DEPLOYMENT_GUIDE.md`](COMPLETE_DEPLOYMENT_GUIDE.md)             | Complete deployment instructions |
+| [`ENHANCED_FEATURES_GUIDE.md`](ENHANCED_FEATURES_GUIDE.md)                 | Advanced features                |
+| [`TROUBLESHOOTING_GUIDE.md`](TROUBLESHOOTING_GUIDE.md)                     | Common issues and solutions      |
+| [`FINAL_DEPLOYMENT_CHECKLIST.md`](FINAL_DEPLOYMENT_CHECKLIST.md)           | Pre-deployment checklist         |
+
+### Multi-Role & Security
+
+| Document                                                                     | Description                     |
+| ---------------------------------------------------------------------------- | ------------------------------- |
+| [`MULTI_ROLE_SYSTEM_IMPLEMENTATION.md`](MULTI_ROLE_SYSTEM_IMPLEMENTATION.md) | Multi-role access control       |
+| [`SECURITY_FIXES_COMPLETE.md`](SECURITY_FIXES_COMPLETE.md)                   | Security implementation details |
+| [`SECURE_CONFIG_IMPLEMENTATION.md`](SECURE_CONFIG_IMPLEMENTATION.md)         | Secure configuration setup      |
+
+### Factory & Chat Systems
+
+| Document                                                                     | Description                    |
+| ---------------------------------------------------------------------------- | ------------------------------ |
+| [`FACTORY_SYSTEM_SUMMARY.md`](FACTORY_SYSTEM_SUMMARY.md)                     | Factory module documentation   |
+| [`FACTORY_ACCOUNT_IMPLEMENTATION.md`](FACTORY_ACCOUNT_IMPLEMENTATION.md)     | Factory account setup          |
+| [`FACTORY_DISCOVERY_IMPLEMENTATION.md`](FACTORY_DISCOVERY_IMPLEMENTATION.md) | Factory discovery feature      |
+| [`CHAT_SYSTEM_IMPLEMENTATION.md`](CHAT_SYSTEM_IMPLEMENTATION.md)             | Chat system implementation     |
+| [`CHAT_SYSTEM_ARCHITECTURE.md`](CHAT_SYSTEM_ARCHITECTURE.md)                 | Chat architecture overview     |
+| [`BIOMETRIC_IMPLEMENTATION.md`](BIOMETRIC_IMPLEMENTATION.md)                 | Biometric authentication setup |
+
+### Edge Functions & Backend
+
 | Document                                                                     | Description                      |
 | ---------------------------------------------------------------------------- | -------------------------------- |
-| [`COMPLETE_IMPLEMENTATION_SUMMARY.md`](COMPLETE_IMPLEMENTATION_SUMMARY.md)   | Full implementation overview     |
-| [`SQL_IMPLEMENTATION_GUIDE.md`](SQL_IMPLEMENTATION_GUIDE.md)                 | Database setup guide             |
-| [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md)                                 | Production deployment            |
-| [`COMPLETE_DEPLOYMENT_GUIDE.md`](COMPLETE_DEPLOYMENT_GUIDE.md)               | Complete deployment instructions |
-| [`ENHANCED_FEATURES_GUIDE.md`](ENHANCED_FEATURES_GUIDE.md)                   | Advanced features                |
-| [`FACTORY_SYSTEM_SUMMARY.md`](FACTORY_SYSTEM_SUMMARY.md)                     | Factory module documentation     |
-| [`FACTORY_ACCOUNT_IMPLEMENTATION.md`](FACTORY_ACCOUNT_IMPLEMENTATION.md)     | Factory account setup            |
-| [`FACTORY_DISCOVERY_IMPLEMENTATION.md`](FACTORY_DISCOVERY_IMPLEMENTATION.md) | Factory discovery feature        |
-| [`CHAT_SYSTEM_IMPLEMENTATION.md`](CHAT_SYSTEM_IMPLEMENTATION.md)             | Chat system implementation       |
-| [`BIOMETRIC_IMPLEMENTATION.md`](BIOMETRIC_IMPLEMENTATION.md)                 | Biometric authentication setup   |
 | [`EDGE_FUNCTIONS_COMPLETE_GUIDE.md`](EDGE_FUNCTIONS_COMPLETE_GUIDE.md)       | Edge functions complete guide    |
 | [`EDGE_FUNCTIONS_DEPLOYMENT.md`](EDGE_FUNCTIONS_DEPLOYMENT.md)               | Edge functions deployment        |
-| [`PRODUCT_SYSTEM_GUIDE.md`](PRODUCT_SYSTEM_GUIDE.md)                         | Product management system        |
-| [`QR_CODE_SKU_GUIDE.md`](QR_CODE_SKU_GUIDE.md)                               | QR code and SKU integration      |
-| [`IMAGE_UPLOAD_SETUP.md`](IMAGE_UPLOAD_SETUP.md)                             | Image upload configuration       |
-| [`MULTI_ROLE_SYSTEM_IMPLEMENTATION.md`](MULTI_ROLE_SYSTEM_IMPLEMENTATION.md) | Multi-role access control        |
-| [`PGMQ_QUEUE_SERVICE.md`](PGMQ_QUEUE_SERVICE.md)                             | Message queue service            |
-| [`SECURITY_FIXES_COMPLETE.md`](SECURITY_FIXES_COMPLETE.md)                   | Security implementation details  |
-| [`TROUBLESHOOTING_GUIDE.md`](TROUBLESHOOTING_GUIDE.md)                       | Common issues and solutions      |
-| [`FINAL_DEPLOYMENT_CHECKLIST.md`](FINAL_DEPLOYMENT_CHECKLIST.md)             | Pre-deployment checklist         |
+| [`BACKEND_FUNCTIONS_COMPLETE_GUIDE.md`](BACKEND_FUNCTIONS_COMPLETE_GUIDE.md) | Backend functions implementation |
+| [`CREATE_ORDER_FUNCTION_GUIDE.md`](CREATE_ORDER_FUNCTION_GUIDE.md)           | Order creation function guide    |
+| [`SERVER_ASIN_GENERATION.md`](SERVER_ASIN_GENERATION.md)                     | Server-side ASIN generation      |
+
+### Product & QR Code System
+
+| Document                                                                         | Description                       |
+| -------------------------------------------------------------------------------- | --------------------------------- |
+| [`PRODUCT_SYSTEM_GUIDE.md`](PRODUCT_SYSTEM_GUIDE.md)                             | Product management system         |
+| [`QR_CODE_SKU_GUIDE.md`](QR_CODE_SKU_GUIDE.md)                                   | QR code and SKU integration       |
+| [`QR_CODE_FULL_PRODUCT_DATA_GUIDE.md`](QR_CODE_FULL_PRODUCT_DATA_GUIDE.md)       | Complete QR data implementation   |
+| [`QR_CODE_LINK_GUIDE.md`](QR_CODE_LINK_GUIDE.md)                                 | Product link in QR codes          |
+| [`QR_DIALOG_REBUILD_COMPLETE.md`](QR_DIALOG_REBUILD_COMPLETE.md)                 | QR dialog enhancement             |
+| [`SKU_GENERATION_GUIDE.md`](SKU_GENERATION_GUIDE.md)                             | Automatic SKU generation          |
+| [`SKU_QR_COMPLETE_REBUILD.md`](SKU_QR_COMPLETE_REBUILD.md)                       | Complete SKU/QR rebuild           |
+| [`PRODUCT_DETAILS_SKU_QR_ENHANCEMENT.md`](PRODUCT_DETAILS_SKU_QR_ENHANCEMENT.md) | Product details page enhancements |
+| [`QR_CODE_SHARE_FEATURE.md`](QR_CODE_SHARE_FEATURE.md)                           | QR code sharing functionality     |
+| [`PRODUCT_LINK_BLACK_THEME.md`](PRODUCT_LINK_BLACK_THEME.md)                     | Product link UI theme             |
+
+### Image & Storage
+
+| Document                                                                           | Description                |
+| ---------------------------------------------------------------------------------- | -------------------------- |
+| [`IMAGE_UPLOAD_SETUP.md`](IMAGE_UPLOAD_SETUP.md)                                   | Image upload configuration |
+| [`PRODUCT_IMAGE_UPLOAD_IMPLEMENTATION.md`](PRODUCT_IMAGE_UPLOAD_IMPLEMENTATION.md) | Product image upload guide |
+| [`SUPABASE_STORAGE_GUIDE.md`](SUPABASE_STORAGE_GUIDE.md)                           | Supabase storage setup     |
+
+### Database & Queues
+
+| Document                                                     | Description                  |
+| ------------------------------------------------------------ | ---------------------------- |
+| [`PGMQ_QUEUE_SERVICE.md`](PGMQ_QUEUE_SERVICE.md)             | Message queue service        |
+| [`PGMQ_QUICK_REFERENCE.md`](PGMQ_QUICK_REFERENCE.md)         | PGMQ quick reference         |
+| [`LOCAL_DATABASE_FIX.md`](LOCAL_DATABASE_FIX.md)             | Local database configuration |
+| [`UNIVERSAL_METADATA_GUIDE.md`](UNIVERSAL_METADATA_GUIDE.md) | Metadata system guide        |
+
+### Testing & Quality
+
+| Document                                                           | Description                 |
+| ------------------------------------------------------------------ | --------------------------- |
+| [`TEST_IMPLEMENTATION_SUMMARY.md`](TEST_IMPLEMENTATION_SUMMARY.md) | Testing implementation      |
+| [`TEST_COMPLETE.md`](TEST_COMPLETE.md)                             | Complete testing guide      |
+| [`TEST_FINAL_STATUS.md`](TEST_FINAL_STATUS.md)                     | Final testing status        |
+| [`CODE_CLEANUP_COMPLETE.md`](CODE_CLEANUP_COMPLETE.md)             | Code cleanup summary        |
+| [`CODE_ANALYSIS_REPORT.md`](CODE_ANALYSIS_REPORT.md)               | Comprehensive code analysis |
+
+### Fixes & Updates
+
+| Document                                                               | Description                 |
+| ---------------------------------------------------------------------- | --------------------------- |
+| [`FIXES_APPLIED.md`](FIXES_APPLIED.md)                                 | Applied fixes summary       |
+| [`PRODUCT_PAGE_LOADING_FIX.md`](PRODUCT_PAGE_LOADING_FIX.md)           | Product page loading fix    |
+| [`PRODUCT_PAGE_UPDATE.md`](PRODUCT_PAGE_UPDATE.md)                     | Product page updates        |
+| [`DEPLOY_SKU_QR_FIX.md`](DEPLOY_SKU_QR_FIX.md)                         | SKU/QR deployment fix       |
+| [`QR_DATA_FIX_DEPLOYMENT.md`](QR_DATA_FIX_DEPLOYMENT.md)               | QR data column fix          |
+| [`FIX_QR_DATA_COLUMN.md`](FIX_QR_DATA_COLUMN.md)                       | QR data column migration    |
+| [`FIX_EDGE_FUNCTION_503_ERROR.md`](FIX_EDGE_FUNCTION_503_ERROR.md)     | Edge function error fix     |
+| [`SHARE_FEATURE_FIX.md`](SHARE_FEATURE_FIX.md)                         | Share feature Android fix   |
+| [`TYPO_FIX_COMPLETE.md`](TYPO_FIX_COMPLETE.md)                         | Typo fixes                  |
+| [`THEME_CONTRAST_FIX.md`](THEME_CONTRAST_FIX.md)                       | Theme contrast improvements |
+| [`SETTINGS_REFACTORING_COMPLETE.md`](SETTINGS_REFACTORING_COMPLETE.md) | Settings refactoring        |
+| [`LOCAL_DATABASE_UPDATES.md`](LOCAL_DATABASE_UPDATES.md)               | Local database updates      |
+
+### Configuration & Metadata
+
+| Document                                                             | Description               |
+| -------------------------------------------------------------------- | ------------------------- |
+| [`CONFIGURATION_FINAL_STATUS.md`](CONFIGURATION_FINAL_STATUS.md)     | Configuration status      |
+| [`UNIVERSAL_METADATA_GUIDE.md`](UNIVERSAL_METADATA_GUIDE.md)         | Universal metadata system |
+| [`SKU_STORAGE_CONFIRMATION.md`](SKU_STORAGE_CONFIRMATION.md)         | SKU storage confirmation  |
+| [`INTEGRATION_COMPLETE_SUMMARY.md`](INTEGRATION_COMPLETE_SUMMARY.md) | Integration summary       |
+| [`INTEGRATION_SUMMARY.md`](INTEGRATION_SUMMARY.md)                   | Integration overview      |
+| [`IMPLEMENTATION_COMPLETE.md`](IMPLEMENTATION_COMPLETE.md)           | Implementation completion |
+
+### Backup & Recovery
+
+| Document                                                 | Description               |
+| -------------------------------------------------------- | ------------------------- |
+| [`BACKUP_GUIDE.md`](BACKUP_GUIDE.md)                     | Backup and recovery guide |
+| [`FINAL_CLEANUP_SUMMARY.md`](FINAL_CLEANUP_SUMMARY.md)   | Final cleanup summary     |
+| [`DUPLICATE_FILE_REMOVED.md`](DUPLICATE_FILE_REMOVED.md) | Duplicate file removal    |
+
+### GitHub & Deployment
+
+| Document                                             | Description                  |
+| ---------------------------------------------------- | ---------------------------- |
+| [`GITHUB_SECRETS_SETUP.md`](GITHUB_SECRETS_SETUP.md) | GitHub secrets configuration |
+| [`DEPLOY_SKU_QR_FIX.md`](DEPLOY_SKU_QR_FIX.md)       | Deployment fixes             |
+
+---
+
+**Quick Links:**
+
+- [📊 Code Analysis Report](CODE_ANALYSIS_REPORT.md) - Latest code quality report
+- [🔧 Troubleshooting Guide](TROUBLESHOOTING_GUIDE.md) - Common issues and solutions
+- [🚀 Deployment Guide](DEPLOYMENT_GUIDE.md) - How to deploy to production
+- [📱 QR Share Feature](QR_CODE_SHARE_FEATURE.md) - Product sharing documentation
+
+---
+
+## 🆕 Recent Updates (March 2026)
+
+### Product QR Code & Sharing Features
+
+- ✅ **QR Code Sharing** - Share product QR codes via WhatsApp, Messenger, SMS, Email
+- ✅ **Product Link Sharing** - Quick share product URLs for deals
+- ✅ **Copy SKU to Clipboard** - One-tap SKU copying from product details
+- ✅ **Enhanced Product Details** - Display SKU with copy button in black theme
+- ✅ **Share Plus Integration** - Native sharing on Android & iOS
+- ✅ **Android Manifest Updates** - Package visibility for Android 11+
+
+### Code Quality
+
+- ✅ **Comprehensive Code Analysis** - 278 issues identified and documented
+- ✅ **Test Coverage** - Unit tests for backend and models
+- ✅ **Documentation** - 95+ markdown documentation files
+
+### Bug Fixes
+
+- ✅ **QR Data Column** - Added missing `qr_data` column to Supabase
+- ✅ **Edge Function 503** - Fixed deployment issues
+- ✅ **Share Feature** - Fixed Android package visibility
+- ✅ **Theme Issues** - Fixed color contrast and deprecated APIs
+
+### Documentation
+
+- ✅ [`CODE_ANALYSIS_REPORT.md`](CODE_ANALYSIS_REPORT.md) - Complete code quality analysis
+- ✅ [`QR_CODE_SHARE_FEATURE.md`](QR_CODE_SHARE_FEATURE.md) - Sharing functionality guide
+- ✅ [`PRODUCT_DETAILS_SKU_QR_ENHANCEMENT.md`](PRODUCT_DETAILS_SKU_QR_ENHANCEMENT.md) - Product details enhancement
+- ✅ [`PRODUCT_LINK_BLACK_THEME.md`](PRODUCT_LINK_BLACK_THEME.md) - UI theme updates
+- ✅ [`FIX_EDGE_FUNCTION_503_ERROR.md`](FIX_EDGE_FUNCTION_503_ERROR.md) - Edge function troubleshooting
+- ✅ [`SHARE_FEATURE_FIX.md`](SHARE_FEATURE_FIX.md) - Android sharing fix
 
 ---
 
 ## 🧪 Testing
 
-Run tests:
+### Test Coverage Status
+
+| Test Type             | Coverage | Status     | Files   |
+| --------------------- | -------- | ---------- | ------- |
+| **Unit Tests**        | ~20%     | ✅ Active  | 6 files |
+| **Widget Tests**      | ~5%      | ✅ Active  | 1 file  |
+| **Database Tests**    | 100% SQL | ✅ Active  | 1 file  |
+| **Integration Tests** | 0%       | ⏳ Planned | -       |
+| **Overall Goal**      | 75%      | 🎯 Target  | -       |
+
+### Run Tests
 
 ```bash
+# Run all tests
 flutter test
-```
 
-Run with coverage:
-
-```bash
+# Run with coverage
 flutter test --coverage
+
+# Run specific test file
+flutter test test/unit/utils/qr_data_generator_test.dart
+
+# Run widget tests
+flutter test test/widget/
+
+# Run database tests (in Supabase SQL Editor)
+# Open test/sql/database_tests.sql and execute
 ```
+
+### Test Files
+
+#### Unit Tests
+
+- ✅ `test/unit/models/aurora_product_test.dart` - Product model tests
+- ✅ `test/unit/models/chat_models_test.dart` - Chat model tests
+- ✅ `test/unit/backend/productsdb_test.dart` - Local database tests
+- ✅ `test/unit/backend/sellerdb_test.dart` - Seller database tests
+- ✅ `test/unit/services/theme_provider_test.dart` - Theme service tests
+- ✅ `test/unit/utils/qr_data_generator_test.dart` - QR data generation tests
+
+#### Widget Tests
+
+- ✅ `test/widget/widgets/qr_code_dialog_test.dart` - QR dialog UI tests
+
+#### Database Tests (SQL)
+
+- ✅ `test/sql/database_tests.sql` - RLS policies, triggers, functions
+
+### Testing Strategy
+
+See [`TESTING_STRATEGY_AND_GAPS.md`](TESTING_STRATEGY_AND_GAPS.md) for comprehensive testing plan including:
+
+- RLS policy testing
+- Integration tests
+- E2E tests
+- Security testing
+- Performance testing
+
+### Identified Gaps & Fixes
+
+#### Gap #1: QR Data Column Missing ✅ FIXED
+
+**Issue:** `qr_data` column not in Supabase  
+**Test Found:** `test_column_qr_data_exists()`  
+**Fix:** Run migration in `supabase/migrations/007_add_qr_data_column.sql`
+
+#### Gap #2: getProductUrl() Returns Null ✅ FIXED
+
+**Issue:** Method returned null when qrData is null  
+**Test Found:** `getProductUrl generates URL if qrData is null`  
+**Fix:** Updated `AuroraProduct.getProductUrl()` to generate URL from sellerId + asin
+
+#### Gap #3: Share Feature on Android ✅ FIXED
+
+**Issue:** Share button not working on Android 11+  
+**Test Found:** Manual testing  
+**Fix:** Added SEND intents to `AndroidManifest.xml`
+
+#### Gap #4: Edge Function 503 Error ⏳ PENDING
+
+**Issue:** create-product function returns 503  
+**Test Found:** Integration testing  
+**Fix Required:** Deploy edge function to Supabase
+
+### Continuous Integration
+
+Tests run automatically on:
+
+- Push to main branch
+- Pull requests
+- Before deployment
+
+See `.github/workflows/test.yml` for CI configuration.
 
 ---
 

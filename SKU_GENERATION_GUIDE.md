@@ -1,24 +1,38 @@
 # 🏷️ SKU Generation Guide
 
-## ✅ SKU Generation Feature - COMPLETE!
+## ✅ Automatic SKU Generation - COMPLETE!
 
-Products **without a SKU** can now **generate one on-demand** with a single button click. The generated SKU includes **ALL product data** in the QR code.
+### **New Products: SKU Generated Automatically** ✨
+
+When creating a **new product**, the SKU and QR code are **automatically generated on the server**. No manual action needed!
+
+### **Legacy Products: Manual Generation Available**
+
+For **old products** created before this feature, use the "Generate SKU for Legacy Product" button in the QR code dialog.
 
 ---
 
 ## 🎯 How It Works
 
-### **When a Product Has No SKU:**
+### **Creating a New Product:**
 
-1. User opens product details
+1. User fills product form (title, description, category, price, etc.)
+2. User taps "Save" or "Create"
+3. Edge function automatically generates:
+   - **ASIN** (UUID) - Unique product identifier
+   - **SKU** (UUID) - Unique inventory identifier
+   - **QR Data** (JSON with all product details)
+4. Product saved with all identifiers
+5. User can immediately view and scan QR code
+
+### **Legacy Product (No SKU):**
+
+1. User opens old product (created before auto-SKU)
 2. Taps QR Code icon
-3. Sees **"Generate SKU & QR Code"** button
-4. Taps button
-5. Edge function generates:
-   - Unique SKU (UUID)
-   - Full QR data with all product details
-6. SKU is saved to database
-7. User sees new SKU and QR code
+3. Sees **"Legacy Product (No SKU)"** message
+4. Taps "Generate SKU for Legacy Product"
+5. Edge function generates SKU and QR data
+6. Product updated with new identifiers
 
 ---
 
@@ -79,6 +93,7 @@ Products **without a SKU** can now **generate one on-demand** with a single butt
 ### **1. Flutter UI** (`lib/pages/product/product.dart`)
 
 **Check for SKU:**
+
 ```dart
 final hasSku = product.sku != null && product.sku!.isNotEmpty;
 
@@ -96,11 +111,12 @@ if (!hasSku) {
 ```
 
 **Generate SKU Method:**
+
 ```dart
 Future<void> _generateSKU(BuildContext context) async {
   // Show loading indicator
   showDialog(...);
-  
+
   try {
     // Call edge function
     final response = await supabase.functions.invoke(
@@ -120,7 +136,7 @@ Future<void> _generateSKU(BuildContext context) async {
         },
       },
     );
-    
+
     // Show success dialog with new SKU
     final updatedSku = response.data?['sku'];
     // Display new SKU
@@ -159,26 +175,26 @@ case "update": {
       // Core identifiers
       asin: asin,
       sku: generatedSku,
-      
+
       // Basic product info
       title: data.title,
       description: data.description,
       brand: data.brand,
-      
+
       // Category hierarchy
       category: data.category,
       subcategory: data.subcategory,
-      
+
       // Pricing
       selling_price: data.selling_price,
       currency: data.currency,
-      
+
       // Inventory
       quantity: data.quantity,
-      
+
       // Attributes
       attributes: data.attributes,
-      
+
       // ... all other fields
     };
     qrDataString = JSON.stringify(qrData);
@@ -199,8 +215,8 @@ case "update": {
 
   return {
     success: true,
-    message: sku === existingProduct?.sku 
-      ? "Product updated successfully" 
+    message: sku === existingProduct?.sku
+      ? "Product updated successfully"
       : "SKU generated successfully",
     data: updatedProduct,
     sku: sku,
@@ -219,33 +235,33 @@ When generated, the QR code contains:
 {
   "asin": "550e8400-e29b-41d4-a716-446655440000",
   "sku": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
-  
+
   "title": "Wireless Bluetooth Headphones",
   "description": "Premium noise-cancelling...",
   "brand": "AudioTech",
-  
+
   "category": "Electronics",
   "subcategory": "Headphones",
   "product_type": "Wireless Headphones",
-  
+
   "selling_price": 79.99,
   "list_price": 99.99,
   "currency": "USD",
-  
+
   "quantity": 150,
   "fulfillment_channel": "FBM",
   "availability_status": "In Stock",
-  
+
   "attributes": {
     "color": "Black",
     "connectivity": "Bluetooth 5.0",
     "battery_life": "30 hours"
   },
-  
+
   "images": [...],
   "variations": [...],
   "compliance": {...},
-  
+
   "status": "Active",
   "language": "en_US",
   "bullet_points": [...]
@@ -266,6 +282,7 @@ supabase functions deploy manage-product --project-ref ofovfxsfazlwvcakpuer
 ### **2. Test in App**
 
 **Test Case 1: Product Without SKU**
+
 1. Open product without SKU
 2. Tap QR Code icon
 3. See amber alert with "Generate SKU & QR Code" button
@@ -275,6 +292,7 @@ supabase functions deploy manage-product --project-ref ofovfxsfazlwvcakpuer
 7. Open QR code again - see full QR code with data
 
 **Test Case 2: Product With SKU**
+
 1. Open product with existing SKU
 2. Tap QR Code icon
 3. See QR code immediately
@@ -342,38 +360,42 @@ supabase functions deploy manage-product --project-ref ofovfxsfazlwvcakpuer
 
 ## ✅ Features
 
-| Feature | Description |
-|---------|-------------|
-| **On-Demand Generation** | Generate SKU only when needed |
-| **UUID Format** | Standard UUID v4 format |
-| **Full Data QR** | All product details in QR code |
-| **Loading State** | Clear loading indicator |
-| **Success Feedback** | Confirmation dialog with new SKU |
-| **Error Handling** | Graceful error messages |
-| **Idempotent** | Won't regenerate if SKU exists |
-| **Secure** | User can only update own products |
+| Feature                  | Description                       |
+| ------------------------ | --------------------------------- |
+| **On-Demand Generation** | Generate SKU only when needed     |
+| **UUID Format**          | Standard UUID v4 format           |
+| **Full Data QR**         | All product details in QR code    |
+| **Loading State**        | Clear loading indicator           |
+| **Success Feedback**     | Confirmation dialog with new SKU  |
+| **Error Handling**       | Graceful error messages           |
+| **Idempotent**           | Won't regenerate if SKU exists    |
+| **Secure**               | User can only update own products |
 
 ---
 
 ## 🎨 UI States
 
 ### **State 1: No SKU**
+
 - Amber alert box
 - Info icon
 - Clear call-to-action button
 - No QR code shown
 
 ### **State 2: Generating**
+
 - Full-screen loading overlay
 - Cannot interact with dialog
 - Clear visual feedback
 
 ### **State 3: Success**
+
 - Green success dialog
 - New SKU displayed
 - Option to view QR code
 
 ### **State 4: Has SKU**
+
 - QR code image
 - SKU displayed
 - Data preview
@@ -383,13 +405,13 @@ supabase functions deploy manage-product --project-ref ofovfxsfazlwvcakpuer
 
 ## 📝 Summary
 
-| Scenario | Behavior |
-|----------|----------|
-| **New Product** | SKU generated automatically on creation |
-| **Old Product (No SKU)** | "Generate SKU" button shown |
-| **Product With SKU** | QR code shown immediately |
-| **Generate Clicked** | Edge function creates SKU + QR data |
-| **Error** | Error message shown, no changes |
+| Scenario                 | Behavior                                |
+| ------------------------ | --------------------------------------- |
+| **New Product**          | SKU generated automatically on creation |
+| **Old Product (No SKU)** | "Generate SKU" button shown             |
+| **Product With SKU**     | QR code shown immediately               |
+| **Generate Clicked**     | Edge function creates SKU + QR data     |
+| **Error**                | Error message shown, no changes         |
 
 **SKU generation is now fully automated and on-demand!** 🎉
 

@@ -9,7 +9,7 @@ import 'dart:convert';
 class AuroraProduct {
   // Core fields
   final String? asin;
-  final String? sku;
+  String? sku; // Non-final: can be generated after creation
   final String? sellerId;
   final String? marketplaceId;
   final String? productType;
@@ -102,59 +102,61 @@ class AuroraProduct {
   String? get mainImage =>
       images?.isNotEmpty == true ? images!.first.url : null;
 
-  // Generate QR data with ALL product details
+  // Generate QR data with product link (URL containing seller_id and asin)
   String generateQRData() {
+    // Build product URL with seller UUID and ASIN
+    final productUrl =
+        'https://aurora-app.com/product?seller=${sellerId ?? ''}&asin=${asin ?? ''}';
+
     return jsonEncode({
       // Core identifiers
       'asin': asin ?? '',
       'sku': sku ?? '',
+      'seller_id': sellerId ?? '',
 
-      // Basic product info
+      // Product URL for quick access
+      'url': productUrl,
+
+      // Basic product info (for offline scanning)
       'title': title,
-      'description': description,
       'brand': brand,
-      'manufacturer': manufacturer,
-
-      // Category hierarchy
-      'category': category,
-      'subcategory': subcategory,
-      'product_type': productType,
-
-      // Pricing
       'selling_price': sellingPrice ?? listPrice,
-      'list_price': listPrice,
-      'business_price': businessPrice,
       'currency': currency ?? 'USD',
-      'tax_code': taxCode,
-
-      // Inventory
       'quantity': quantity,
-      'fulfillment_channel': fulfillmentChannel,
-      'availability_status': availabilityStatus,
-      'lead_time_to_ship': leadTimeToShip,
-
-      // Attributes (flexible JSONB fields)
-      'attributes': attributes,
-
-      // Variations
-      'variations': variations?.toJson(),
-
-      // Images (main image URLs)
-      'images': images?.map((e) => e.toJson()).toList(),
-
-      // Compliance
-      'compliance': compliance?.toJson(),
-
-      // Metadata
-      'status': status,
-      'language': language,
-      'bullet_points': bulletPoints,
     });
   }
 
   // Update QR data to current product state
   void refreshQRData() {
     qrData = generateQRData();
+  }
+
+  // Parse QR data from JSON string
+  Map<String, dynamic>? parseQRData() {
+    if (qrData == null || qrData!.isEmpty) return null;
+    try {
+      return jsonDecode(qrData!) as Map<String, dynamic>;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Get product URL from QR data
+  String? getProductUrl() {
+    final qr = parseQRData();
+    final urlFromQr = qr?['url'] as String?;
+
+    // If qrData exists, return URL from it
+    if (urlFromQr != null && urlFromQr.isNotEmpty) {
+      return urlFromQr;
+    }
+
+    // Otherwise generate URL from available data
+    if (sellerId != null && asin != null) {
+      return 'https://aurora-app.com/product?seller=$sellerId&asin=$asin';
+    }
+
+    return null;
   }
 
   // Create from Supabase JSON

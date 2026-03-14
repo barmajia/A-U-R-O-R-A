@@ -1,15 +1,13 @@
-import 'package:aurora/models/aurora_product.dart'; // Changed from product.dart
+import 'package:aurora/models/aurora_product.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/widgets/drawer.dart';
 import 'package:aurora/pages/product/product_form_screen.dart';
+import 'package:aurora/widgets/product_qr_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'dart:convert';
-
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProductPage extends StatefulWidget {
   const ProductPage({super.key});
@@ -366,153 +364,232 @@ class _ProductPageState extends State<ProductPage> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
+    return GridView.builder(
+      padding: const EdgeInsets.all(8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 0.75,
+      ),
       itemCount: _products.length,
       itemBuilder: (context, index) {
         final product = _products[index];
-        return _buildProductCard(product);
+        return _buildCompactProductCard(product);
       },
     );
   }
 
-  Widget _buildProductCard(AuroraProduct product) {
-    // Changed parameter type
+  Widget _buildCompactProductCard(AuroraProduct product) {
     final currencyFormat = NumberFormat.currency(
       symbol: product.currency ?? '\$',
       decimalDigits: 2,
     );
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.zero,
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shadowColor: Colors.black26,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey[200]!, width: 1),
+      ),
       child: InkWell(
         onTap: () => _navigateToProductDetails(product),
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              // Product Image
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  color: Colors.grey[200],
-                  child: product.mainImage != null
-                      ? Image.network(
-                          product.mainImage!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(Icons.image_not_supported);
-                          },
-                        )
-                      : const Icon(Icons.image, size: 40),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Compact Product Image (120px height)
+            Container(
+              width: double.infinity,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
                 ),
               ),
-              const SizedBox(width: 12),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (product.mainImage != null)
+                    Image.network(
+                      product.mainImage!,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                : null,
+                            strokeWidth: 2,
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            size: 40,
+                            color: Colors.grey[400],
+                          ),
+                        );
+                      },
+                    )
+                  else
+                    Center(
+                      child: Icon(
+                        Icons.image_outlined,
+                        size: 40,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  // Stock Status Badge (smaller)
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: product.isInStock
+                            ? Colors.green[600]!
+                            : Colors.red[600]!,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white, width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            product.isInStock
+                                ? Icons.check_circle
+                                : Icons.cancel,
+                            color: Colors.white,
+                            size: 10,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            product.isInStock ? 'In' : 'Out',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-              // Product Info
-              Expanded(
+            // Compact Product Info
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Title (smaller)
                     Text(
                       product.title ?? 'Untitled',
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 13,
                         fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
+
+                    // Brand (smaller)
                     if (product.brand != null)
                       Text(
-                        'Brand: ${product.brand}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        product.brand!,
+                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    const SizedBox(height: 8),
+
+                    const SizedBox(height: 6),
+
+                    // Price
+                    Text(
+                      currencyFormat.format(product.price ?? 0),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+
+                    // Quantity (smaller)
+                    if (product.quantity != null && product.quantity! > 0)
+                      Text(
+                        '${product.quantity} left',
+                        style: TextStyle(fontSize: 9, color: Colors.grey[600]),
+                      ),
+
+                    const Spacer(),
+
+                    // Action Buttons (compact)
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Text(
-                          currencyFormat.format(product.price ?? 0),
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor,
+                        // Edit Button
+                        InkWell(
+                          onTap: product.asin != null
+                              ? () => _navigateToProductForm(product)
+                              : null,
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[50],
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.blue[200]!),
+                            ),
+                            child: Icon(
+                              Icons.edit_outlined,
+                              size: 16,
+                              color: Colors.blue[700],
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        if (product.isInStock)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
+                        const SizedBox(width: 4),
+                        // QR Code Button
+                        InkWell(
+                          onTap: () => _showQRCodeForProduct(product),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: Colors.green[100],
-                              borderRadius: BorderRadius.circular(4),
+                              color: Colors.purple[50],
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.purple[200]!),
                             ),
-                            child: Text(
-                              'In Stock',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.green[800],
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          )
-                        else
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red[100],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              'Out of Stock',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.red[800],
-                                fontWeight: FontWeight.bold,
-                              ),
+                            child: Icon(
+                              Icons.qr_code_2,
+                              size: 16,
+                              color: Colors.purple[700],
                             ),
                           ),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
-
-              // Actions
-              Column(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit, size: 20),
-                    onPressed: product.asin != null
-                        ? () => _navigateToProductForm(product)
-                        : null,
-                    tooltip: product.asin == null ? 'No ASIN' : 'Edit',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete, size: 20, color: Colors.red),
-                    onPressed: product.asin != null
-                        ? () => _deleteProduct(product.asin!)
-                        : null,
-                    tooltip: product.asin == null ? 'No ASIN' : 'Delete',
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -547,8 +624,7 @@ class _ProductPageState extends State<ProductPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            ProductFormScreen(product: product), // Pass null for new product
+        builder: (context) => ProductFormScreen(product: product),
       ),
     ).then((result) {
       if (result == true) _loadProducts();
@@ -556,13 +632,16 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   void _navigateToProductDetails(AuroraProduct product) {
-    // Changed parameter type
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ProductDetailsScreen(product: product),
       ),
     );
+  }
+
+  void _showQRCodeForProduct(AuroraProduct product) {
+    ProductQRCodeDialog.show(context, product);
   }
 }
 
@@ -582,17 +661,27 @@ class ProductDetailsScreen extends StatelessWidget {
       decimalDigits: 2,
     );
 
-    // Generate QR data from product with ALL details
-    final qrData = product.generateQRData();
+    // Use stored QR data from product, or generate if not available
+    final qrData = product.qrData ?? product.generateQRData();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Product Details'),
+        title: Text(
+          product.title?.isNotEmpty == true
+              ? product.title!
+              : 'Product Details',
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.qr_code),
-            onPressed: () => _showQRCode(context, qrData),
-            tooltip: 'Show QR Code',
+            icon: Badge(
+              isLabelVisible: product.sku == null || product.sku!.isEmpty,
+              label: const Icon(Icons.warning, size: 16),
+              child: const Icon(Icons.qr_code),
+            ),
+            onPressed: () => ProductQRCodeDialog.show(context, product),
+            tooltip: product.sku == null || product.sku!.isEmpty
+                ? 'Show QR Code (No SKU - Legacy Product)'
+                : 'Show QR Code',
           ),
         ],
       ),
@@ -689,7 +778,7 @@ class ProductDetailsScreen extends StatelessWidget {
                 children: [
                   _buildDetailRow('ASIN', product.asin ?? 'N/A'),
                   const Divider(height: 24),
-                  _buildDetailRow('SKU', product.sku ?? 'N/A'),
+                  _buildSKURow(context),
                   const Divider(height: 24),
                   _buildDetailRow('Quantity', '${product.quantity ?? 0} units'),
                   const Divider(height: 24),
@@ -769,7 +858,7 @@ class ProductDetailsScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'This product does not have a SKU yet',
+                          'Legacy Product (No SKU)',
                           style: TextStyle(
                             color: Colors.amber[900],
                             fontSize: 14,
@@ -779,7 +868,7 @@ class ProductDetailsScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Generate a unique SKU and QR code with all product data',
+                          'This product was created before automatic SKU generation.\nGenerate a SKU now to enable QR code features.',
                           style: TextStyle(
                             color: Colors.amber[800],
                             fontSize: 12,
@@ -789,8 +878,8 @@ class ProductDetailsScreen extends StatelessWidget {
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: () => _generateSKU(dialogContext),
-                          icon: const Icon(Icons.qr_code_sharp),
-                          label: const Text('Generate SKU & QR Code'),
+                          icon: const Icon(Icons.qr_code_outlined),
+                          label: const Text('Generate SKU for Legacy Product'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.amber[600],
                             foregroundColor: Colors.white,
@@ -977,42 +1066,35 @@ class ProductDetailsScreen extends StatelessWidget {
     );
 
     try {
-      // Refresh session to ensure valid JWT
-      await supabaseProvider.client.auth.refreshSession();
-
-      // Determine action based on whether product has SKU
-      // If product has no SKU, we just need to update with generated SKU
-      final response = await supabaseProvider.client.functions.invoke(
-        'manage-product',
-        body: {
-          'action': 'update',
-          'asin': product.asin,
-          'data': {
-            'title': product.title,
-            'description': product.description,
-            'brand': product.brand,
-            'category': product.category,
-            'subcategory': product.subcategory,
-            'selling_price': product.sellingPrice,
-            'list_price': product.listPrice,
-            'currency': product.currency,
-            'quantity': product.quantity,
-            'status': product.status,
-            'attributes': product.attributes,
-          },
+      // Use the provider's edge function wrapper which handles auth properly
+      final result = await supabaseProvider.callManageProduct(
+        action: 'update',
+        asin: product.asin,
+        data: {
+          'title': product.title,
+          'description': product.description,
+          'brand': product.brand,
+          'category': product.category,
+          'subcategory': product.subcategory,
+          'selling_price': product.sellingPrice,
+          'list_price': product.listPrice,
+          'currency': product.currency,
+          'quantity': product.quantity,
+          'status': product.status,
+          'attributes': product.attributes,
         },
       );
 
-      print('SKU Generation Response: ${response.status} - ${response.data}');
+      print('SKU Generation Result: ${result.success} - ${result.message}');
 
       // Close loading
       if (dialogContext.mounted) {
         Navigator.pop(dialogContext);
       }
 
-      if (response.data?['success'] == true) {
-        final updatedSku = response.data?['sku'];
-        final updatedQrData = response.data?['qr_data'];
+      if (result.success && result.data != null) {
+        final updatedSku = result.data!['sku'] as String?;
+        final updatedQrData = result.data!['qr_data'] as String?;
 
         // Show success dialog with new QR code
         showDialog(
@@ -1065,7 +1147,7 @@ class ProductDetailsScreen extends StatelessWidget {
         // TODO: Update local product and refresh UI
         // setState(() {});
       } else {
-        throw Exception(response.data?['message'] ?? 'Failed to generate SKU');
+        throw Exception(result.message ?? 'Failed to generate SKU');
       }
     } catch (e) {
       // Close loading if still open
@@ -1131,6 +1213,51 @@ class ProductDetailsScreen extends StatelessWidget {
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildSKURow(BuildContext context) {
+    final hasSku = product.sku != null && product.sku!.isNotEmpty;
+    final skuText = hasSku ? product.sku! : 'N/A';
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(
+            'SKU',
+            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            skuText,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: hasSku ? Theme.of(context).primaryColor : null,
+            ),
+          ),
+        ),
+        if (hasSku)
+          IconButton(
+            icon: const Icon(Icons.copy, size: 20),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: product.sku!));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('SKU copied to clipboard'),
+                  duration: Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            tooltip: 'Copy SKU',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
       ],
     );
   }

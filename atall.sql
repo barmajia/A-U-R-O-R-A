@@ -1487,6 +1487,7 @@ CREATE TABLE IF NOT EXISTS "public"."products" (
     "average_rating" numeric(3,2) DEFAULT 0,
     "review_count" integer DEFAULT 0,
     "title_description" "tsvector",
+    "qr_data" TEXT,
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"(),
     "allow_chat" boolean DEFAULT true,

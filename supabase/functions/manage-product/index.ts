@@ -64,72 +64,26 @@ serve(async (req) => {
 
     switch (action) {
       case "create": {
-        // Create new product - Server generates ASIN and SKU as UUID
+        // Create new product - Server generates ASIN, Client provides SKU
         if (!data) {
           throw new Error("Missing product data");
         }
 
-        // Generate ASIN and SKU as UUIDs on server side
+        // Generate ASIN as UUID (server-side)
         const generatedAsin = crypto.randomUUID();
-        const generatedSku = crypto.randomUUID();
 
-        // Create QR data string with ALL product details (compact JSON)
-        const qrData = {
-          // Core identifiers
-          asin: generatedAsin,
-          sku: generatedSku,
-
-          // Basic product info
-          title: data.title,
-          description: data.description,
-          brand: data.brand,
-          manufacturer: data.manufacturer,
-
-          // Category hierarchy
-          category: data.category,
-          subcategory: data.subcategory,
-          product_type: data.product_type,
-
-          // Pricing
-          selling_price: data.selling_price,
-          list_price: data.list_price,
-          business_price: data.business_price,
-          currency: data.currency,
-          tax_code: data.tax_code,
-
-          // Inventory
-          quantity: data.quantity,
-          fulfillment_channel: data.fulfillment_channel,
-          availability_status: data.availability_status,
-          lead_time_to_ship: data.lead_time_to_ship,
-
-          // Attributes (flexible JSONB fields)
-          attributes: data.attributes,
-
-          // Variations
-          variations: data.variations,
-
-          // Images (main image URLs)
-          images: data.images,
-
-          // Compliance
-          compliance: data.compliance,
-
-          // Metadata
-          status: data.status,
-          language: data.language,
-          bullet_points: data.bullet_points,
-        };
-        const qrDataString = JSON.stringify(qrData);
+        // Get SKU from client, or generate if not provided
+        const providedSku = data.sku as string | undefined;
+        const finalSku = providedSku || crypto.randomUUID();
 
         const productData = {
           ...data,
           asin: generatedAsin, // Server-generated ASIN
-          sku: generatedSku, // Server-generated SKU (for QR code)
-          qr_data: qrDataString, // Store QR-ready JSON data
+          sku: finalSku, // Client-provided SKU (or server-generated fallback)
           seller_id: user.id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          // qr_data will be added by Flutter app
         };
 
         const { data: newProduct, error } = await supabase
@@ -141,16 +95,16 @@ serve(async (req) => {
         if (error) throw error;
 
         console.log(
-          `Product created with ASIN: ${generatedAsin}, SKU: ${generatedSku}`,
+          `Product created with ASIN: ${generatedAsin}, SKU: ${finalSku}`,
         );
 
         result = {
           success: true,
           message: "Product created successfully",
           data: newProduct,
-          asin: generatedAsin, // Return the generated ASIN
-          sku: generatedSku, // Return the generated SKU (for QR code)
-          qr_data: qrDataString, // Return QR-ready data
+          asin: generatedAsin,
+          sku: finalSku,
+          seller_id: user.id,
         };
         break;
       }
@@ -168,72 +122,22 @@ serve(async (req) => {
         // Get existing product to check if SKU needs to be generated
         const { data: existingProduct } = await supabase
           .from("products")
-          .select("sku, qr_data")
+          .select("sku")
           .eq("asin", asin)
           .eq("seller_id", user.id)
           .single();
 
         let sku = existingProduct?.sku;
-        let qrDataString = existingProduct?.qr_data;
 
-        // Generate SKU if product doesn't have one
+        // Generate SKU if product doesn't have one (for legacy products)
         if (!sku) {
           const generatedSku = crypto.randomUUID();
           sku = generatedSku;
-
-          // Generate full QR data with all product details
-          const qrData = {
-            // Core identifiers
-            asin: asin,
-            sku: generatedSku,
-
-            // Basic product info
-            title: data.title,
-            description: data.description,
-            brand: data.brand,
-            manufacturer: data.manufacturer,
-
-            // Category hierarchy
-            category: data.category,
-            subcategory: data.subcategory,
-            product_type: data.product_type,
-
-            // Pricing
-            selling_price: data.selling_price,
-            list_price: data.list_price,
-            business_price: data.business_price,
-            currency: data.currency,
-            tax_code: data.tax_code,
-
-            // Inventory
-            quantity: data.quantity,
-            fulfillment_channel: data.fulfillment_channel,
-            availability_status: data.availability_status,
-            lead_time_to_ship: data.lead_time_to_ship,
-
-            // Attributes (flexible JSONB fields)
-            attributes: data.attributes,
-
-            // Variations
-            variations: data.variations,
-
-            // Images (main image URLs)
-            images: data.images,
-
-            // Compliance
-            compliance: data.compliance,
-
-            // Metadata
-            status: data.status,
-            language: data.language,
-            bullet_points: data.bullet_points,
-          };
-          qrDataString = JSON.stringify(qrData);
-
-          // Add SKU and QR data to update
+          // Add SKU to update data
           data.sku = sku;
-          data.qr_data = qrDataString;
         }
+
+        // Note: qr_data is now managed by Flutter app, not edge function
 
         const updateData = {
           ...data,
@@ -257,8 +161,7 @@ serve(async (req) => {
               ? "Product updated successfully"
               : "SKU generated successfully",
           data: updatedProduct,
-          sku: sku, // Return the SKU (new or existing)
-          qr_data: qrDataString, // Return QR-ready data
+          sku: sku,
         };
         break;
       }

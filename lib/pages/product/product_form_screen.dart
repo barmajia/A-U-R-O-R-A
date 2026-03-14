@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
+import 'dart:convert';
+import 'package:uuid/uuid.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -558,8 +560,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       final user = supabaseProvider.currentUser;
       if (user == null) throw Exception('User not logged in');
 
+      // ======================================================================
+      // STEP 1: Generate SKU locally BEFORE calling edge function
+      // ======================================================================
+      final generatedSku = const Uuid().v4();
+      debugPrint('✓ Generated SKU: $generatedSku');
+
       // For image upload: use existing ASIN for edits, temp ID for storage path only
-      // DO NOT send temp ASIN to Edge Function (server generates ASIN)
       final existingAsin = widget.product?.asin;
       final storageId =
           existingAsin ?? 'temp-${DateTime.now().millisecondsSinceEpoch}';
@@ -575,12 +582,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       bool isLocalBrand = false;
 
       if (_selectedBrand?.isLocal == true) {
-        // Use custom local brand name
         finalBrandName = _customBrandController.text.trim();
         finalBrandId = null;
         isLocalBrand = true;
       } else {
-        // Use predefined brand name
         finalBrandName = _selectedBrand?.name ?? '';
         finalBrandId = _selectedBrand?.id;
         isLocalBrand = false;
@@ -597,10 +602,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       );
 
       // ======================================================================
-      // ASIN HANDLING: Server generates ASIN for new products via Edge Function
+      // STEP 2: Call edge function (server generates ASIN, we send SKU)
       // ======================================================================
       final result = widget.product != null
-          // UPDATE: Existing product has ASIN, use update edge function
+          // UPDATE: Existing product has ASIN
           ? await supabaseProvider.updateProductWithEdgeFunction(
               asin: widget.product!.asin!,
               updates: {
@@ -618,7 +623,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 'images': imageUrls.map((url) => {'url': url}).toList(),
               },
             )
-          // CREATE: New product - NO ASIN sent, server generates it
+          // CREATE: New product - send generated SKU, server generates ASIN
           : await supabaseProvider.createProductWithEdgeFunction(
               title: _titleController.text.trim(),
               brand: finalBrandName,
@@ -633,25 +638,75 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               images: imageUrls.map((url) => {'url': url}).toList(),
               status: _status,
               currency: _accountCurrency,
+              sku: generatedSku, // Send our generated SKU to server
             );
 
       // ======================================================================
-      // CAPTURE ASIN: For new products, extract ASIN from server response
+      // STEP 3: Build QR code with ASIN (from server) + SKU (from us)
       // ======================================================================
       if (result.success && widget.product == null) {
         final generatedAsin = result.data?['asin'] as String?;
         final productData = result.data?['product'] as Map<String, dynamic>?;
         final productAsin = productData?['asin'] as String?;
+        final productSku =
+            productData?['sku'] as String?; // Get SKU from server response
+        final sellerId = result.data?['seller_id'] as String?;
 
         final finalAsin = generatedAsin ?? productAsin;
+        final finalSku = productSku ?? generatedSku; // Use server-confirmed SKU
 
         if (finalAsin != null && mounted) {
-          // Show success with ASIN for user reference
+          debugPrint('========================================');
+          debugPrint('✅ PRODUCT CREATED SUCCESSFULLY');
+          debugPrint('   ASIN: $finalAsin');
+          debugPrint('   SKU: $finalSku');
+          debugPrint(
+            '   Seller ID: ${sellerId ?? supabaseProvider.currentUser!.id}',
+          );
+
+          // Build product URL with seller UUID and ASIN
+          final productUrl =
+              'https://aurora-app.com/product?seller=${sellerId ?? supabaseProvider.currentUser!.id}&asin=$finalAsin';
+
+          // Build QR data with ASIN + SKU + URL
+          final qrData = jsonEncode({
+            'asin': finalAsin,
+            'sku': finalSku, // Use the confirmed SKU
+            'seller_id': sellerId ?? supabaseProvider.currentUser!.id,
+            'url': productUrl,
+            'title': _titleController.text.trim(),
+            'brand': finalBrandName,
+            'selling_price': double.tryParse(_priceController.text.trim()) ?? 0,
+            'currency': _accountCurrency,
+            'quantity': int.tryParse(_quantityController.text.trim()) ?? 0,
+          });
+
+          debugPrint('   QR Data: $qrData');
+
+          // Send QR data to server immediately
+          try {
+            final updateResult = await supabaseProvider.client
+                .from('products')
+                .update({'qr_data': qrData})
+                .eq('asin', finalAsin);
+
+            debugPrint('   QR Update Result: ${updateResult.toString()}');
+            debugPrint('✓ QR code saved to server');
+            debugPrint('Product URL: $productUrl');
+            debugPrint('SKU: $finalSku');
+            debugPrint('========================================');
+          } catch (e) {
+            debugPrint('✗ Error saving QR code: $e');
+          }
+
+          // Show success with ASIN and SKU
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Product created! ASIN: $finalAsin'),
+              content: Text(
+                'Product created! ASIN: $finalAsin | SKU: $finalSku',
+              ),
               backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
+              duration: const Duration(seconds: 4),
             ),
           );
         }

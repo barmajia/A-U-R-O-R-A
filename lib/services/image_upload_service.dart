@@ -34,19 +34,19 @@ class UploadedImage {
 /// Usage:
 /// ```dart
 /// final service = ImageUploadService(supabaseClient);
-/// 
+///
 /// // Upload single image
 /// final image = await service.pickAndUploadImage(
 ///   productId: productId,
 ///   source: ImageSource.gallery,
 /// );
-/// 
+///
 /// // Upload multiple images
 /// final images = await service.pickAndUploadMultipleImages(
 ///   productId: productId,
 ///   maxImages: 10,
 /// );
-/// 
+///
 /// // Delete image
 /// await service.deleteImage(imageUrl);
 /// ```
@@ -62,8 +62,8 @@ class ImageUploadService {
   static const String _bucketName = 'product-images';
 
   ImageUploadService(this._client)
-      : _picker = ImagePicker(),
-        _uuid = const Uuid();
+    : _picker = ImagePicker(),
+      _uuid = const Uuid();
 
   /// Pick and upload a single image
   ///
@@ -227,7 +227,11 @@ class ImageUploadService {
           .list(path: prefix);
 
       return objects
-          .map((obj) => _client.storage.from(_bucketName).getPublicUrl('$prefix${obj.name}'))
+          .map(
+            (obj) => _client.storage
+                .from(_bucketName)
+                .getPublicUrl('$prefix${obj.name}'),
+          )
           .toList();
     } catch (e) {
       debugPrint('[ImageUploadService] List images error: $e');
@@ -251,9 +255,7 @@ class ImageUploadService {
             initAspectRatio: CropAspectRatioPreset.original,
             lockAspectRatio: false,
           ),
-          IOSUiSettings(
-            title: 'Crop Image',
-          ),
+          IOSUiSettings(title: 'Crop Image'),
         ],
       );
       return croppedFile;
@@ -289,7 +291,10 @@ class ImageUploadService {
       }
 
       // Compress as JPEG
-      final compressed = img.encodeJpg(resizedImage ?? image, quality: _compressionQuality);
+      final compressed = img.encodeJpg(
+        resizedImage ?? image,
+        quality: _compressionQuality,
+      );
 
       // Save to temp file
       final tempDir = await getTemporaryDirectory();
@@ -335,18 +340,22 @@ class ImageUploadService {
       final mimeType = _getMimeType(fileExtension);
 
       // Upload file
-      await _client.storage.from(_bucketName).upload(
-        storagePath,
-        file,
-        fileOptions: FileOptions(
-          cacheControl: '3600',
-          upsert: false,
-          contentType: mimeType,
-        ),
-      );
+      await _client.storage
+          .from(_bucketName)
+          .upload(
+            storagePath,
+            file,
+            fileOptions: FileOptions(
+              cacheControl: '3600',
+              upsert: false,
+              contentType: mimeType,
+            ),
+          );
 
       // Get public URL
-      final publicUrl = _client.storage.from(_bucketName).getPublicUrl(storagePath);
+      final publicUrl = _client.storage
+          .from(_bucketName)
+          .getPublicUrl(storagePath);
 
       return UploadedImage(
         url: publicUrl,

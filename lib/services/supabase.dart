@@ -954,6 +954,7 @@ class SupabaseProvider extends ChangeNotifier {
       final response = await _client.functions.invoke(
         SupabaseConstants.functionCreateOrder,
         body: orderData,
+        headers: _getAuthHeaders(),
       );
 
       if (response.status == 201 && response.data?['success'] == true) {
@@ -1677,13 +1678,27 @@ class SupabaseProvider extends ChangeNotifier {
   // Edge Functions
   // --------------------------------------------------------------------------
 
+  /// Helper method to get authentication headers for edge functions
+  Map<String, String> _getAuthHeaders() {
+    final headers = <String, String>{};
+    final accessToken = _client.auth.currentSession?.accessToken;
+    if (accessToken != null) {
+      headers['Authorization'] = 'Bearer $accessToken';
+    }
+    return headers;
+  }
+
   /// Invokes a Supabase Edge Function with the provided [body].
   Future<dynamic> callEdgeFunction({
     required String functionName,
     required Map<String, dynamic> body,
   }) async {
     try {
-      final response = await _client.functions.invoke(functionName, body: body);
+      final response = await _client.functions.invoke(
+        functionName,
+        body: body,
+        headers: _getAuthHeaders(),
+      );
       return response.data;
     } catch (e) {
       _errorHandler.handleError(e, 'Edge Function: $functionName');
@@ -1699,9 +1714,19 @@ class SupabaseProvider extends ChangeNotifier {
     Map<String, dynamic>? data,
   }) async {
     try {
+      // Get the current access token
+      final accessToken = _client.auth.currentSession?.accessToken;
+
+      // Prepare headers with authentication
+      final headers = <String, String>{};
+      if (accessToken != null) {
+        headers['Authorization'] = 'Bearer $accessToken';
+      }
+
       final result = await _client.functions.invoke(
         SupabaseConstants.functionManageProduct,
         body: {'action': action, 'asin': asin, 'data': data},
+        headers: headers,
       );
 
       if (result.data?['success'] == true) {
@@ -1756,6 +1781,7 @@ class SupabaseProvider extends ChangeNotifier {
     bool? isLocalBrand,
     List<Map<String, dynamic>>? images,
     String? currency,
+    String? sku, // Optional SKU from client
   }) async {
     try {
       if (!isLoggedIn) {
@@ -1779,9 +1805,11 @@ class SupabaseProvider extends ChangeNotifier {
           'brandId': brandId,
           'isLocalBrand': isLocalBrand ?? false,
           'images': images ?? [],
+          'currency': currency ?? 'USD',
+          if (sku != null) 'sku': sku, // Send SKU if provided
           'sellerId': sellerId,
-          'currency': currency ?? userCurrency,
         },
+        headers: _getAuthHeaders(),
       );
 
       if (response.status == 201 && response.data?['success'] == true) {
@@ -1830,6 +1858,7 @@ class SupabaseProvider extends ChangeNotifier {
       final response = await _client.functions.invoke(
         SupabaseConstants.functionUpdateProduct,
         body: {'asin': asin, 'updates': updates, 'sellerId': sellerId},
+        headers: _getAuthHeaders(),
       );
 
       if (response.status == 200 && response.data?['success'] == true) {
@@ -1875,6 +1904,7 @@ class SupabaseProvider extends ChangeNotifier {
       final response = await _client.functions.invoke(
         SupabaseConstants.functionDeleteProduct,
         body: {'asin': asin, 'sellerId': sellerId},
+        headers: _getAuthHeaders(),
       );
 
       if (response.status == 200 && response.data?['success'] == true) {
@@ -1932,6 +1962,7 @@ class SupabaseProvider extends ChangeNotifier {
           'limit': limit,
           'offset': offset,
         },
+        headers: _getAuthHeaders(),
       );
 
       if (response.status == 200 && response.data?['success'] == true) {
@@ -2251,7 +2282,7 @@ class SupabaseProvider extends ChangeNotifier {
             .from('customers')
             .select('id, name, phone, age_range')
             .inFilter('id', customerIds);
-        
+
         if (customers is List) {
           customerMap = {for (var c in customers) c['id']: c};
         }
@@ -2263,7 +2294,7 @@ class SupabaseProvider extends ChangeNotifier {
             .from('products')
             .select('id, name, asin, image_url')
             .inFilter('id', productIds);
-        
+
         if (products is List) {
           productMap = {for (var p in products) p['id']: p};
         }
@@ -2447,6 +2478,7 @@ class SupabaseProvider extends ChangeNotifier {
       final response = await _client.functions.invoke(
         SupabaseConstants.functionGetOrCreateConversation,
         body: {'otherUserId': otherUserId, 'productId': productId},
+        headers: _getAuthHeaders(),
       );
 
       if (response.status == 200 && response.data?['success'] == true) {
@@ -2909,6 +2941,7 @@ class SupabaseProvider extends ChangeNotifier {
       await _client.functions.invoke(
         SupabaseConstants.functionProcessSignup,
         body: body,
+        headers: _getAuthHeaders(),
       );
     } catch (e) {
       if (kDebugMode) print('Edge Function error (user still created): $e');
