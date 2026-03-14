@@ -1,7 +1,7 @@
 // ============================================================================
 // Aurora Image Caching Service
 // ============================================================================
-// 
+//
 // Optimized image loading and caching for better performance
 // Features:
 // - Multi-level caching (memory + disk)
@@ -14,7 +14,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -69,10 +68,10 @@ class ImageCachingService {
 
   // Memory cache for decoded images
   final Map<String, ui.Image> _memoryCache = {};
-  
+
   // Loading trackers to prevent duplicate loads
   final Set<String> _loadingUrls = {};
-  
+
   // Failed URLs to prevent retry storms
   final Set<String> _failedUrls = {};
 
@@ -93,7 +92,9 @@ class ImageCachingService {
   Future<void> storeImageInMemory(String url, ui.Image image) async {
     if (_currentCacheSize >= _maxMemoryCacheSize) {
       // Remove oldest 10% of cache
-      final toRemove = _memoryCache.keys.take(_maxMemoryCacheSize ~/ 10).toList();
+      final toRemove = _memoryCache.keys
+          .take(_maxMemoryCacheSize ~/ 10)
+          .toList();
       for (final key in toRemove) {
         _memoryCache.remove(key);
         _currentCacheSize--;
@@ -127,7 +128,7 @@ class ImageCachingService {
   /// Mark URL as failed
   void markAsFailed(String url) {
     _failedUrls.add(url);
-    
+
     // Remove from failed after 5 minutes
     Timer(const Duration(minutes: 5), () {
       _failedUrls.remove(url);
@@ -184,7 +185,8 @@ class ImageCachingService {
       fadeInDuration: const Duration(milliseconds: 300),
       fadeOutDuration: const Duration(milliseconds: 300),
       placeholder: (context, url) => placeholder ?? _defaultPlaceholder(),
-      errorWidget: (context, url, error) => errorWidget ?? _defaultErrorWidget(),
+      errorWidget: (context, url, error) =>
+          errorWidget ?? _defaultErrorWidget(),
       cacheKey: _generateCacheKey(url),
       maxWidthDiskCache: PerformanceConfig.maxImageWidth,
       maxHeightDiskCache: PerformanceConfig.maxImageHeight,
@@ -230,11 +232,13 @@ class ImageCachingService {
       memCacheWidth: size.toInt(),
       memCacheHeight: size.toInt(),
       fadeInDuration: const Duration(milliseconds: 300),
-      placeholder: (context, url) => placeholder ?? CircleAvatar(
-        radius: size / 2,
-        backgroundColor: Colors.grey[300],
-        child: Icon(Icons.person, size: size / 2, color: Colors.grey),
-      ),
+      placeholder: (context, url) =>
+          placeholder ??
+          CircleAvatar(
+            radius: size / 2,
+            backgroundColor: Colors.grey[300],
+            child: Icon(Icons.person, size: size / 2, color: Colors.grey),
+          ),
       errorWidget: (context, url, error) => CircleAvatar(
         radius: size / 2,
         backgroundColor: Colors.grey[300],
@@ -243,10 +247,8 @@ class ImageCachingService {
       cacheKey: 'profile:$_generateCacheKey(url)',
       maxWidthDiskCache: 200,
       maxHeightDiskCache: 200,
-      imageBuilder: (context, imageProvider) => CircleAvatar(
-        radius: size / 2,
-        backgroundImage: imageProvider,
-      ),
+      imageBuilder: (context, imageProvider) =>
+          CircleAvatar(radius: size / 2, backgroundImage: imageProvider),
     );
   }
 
@@ -276,10 +278,7 @@ class ImageCachingService {
           width: width,
           height: height,
           decoration: BoxDecoration(
-            image: DecorationImage(
-              image: imageProvider,
-              fit: fit,
-            ),
+            image: DecorationImage(image: imageProvider, fit: fit),
           ),
         );
       },
@@ -299,7 +298,7 @@ class ImageCachingService {
 
       try {
         markAsLoading(url);
-        
+
         // Download and cache image
         final fileInfo = await AuroraCacheManager.instance.downloadFile(url);
         if (fileInfo != null) {
@@ -323,9 +322,12 @@ class ImageCachingService {
   /// Prefetch images for upcoming pages
   Future<void> prefetchNextPage(List<String> nextUrls) async {
     // Only prefetch if not already loading
-    final toLoad = nextUrls.where((url) => 
-      !_loadingUrls.contains(url) && !_failedUrls.contains(url)
-    ).take(5).toList(); // Limit to 5 images
+    final toLoad = nextUrls
+        .where(
+          (url) => !_loadingUrls.contains(url) && !_failedUrls.contains(url),
+        )
+        .take(5)
+        .toList(); // Limit to 5 images
 
     if (toLoad.isNotEmpty) {
       // Fire and forget - don't await
@@ -390,10 +392,10 @@ class ImageCachingService {
   Future<void> clearAll() async {
     clearMemoryCache();
     clearFailedUrls();
-    
+
     // Clear disk cache (async)
     await AuroraCacheManager.instance.emptyCache();
-    
+
     debugPrint('[ImageCachingService] All caches cleared');
   }
 
@@ -430,21 +432,11 @@ extension ImageCachingExtension on BuildContext {
     double size = 100,
     BoxFit fit = BoxFit.cover,
   }) {
-    return ImageCachingService().buildThumbnail(
-      url: url,
-      size: size,
-      fit: fit,
-    );
+    return ImageCachingService().buildThumbnail(url: url, size: size, fit: fit);
   }
 
   /// Get profile image widget
-  Widget profileImage({
-    required String url,
-    double size = 50,
-  }) {
-    return ImageCachingService().buildProfileImage(
-      url: url,
-      size: size,
-    );
+  Widget profileImage({required String url, double size = 50}) {
+    return ImageCachingService().buildProfileImage(url: url, size: size);
   }
 }

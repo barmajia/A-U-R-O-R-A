@@ -35,6 +35,8 @@ import 'package:aurora/services/auth_provider.dart';
 import 'package:aurora/services/product_provider.dart';
 import 'package:aurora/services/chat_provider.dart';
 import 'package:aurora/services/permissions.dart';
+import 'package:aurora/services/notification_service.dart';
+import 'package:aurora/services/user_preferences_service.dart';
 import 'package:aurora/theme/themeprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -70,6 +72,13 @@ Future<void> main() async {
   final themeProvider = ThemeProvider();
   await themeProvider.loadTheme();
 
+  // Initialize user preferences service
+  final userPreferencesService = UserPreferencesService();
+  await userPreferencesService.initialize();
+
+  // Initialize notification service
+  final notificationService = NotificationService();
+
   // Initialize modular providers
   final authProvider = AuthProvider(
     Supabase.instance.client,
@@ -94,6 +103,12 @@ Future<void> main() async {
         // Chat & Messaging
         ChangeNotifierProvider.value(value: chatProvider),
 
+        // Notifications
+        ChangeNotifierProvider.value(value: notificationService),
+
+        // User Preferences
+        ChangeNotifierProvider.value(value: userPreferencesService),
+
         // Local Databases
         ChangeNotifierProvider(create: (context) => sellerDb),
         Provider(create: (context) => productsDb),
@@ -114,50 +129,58 @@ class Aurora extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<SupabaseProvider, ThemeProvider>(
-      builder: (context, supabaseProvider, themeProvider, child) {
-        // Show loading screen while checking session
-        if (supabaseProvider.isCheckingSession) {
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'Aurora E-commerce',
-            theme: themeProvider.themeData,
-            home: const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            ),
-          );
-        }
+    return Consumer3<AuthProvider, ThemeProvider, NotificationService>(
+      builder:
+          (context, authProvider, themeProvider, notificationService, child) {
+            // Show loading screen while checking session
+            if (authProvider.isCheckingSession) {
+              return MaterialApp(
+                debugShowCheckedModeBanner: false,
+                title: 'Aurora E-commerce',
+                theme: themeProvider.themeData,
+                home: const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            }
 
-        // Get system brightness for auto theme switching
-        final systemBrightness = MediaQuery.platformBrightnessOf(context);
+            // Get system brightness for auto theme switching
+            final systemBrightness = MediaQuery.platformBrightnessOf(context);
 
-        // Update theme provider with system brightness
-        themeProvider.updateSystemBrightness(systemBrightness);
+            // Update theme provider with system brightness
+            themeProvider.updateSystemBrightness(systemBrightness);
 
-        if (supabaseProvider.isLoggedIn) {
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'Aurora E-commerce',
-            theme: themeProvider.themeData,
-            home: const Homepage(),
-            routes: {
-              '/login': (context) => const Login(),
-              '/home': (context) => const Homepage(),
-            },
-          );
-        } else {
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'Aurora E-commerce',
-            theme: themeProvider.themeData,
-            home: const Login(),
-            routes: {
-              '/login': (context) => const Login(),
-              '/home': (context) => const Homepage(),
-            },
-          );
-        }
-      },
+            // Initialize notification service when user is logged in
+            if (authProvider.isLoggedIn) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                notificationService.initialize(authProvider.userId!);
+              });
+            }
+
+            if (authProvider.isLoggedIn) {
+              return MaterialApp(
+                debugShowCheckedModeBanner: false,
+                title: 'Aurora E-commerce',
+                theme: themeProvider.themeData,
+                home: const Homepage(),
+                routes: {
+                  '/login': (context) => const Login(),
+                  '/home': (context) => const Homepage(),
+                },
+              );
+            } else {
+              return MaterialApp(
+                debugShowCheckedModeBanner: false,
+                title: 'Aurora E-commerce',
+                theme: themeProvider.themeData,
+                home: const Login(),
+                routes: {
+                  '/login': (context) => const Login(),
+                  '/home': (context) => const Homepage(),
+                },
+              );
+            }
+          },
     );
   }
 }
