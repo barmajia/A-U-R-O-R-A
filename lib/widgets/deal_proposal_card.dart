@@ -1,6 +1,8 @@
 import 'package:aurora/models/chat/deal_proposal.dart';
+import 'package:aurora/services/deal_chat_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 /// Widget to display a deal proposal in a chat conversation
 ///
@@ -315,7 +317,10 @@ class DealProposalCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActions(ColorScheme colorScheme) {
+  Widget _buildActions(
+    ColorScheme colorScheme, {
+    DealChatService? dealService,
+  }) {
     // Action buttons for recipient (when pending)
     if (!isProposer && proposal.status == 'pending') {
       return Padding(
@@ -324,7 +329,7 @@ class DealProposalCard extends StatelessWidget {
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: onAccept,
+                onPressed: () => _handleAcceptDeal(dealService),
                 icon: const Icon(Icons.check, size: 20),
                 label: const Text('Accept Deal'),
                 style: ElevatedButton.styleFrom(
@@ -341,7 +346,7 @@ class DealProposalCard extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: onReject,
+                onPressed: () => _handleRejectDeal(dealService),
                 icon: const Icon(Icons.close, size: 20),
                 label: const Text('Reject'),
                 style: OutlinedButton.styleFrom(
@@ -488,5 +493,53 @@ class DealProposalCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // ==========================================================================
+  // Deal Action Handlers
+  // ==========================================================================
+
+  /// Handle accept deal action
+  Future<void> _handleAcceptDeal(DealChatService? dealService) async {
+    if (dealService == null) {
+      debugPrint('Deal service not available');
+      return;
+    }
+
+    try {
+      // Call backend to accept deal
+      final success = await dealService.respondToDeal(
+        dealProposalId: proposal.id,
+        accepted: true,
+      );
+
+      if (success && onAccept != null) {
+        onAccept!();
+      }
+    } catch (e) {
+      debugPrint('Error accepting deal: $e');
+    }
+  }
+
+  /// Handle reject deal action
+  Future<void> _handleRejectDeal(DealChatService? dealService) async {
+    if (dealService == null) {
+      debugPrint('Deal service not available');
+      return;
+    }
+
+    try {
+      // Call backend to reject deal
+      final success = await dealService.respondToDeal(
+        dealProposalId: proposal.id,
+        accepted: false,
+      );
+
+      if (success && onReject != null) {
+        onReject!();
+      }
+    } catch (e) {
+      debugPrint('Error rejecting deal: $e');
+    }
   }
 }

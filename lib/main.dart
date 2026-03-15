@@ -37,6 +37,7 @@ import 'package:aurora/services/chat_provider.dart';
 import 'package:aurora/services/permissions.dart';
 import 'package:aurora/services/notification_service.dart';
 import 'package:aurora/services/user_preferences_service.dart';
+import 'package:aurora/services/presence_service.dart';
 import 'package:aurora/theme/themeprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -79,6 +80,9 @@ Future<void> main() async {
   // Initialize notification service
   final notificationService = NotificationService();
 
+  // Initialize presence service
+  final presenceService = PresenceService();
+
   // Initialize modular providers
   final authProvider = AuthProvider(
     Supabase.instance.client,
@@ -108,6 +112,9 @@ Future<void> main() async {
 
         // User Preferences
         ChangeNotifierProvider.value(value: userPreferencesService),
+
+        // Presence Tracking
+        ChangeNotifierProvider.value(value: presenceService),
 
         // Local Databases
         ChangeNotifierProvider(create: (context) => sellerDb),
@@ -154,6 +161,7 @@ class Aurora extends StatelessWidget {
             if (authProvider.isLoggedIn) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 notificationService.initialize(authProvider.userId!);
+                // Presence service is initialized via ChangeNotifierProvider
               });
             }
 

@@ -35,7 +35,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Text('Delete'),
           ),
@@ -56,7 +58,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           SnackBar(
             content: Text(result.message),
             backgroundColor: result.success ? Colors.green : Colors.red,
-            behavior: SnackBarBehavior.floating,
           ),
         );
         if (result.success) Navigator.pop(context, true);
@@ -67,7 +68,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           SnackBar(
             content: Text('Delete failed: $e'),
             backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -79,7 +79,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currencyFormat = NumberFormat.currency(
+      symbol: '\$',
+      decimalDigits: 2,
+    );
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -180,7 +183,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     _buildInfoRow(
                       icon: Icons.receipt_long,
                       label: 'Avg Order Value',
-                      value: currencyFormat.format(widget.customer.averageOrderValue),
+                      value: currencyFormat.format(
+                        widget.customer.averageOrderValue,
+                      ),
                       colorScheme: colorScheme,
                     ),
                     if (widget.customer.lastPurchaseDate != null) ...[
@@ -198,7 +203,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       label: 'Status',
                       value: widget.customer.customerStatus,
                       valueStyle: TextStyle(
-                        color: _getStatusColor(widget.customer.customerStatus, colorScheme),
+                        color: _getStatusColor(
+                          widget.customer.customerStatus,
+                          colorScheme,
+                        ),
                         fontWeight: FontWeight.w600,
                       ),
                       colorScheme: colorScheme,
@@ -207,7 +215,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 ),
 
                 // Notes
-                if (widget.customer.notes != null && widget.customer.notes!.isNotEmpty) ...[
+                if (widget.customer.notes != null &&
+                    widget.customer.notes!.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   _buildSectionCard(
                     colorScheme,
@@ -218,7 +227,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         padding: const EdgeInsets.all(8),
                         child: Text(
                           widget.customer.notes!,
-                          style: TextStyle(color: colorScheme.onSurface.withOpacity(0.8)),
+                          style: TextStyle(
+                            color: colorScheme.onSurface.withOpacity(0.8),
+                          ),
                         ),
                       ),
                     ],
@@ -274,11 +285,18 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.phone, size: 14, color: Colors.white.withOpacity(0.8)),
+                      Icon(
+                        Icons.phone,
+                        size: 14,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         widget.customer.phone,
-                        style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 14,
+                        ),
                       ),
                     ],
                   ),
@@ -356,10 +374,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               const SizedBox(height: 2),
               Text(
                 value,
-                style: valueStyle ?? TextStyle(
-                  fontSize: 14,
-                  color: colorScheme?.onSurface,
-                ),
+                style:
+                    valueStyle ??
+                    TextStyle(fontSize: 14, color: colorScheme?.onSurface),
               ),
             ],
           ),
@@ -387,9 +404,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   void _navigateToEdit() {
     // TODO: Navigate to edit screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit feature coming soon')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Edit feature coming soon')));
   }
 
   void _recordSale() {

@@ -40,8 +40,12 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
         name: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
         ageRange: _selectedAgeRange,
-        email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        email: _emailController.text.trim().isEmpty
+            ? null
+            : _emailController.text.trim(),
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
       );
 
       if (mounted) {
@@ -49,8 +53,9 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
           SnackBar(
             content: Text(result.message),
             backgroundColor: result.success ? Colors.green : Colors.red,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
         if (result.success) Navigator.pop(context, true);
@@ -61,7 +66,6 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
           SnackBar(
             content: Text('Save failed: $e'),
             backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -102,8 +106,12 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                     decoration: InputDecoration(
                       labelText: 'Name *',
                       hintText: 'Enter customer name',
-                      labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
-                      hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.4)),
+                      labelStyle: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                      hintStyle: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.4),
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: colorScheme.outline),
@@ -114,7 +122,10 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
                       ),
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest,
@@ -133,8 +144,12 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                     decoration: InputDecoration(
                       labelText: 'Phone *',
                       hintText: 'Enter phone number',
-                      labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
-                      hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.4)),
+                      labelStyle: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                      hintStyle: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.4),
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: colorScheme.outline),
@@ -145,16 +160,23 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
                       ),
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest,
-                      prefixIcon: Icon(Icons.phone, color: colorScheme.onSurface),
+                      prefixIcon: Icon(
+                        Icons.phone,
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                     keyboardType: TextInputType.phone,
                     validator: (value) {
                       if (value?.isEmpty ?? true) return 'Phone is required';
-                      if (value!.length < 8) return 'Enter a valid phone number';
+                      if (value!.length < 8)
+                        return 'Enter a valid phone number';
                       return null;
                     },
                   ),
@@ -165,7 +187,9 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                     value: _selectedAgeRange,
                     decoration: InputDecoration(
                       labelText: 'Age Range',
-                      labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
+                      labelStyle: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: colorScheme.outline),
@@ -176,17 +200,26 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
                       ),
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest,
-                      prefixIcon: Icon(Icons.calendar_today, color: colorScheme.onSurface),
+                      prefixIcon: Icon(
+                        Icons.calendar_today,
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                     dropdownColor: colorScheme.surface,
                     items: ageRangeOptions.map((option) {
                       return DropdownMenuItem(
                         value: option['value'],
-                        child: Text(option['label']!, style: TextStyle(color: colorScheme.onSurface)),
+                        child: Text(
+                          option['label']!,
+                          style: TextStyle(color: colorScheme.onSurface),
+                        ),
                       );
                     }).toList(),
                     onChanged: (value) {
@@ -202,8 +235,12 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                     decoration: InputDecoration(
                       labelText: 'Email (Optional)',
                       hintText: 'Enter email address',
-                      labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
-                      hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.4)),
+                      labelStyle: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                      hintStyle: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.4),
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: colorScheme.outline),
@@ -214,11 +251,17 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
                       ),
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest,
-                      prefixIcon: Icon(Icons.email, color: colorScheme.onSurface),
+                      prefixIcon: Icon(
+                        Icons.email,
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                     keyboardType: TextInputType.emailAddress,
                   ),
@@ -231,8 +274,12 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                     decoration: InputDecoration(
                       labelText: 'Notes (Optional)',
                       hintText: 'Add any notes about this customer',
-                      labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
-                      hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.4)),
+                      labelStyle: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                      hintStyle: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.4),
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: colorScheme.outline),
@@ -243,11 +290,17 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
                       ),
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest,
-                      prefixIcon: Icon(Icons.note, color: colorScheme.onSurface),
+                      prefixIcon: Icon(
+                        Icons.note,
+                        color: colorScheme.onSurface,
+                      ),
                       alignLabelWithHint: true,
                     ),
                     maxLines: 3,
@@ -264,14 +317,21 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
                             )
                           : const Icon(Icons.save),
                       label: Text(_isLoading ? 'Saving...' : 'Save Customer'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colorScheme.primary,
                         foregroundColor: colorScheme.onPrimary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
