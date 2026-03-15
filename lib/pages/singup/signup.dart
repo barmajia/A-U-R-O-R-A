@@ -569,7 +569,7 @@ class _SignupState extends State<Signup> {
                 TextFormField(
                   controller: emailController,
                   focusNode: _emailFocus,
-                  textInputAction: TextInputAction.next,
+                  textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) {
                     FocusScope.of(context).requestFocus(_passwordFocus);
                   },
