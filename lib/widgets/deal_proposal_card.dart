@@ -2,7 +2,6 @@ import 'package:aurora/models/chat/deal_proposal.dart';
 import 'package:aurora/services/deal_chat_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 
 /// Widget to display a deal proposal in a chat conversation
 ///

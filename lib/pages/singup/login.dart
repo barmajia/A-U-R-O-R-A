@@ -162,23 +162,16 @@ class _LoginState extends State<Login> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your password';
                     }
-                    if (value.length < 8) {
-                      return 'Password must be at least 8 characters';
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
                     }
                     // Check for password complexity
-                    final hasUppercase = value.contains(RegExp(r'[A-Z]'));
                     final hasLowercase = value.contains(RegExp(r'[a-z]'));
-                    final hasDigit = value.contains(RegExp(r'[0-9]'));
-                    final hasSpecialChar = value.contains(
-                      RegExp(r'[!@#$%^&*(),.?":{}|<>]'),
-                    );
 
-                    if (!hasUppercase || !hasLowercase || !hasDigit) {
+                    if (!hasLowercase) {
                       return 'Password must contain uppercase, lowercase, and number';
                     }
-                    if (!hasSpecialChar) {
-                      return 'Password must contain at least one special character';
-                    }
+
                     return null;
                   },
                 ),

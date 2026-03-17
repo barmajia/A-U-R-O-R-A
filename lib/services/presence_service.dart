@@ -122,8 +122,10 @@ class PresenceService extends ChangeNotifier {
   }
 
   /// Subscribe to presence updates
+  /// NOTE: Using single channel to avoid Supabase Free tier limit (2 channels max)
   Future<void> _subscribeToPresence() async {
     try {
+      // Use single presence channel for all users
       _presenceChannel = _client.channel('presence:online');
 
       _presenceChannel!
@@ -142,28 +144,8 @@ class PresenceService extends ChangeNotifier {
           )
           .subscribe();
 
-      // Also listen to business_profiles if exists
-      try {
-        _client
-            .channel('presence:business')
-            .onPostgresChanges(
-              event: PostgresChangeEvent.update,
-              schema: 'public',
-              table: 'business_profiles',
-              filter: PostgresChangeFilter(
-                type: PostgresChangeFilterType.eq,
-                column: 'user_id',
-                value: _currentUserId!,
-              ),
-              callback: (payload) {
-                _handlePresenceUpdate(payload);
-              },
-            )
-            .subscribe();
-      } catch (e) {
-        // business_profiles table might not exist
-        debugPrint('[PresenceService] business_profiles not available');
-      }
+      // NOTE: Removed 'presence:business' channel to stay within Supabase Free tier limit
+      // Presence updates now handled through sellers table only
     } catch (e, stackTrace) {
       _errorHandler.handleError(
         e,

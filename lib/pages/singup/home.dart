@@ -43,6 +43,7 @@ class _HomepageState extends State<Homepage> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
 
     try {
@@ -93,6 +94,7 @@ class _HomepageState extends State<Homepage> {
       // Build enhanced activity list
       final activities = await _buildEnhancedActivity();
 
+      if (!mounted) return;
       setState(() {
         _kpis = kpis;
         _totalRevenue = kpis['total_revenue'] ?? 0;
@@ -107,6 +109,7 @@ class _HomepageState extends State<Homepage> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = 'Failed to load dashboard data: $e';
         _isLoading = false;

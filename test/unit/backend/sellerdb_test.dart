@@ -1,30 +1,46 @@
 // Unit Tests for SellerDB (Local SQLite Database)
 import 'package:aurora/backend/sellerdb.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   // Initialize binding for tests that use path_provider
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   late SellerDB sellerDb;
 
   setUpAll(() async {
+    // Mock method channels for path_provider and secure_storage
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (message) async {
+          if (message.method == 'getTemporaryDirectory') {
+            return '/tmp';
+          }
+          if (message.method == 'getApplicationDocumentsDirectory') {
+            return '/documents';
+          }
+          if (message.method == 'getLibraryDirectory') {
+            return '/library';
+          }
+          return null;
+        });
+
     // Mock shared preferences
     SharedPreferences.setMockInitialValues({});
-    
+
     // Initialize database (SellerDB auto-initializes in constructor)
     sellerDb = SellerDB();
     // Wait for initialization
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(const Duration(milliseconds: 500));
   });
 
   tearDownAll(() async {
     // Clean up
     await sellerDb.close();
   });
-  
+
   group('SellerDB', () {
     setUp(() async {
       // Database already initialized in setUpAll
@@ -211,9 +227,15 @@ void main() {
 
         await sellerDb.addSeller(seller);
 
-        await sellerDb.updateSellerLocation('test-user-location', 39.7392, -104.9903);
+        await sellerDb.updateSellerLocation(
+          'test-user-location',
+          39.7392,
+          -104.9903,
+        );
 
-        final retrieved = await sellerDb.getSellerByUserId('test-user-location');
+        final retrieved = await sellerDb.getSellerByUserId(
+          'test-user-location',
+        );
         expect(retrieved, isNotNull);
         expect(retrieved!['latitude'], 39.7392);
         expect(retrieved['longitude'], -104.9903);
@@ -279,7 +301,7 @@ void main() {
         // Create fresh DB instance
         final freshDb = SellerDB();
         await freshDb.init();
-        
+
         // Note: This test assumes a fresh database
         // In practice, you'd need to clear the DB first
         await freshDb.close();
@@ -318,7 +340,7 @@ void main() {
       test('should throw when database not initialized', () {
         final freshDb = SellerDB();
         // Don't initialize
-        
+
         expect(() => freshDb.db, throwsException);
       });
     });

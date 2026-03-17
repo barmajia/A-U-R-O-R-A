@@ -83,11 +83,13 @@ class NotificationService extends ChangeNotifier {
   final ErrorHandler _errorHandler = ErrorHandler();
 
   // State
+  String? _userId;
   int _unreadCount = 0;
   List<NotificationModel> _notifications = [];
   bool _isLoading = false;
   String? _error;
   StreamSubscription? _notificationSubscription;
+  Timer? _pollingTimer;
 
   // Cache
   DateTime? _lastFetchTime;
@@ -109,29 +111,25 @@ class NotificationService extends ChangeNotifier {
   // ==========================================================================
 
   /// Initialize notification service
+  /// NOTE: Using polling instead of realtime to stay within Supabase Free tier limit
   Future<void> initialize(String userId) async {
+    _userId = userId;
     await _fetchUnreadCount();
     await _fetchRecentNotifications();
-    _subscribeToRealtimeUpdates(userId);
+    _startPolling(); // Poll every 30 seconds instead of realtime stream
   }
 
-  /// Subscribe to real-time notification updates
-  void _subscribeToRealtimeUpdates(String userId) {
-    _notificationSubscription = _client
-        .from('notifications')
-        .stream(primaryKey: ['id'])
-        .eq('user_id', userId)
-        .order('created_at', ascending: false)
-        .limit(50)
-        .listen((event) async {
-          // Update unread count
-          await _fetchUnreadCount();
-
-          // Update notifications list
-          _updateNotificationsList(event);
-
-          notifyListeners();
-        });
+  /// Start polling for notification updates (every 30 seconds)
+  /// This replaces realtime streaming to stay within Supabase Free tier channel limit
+  void _startPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
+      if (_userId != null) {
+        await _fetchUnreadCount();
+        await _fetchRecentNotifications();
+        notifyListeners();
+      }
+    });
   }
 
   void _updateNotificationsList(List<Map<String, dynamic>> events) {
@@ -429,6 +427,7 @@ class NotificationService extends ChangeNotifier {
   @override
   void dispose() {
     _notificationSubscription?.cancel();
+    _pollingTimer?.cancel();
     super.dispose();
   }
 }

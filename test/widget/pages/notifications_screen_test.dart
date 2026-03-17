@@ -19,14 +19,13 @@ void main() {
     Widget createTestWidget(NotificationService service) {
       return ChangeNotifierProvider<NotificationService>.value(
         value: service,
-        child: const MaterialApp(
-          home: NotificationsScreen(),
-        ),
+        child: const MaterialApp(home: NotificationsScreen()),
       );
     }
 
-    testWidgets('should display empty state when no notifications',
-        (tester) async {
+    testWidgets('should display empty state when no notifications', (
+      tester,
+    ) async {
       final service = createMockService();
 
       await tester.pumpWidget(createTestWidget(service));
@@ -41,13 +40,14 @@ void main() {
       final service = createMockService();
 
       await tester.pumpWidget(createTestWidget(service));
-      
+
       // Initially might show loading
       // (Depends on implementation)
     });
 
-    testWidgets('should display mark all as read button when has unread',
-        (tester) async {
+    testWidgets('should display mark all as read button when has unread', (
+      tester,
+    ) async {
       final service = createMockService();
 
       await tester.pumpWidget(createTestWidget(service));
@@ -82,7 +82,7 @@ void main() {
 
       // Find notification tile
       final tile = find.byType(ListTile).first;
-      
+
       if (tile.evaluate().isNotEmpty) {
         // Swipe to delete
         await tester.drag(tile, const Offset(-500.0, 0.0));
@@ -119,8 +119,9 @@ void main() {
       expect(find.byIcon(Icons.message_outlined), findsOneWidget);
     });
 
-    testWidgets('should show priority badge for urgent notifications',
-        (tester) async {
+    testWidgets('should show priority badge for urgent notifications', (
+      tester,
+    ) async {
       final service = createMockService();
 
       await tester.pumpWidget(createTestWidget(service));
@@ -137,10 +138,7 @@ void main() {
       await tester.pump();
 
       // Pull to refresh
-      await tester.drag(
-        find.byType(RefreshIndicator),
-        const Offset(0, 300),
-      );
+      await tester.drag(find.byType(RefreshIndicator), const Offset(0, 300));
       await tester.pump();
       await tester.pump();
 
@@ -157,8 +155,9 @@ void main() {
       expect(find.textContaining('ago'), findsOneWidget);
     });
 
-    testWidgets('should show different background for unread notifications',
-        (tester) async {
+    testWidgets('should show different background for unread notifications', (
+      tester,
+    ) async {
       final service = createMockService();
 
       await tester.pumpWidget(createTestWidget(service));
@@ -193,11 +192,9 @@ void main() {
       await tester.pumpWidget(
         ChangeNotifierProvider<NotificationService>.value(
           value: service,
-          child: const MaterialApp(
+          child: MaterialApp(
             home: Scaffold(
-              appBar: AppBar(
-                title: Text('Test'),
-              ),
+              appBar: AppBar(title: const Text('Test')),
               body: Builder(
                 builder: (context) {
                   return context.notificationBadge(
@@ -214,14 +211,15 @@ void main() {
       // Badge should display (or not if count is 0)
     });
 
-    testWidgets('should hide badge when no unread notifications',
-        (tester) async {
+    testWidgets('should hide badge when no unread notifications', (
+      tester,
+    ) async {
       final service = NotificationService();
 
       await tester.pumpWidget(
         ChangeNotifierProvider<NotificationService>.value(
           value: service,
-          child: const MaterialApp(
+          child: MaterialApp(
             home: Scaffold(
               body: Builder(
                 builder: (context) {

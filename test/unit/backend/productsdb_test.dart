@@ -2,23 +2,39 @@
 import 'package:aurora/backend/products_db.dart';
 import 'package:aurora/models/aurora_product.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   // Initialize binding for tests that use path_provider
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   late ProductsDB productsDb;
 
   setUpAll(() async {
+    // Mock method channels for path_provider and secure_storage
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (message) async {
+          if (message.method == 'getTemporaryDirectory') {
+            return '/tmp';
+          }
+          if (message.method == 'getApplicationDocumentsDirectory') {
+            return '/documents';
+          }
+          if (message.method == 'getLibraryDirectory') {
+            return '/library';
+          }
+          return null;
+        });
+
     // Mock shared preferences
     SharedPreferences.setMockInitialValues({});
-    
+
     // Initialize database (ProductsDB auto-initializes in constructor)
     productsDb = ProductsDB();
     // Wait for initialization
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(const Duration(milliseconds: 500));
   });
 
   tearDownAll(() async {
@@ -26,7 +42,7 @@ void main() {
     await productsDb.deleteAllProducts();
     await productsDb.close();
   });
-  
+
   group('ProductsDB', () {
     setUp(() async {
       // Database already initialized in setUpAll
@@ -117,9 +133,7 @@ void main() {
           fulfillmentChannel: 'FBM',
           availabilityStatus: 'IN_STOCK',
           leadTimeToShip: '1-2 days',
-          images: [
-            ProductImage(url: 'https://example.com/image1.jpg'),
-          ],
+          images: [ProductImage(url: 'https://example.com/image1.jpg')],
           variations: ProductVariations(
             variants: [
               {'name': 'Red', 'size': 'S'},
@@ -243,7 +257,9 @@ void main() {
       });
 
       test('should return empty list for no matches', () async {
-        final results = await productsDb.searchProducts('NonExistentProduct12345');
+        final results = await productsDb.searchProducts(
+          'NonExistentProduct12345',
+        );
         expect(results, isEmpty);
       });
     });
@@ -251,7 +267,7 @@ void main() {
     group('Get Products By Seller', () {
       test('should get products by seller ID', () async {
         final sellerId = 'seller-test-001';
-        
+
         for (int i = 0; i < 3; i++) {
           final product = AuroraProduct(
             asin: 'B0SELLER$i',
@@ -268,7 +284,9 @@ void main() {
       });
 
       test('should return empty list for seller with no products', () async {
-        final products = await productsDb.getProductsBySeller('non-existent-seller');
+        final products = await productsDb.getProductsBySeller(
+          'non-existent-seller',
+        );
         expect(products, isEmpty);
       });
     });
@@ -425,7 +443,7 @@ void main() {
 
       test('should delete all products', () async {
         final initialCount = await productsDb.getProductCount();
-        
+
         // Add products
         for (int i = 0; i < 3; i++) {
           final product = AuroraProduct(
@@ -495,7 +513,7 @@ void main() {
 
       test('should filter by seller ID', () async {
         final sellerId = 'seller-filter-test';
-        
+
         for (int i = 0; i < 3; i++) {
           final product = AuroraProduct(
             asin: 'B0FILTER$i',
@@ -532,7 +550,7 @@ void main() {
       test('should throw when database not initialized', () {
         final freshDb = ProductsDB();
         // Don't wait for initialization
-        
+
         expect(() => freshDb.db, throwsException);
       });
     });

@@ -84,6 +84,11 @@ Future<void> main() async {
   final presenceService = PresenceService();
 
   // Initialize modular providers
+  final supabaseProvider = SupabaseProvider(
+    Supabase.instance.client,
+    sellerDb,
+    productsDb,
+  );
   final authProvider = AuthProvider(
     Supabase.instance.client,
     sellerDb,
@@ -98,6 +103,9 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+        // Supabase Provider (core authentication & backend operations)
+        ChangeNotifierProvider.value(value: supabaseProvider),
+
         // Auth & User Management
         ChangeNotifierProvider.value(value: authProvider),
 

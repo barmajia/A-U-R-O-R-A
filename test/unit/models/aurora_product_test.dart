@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   // Initialize binding for tests
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   group('AuroraProduct', () {
     group('Constructor', () {
       test('should create product with required fields', () {
@@ -46,9 +46,7 @@ void main() {
           fulfillmentChannel: 'FBM',
           availabilityStatus: 'IN_STOCK',
           leadTimeToShip: '1-2 days',
-          images: [
-            ProductImage(url: 'https://example.com/image1.jpg'),
-          ],
+          images: [ProductImage(url: 'https://example.com/image1.jpg')],
           variations: ProductVariations(
             variants: [
               {'name': 'Red', 'size': 'S'},
@@ -93,18 +91,13 @@ void main() {
 
     group('Convenience Getters', () {
       test('price should return sellingPrice when available', () {
-        final product = AuroraProduct(
-          listPrice: 149.99,
-          sellingPrice: 99.99,
-        );
+        final product = AuroraProduct(listPrice: 149.99, sellingPrice: 99.99);
 
         expect(product.price, 99.99);
       });
 
       test('price should return listPrice when sellingPrice is null', () {
-        final product = AuroraProduct(
-          listPrice: 149.99,
-        );
+        final product = AuroraProduct(listPrice: 149.99);
 
         expect(product.price, 149.99);
       });
@@ -146,6 +139,7 @@ void main() {
         final product = AuroraProduct(
           asin: 'B0TEST123',
           sku: 'TEST-SKU-001',
+          sellerId: 'seller-123',
           title: 'Test Product',
           brand: 'Test Brand',
           sellingPrice: 99.99,
@@ -155,33 +149,75 @@ void main() {
 
         final qrData = product.generateQRData();
         expect(qrData, isA<String>());
-        
+
         // Verify it's valid JSON
         expect(() => jsonDecode(qrData), returnsNormally);
-        
+
         final decoded = jsonDecode(qrData);
         expect(decoded['asin'], 'B0TEST123');
         expect(decoded['sku'], 'TEST-SKU-001');
+        expect(decoded['seller_id'], 'seller-123');
         expect(decoded['title'], 'Test Product');
         expect(decoded['brand'], 'Test Brand');
-        expect(decoded['price'], 99.99);
+        expect(decoded['selling_price'], 99.99);
         expect(decoded['currency'], 'USD');
         expect(decoded['quantity'], 50);
+        expect(decoded['url'], contains('aurora-app.com'));
       });
 
       test('refreshQRData should update qrData field', () {
         final product = AuroraProduct(
           asin: 'B0TEST123',
+          sellerId: 'seller-123',
           title: 'Original Title',
           sellingPrice: 99.99,
         );
 
         product.refreshQRData();
         expect(product.qrData, isNotNull);
-        
+
         final decoded = jsonDecode(product.qrData!);
         expect(decoded['title'], 'Original Title');
-        expect(decoded['price'], 99.99);
+        expect(decoded['selling_price'], 99.99);
+      });
+
+      test('parseQRData should return map from qrData', () {
+        final product = AuroraProduct(
+          asin: 'B0TEST123',
+          sellerId: 'seller-123',
+          title: 'Test Product',
+          sellingPrice: 99.99,
+        );
+
+        product.refreshQRData();
+        final parsed = product.parseQRData();
+
+        expect(parsed, isNotNull);
+        expect(parsed!['title'], 'Test Product');
+        expect(parsed['asin'], 'B0TEST123');
+      });
+
+      test('parseQRData should return null when qrData is null', () {
+        final product = AuroraProduct(title: 'Test Product');
+
+        final parsed = product.parseQRData();
+        expect(parsed, isNull);
+      });
+
+      test('getProductUrl should return URL from qrData', () {
+        final product = AuroraProduct(
+          asin: 'B0TEST123',
+          sellerId: 'seller-123',
+          title: 'Test Product',
+        );
+
+        product.refreshQRData();
+        final url = product.getProductUrl();
+
+        expect(url, isNotNull);
+        expect(url, contains('aurora-app.com'));
+        expect(url, contains('seller-123'));
+        expect(url, contains('B0TEST123'));
       });
     });
 
@@ -284,9 +320,7 @@ void main() {
       test('should handle nested objects in JSON', () {
         final product = AuroraProduct(
           asin: 'B0TEST123',
-          images: [
-            ProductImage(url: 'https://example.com/image.jpg'),
-          ],
+          images: [ProductImage(url: 'https://example.com/image.jpg')],
           variations: ProductVariations(
             variants: [
               {'name': 'Red'},
@@ -311,10 +345,7 @@ void main() {
           quantity: 50,
         );
 
-        final copy = original.copyWith(
-          title: 'Modified Title',
-          quantity: 100,
-        );
+        final copy = original.copyWith(title: 'Modified Title', quantity: 100);
 
         expect(copy.asin, 'B0TEST123'); // Unchanged
         expect(copy.title, 'Modified Title');
