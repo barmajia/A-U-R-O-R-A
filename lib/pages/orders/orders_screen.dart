@@ -27,38 +27,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   bool _isLoading = false;
 
   // Sample orders (replace with actual data from provider)
-  final List<Map<String, dynamic>> _orders = [
-    {
-      'id': 'ORD-001',
-      'status': 'delivered',
-      'total': 150.00,
-      'items': 3,
-      'date': DateTime.now().subtract(const Duration(days: 5)),
-      'products': [
-        {'name': 'Product 1', 'image': 'https://via.placeholder.com/100'},
-      ],
-    },
-    {
-      'id': 'ORD-002',
-      'status': 'shipped',
-      'total': 89.99,
-      'items': 2,
-      'date': DateTime.now().subtract(const Duration(days: 2)),
-      'products': [
-        {'name': 'Product 2', 'image': 'https://via.placeholder.com/100'},
-      ],
-    },
-    {
-      'id': 'ORD-003',
-      'status': 'processing',
-      'total': 245.50,
-      'items': 5,
-      'date': DateTime.now().subtract(const Duration(days: 1)),
-      'products': [
-        {'name': 'Product 3', 'image': 'https://via.placeholder.com/100'},
-      ],
-    },
-  ];
+  final List<Map<String, dynamic>> _orders = [];
 
   @override
   void dispose() {

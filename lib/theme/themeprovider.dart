@@ -22,6 +22,144 @@ class AppColors {
   static const Color darkBackground = Color(0xFF121214);
 }
 
+// ============================================================================
+// 1.1 VS Code–inspired Theme Presets
+// ============================================================================
+
+enum AppThemeId {
+  vscodeLight,
+  vscodeDark,
+  dracula,
+  monokai,
+  solarizedDark,
+  highContrast,
+}
+
+class ThemePalette {
+  final AppThemeId id;
+  final String name;
+  final String description;
+  final Brightness brightness;
+  final Color seed;
+  final Color primary;
+  final Color secondary;
+  final Color accent;
+  final Color surface;
+  final Color background;
+  final Color card;
+  final List<Color> preview;
+
+  const ThemePalette({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.brightness,
+    required this.seed,
+    required this.primary,
+    required this.secondary,
+    required this.accent,
+    required this.surface,
+    required this.background,
+    required this.card,
+    required this.preview,
+  });
+}
+
+class AppThemes {
+  AppThemes._();
+
+  static const List<ThemePalette> palettes = [
+    ThemePalette(
+      id: AppThemeId.vscodeLight,
+      name: 'VS Code Light+',
+      description: 'Classic Light+ palette from VS Code',
+      brightness: Brightness.light,
+      seed: Color(0xFF007ACC),
+      primary: Color(0xFF007ACC),
+      secondary: Color(0xFF2B88D8),
+      accent: Color(0xFF0E639C),
+      surface: Colors.white,
+      background: Color(0xFFF5F5F7),
+      card: Colors.white,
+      preview: [Color(0xFF007ACC), Color(0xFF2B88D8), Color(0xFF0E639C)],
+    ),
+    ThemePalette(
+      id: AppThemeId.vscodeDark,
+      name: 'VS Code Dark+',
+      description: 'Default Dark+ theme used in VS Code',
+      brightness: Brightness.dark,
+      seed: Color(0xFF569CD6),
+      primary: Color(0xFF569CD6),
+      secondary: Color(0xFF4EC9B0),
+      accent: Color(0xFFD4D4D4),
+      surface: Color(0xFF1E1E1E),
+      background: Color(0xFF111111),
+      card: Color(0xFF252526),
+      preview: [Color(0xFF569CD6), Color(0xFF4EC9B0), Color(0xFFD4D4D4)],
+    ),
+    ThemePalette(
+      id: AppThemeId.dracula,
+      name: 'Dracula',
+      description: 'Popular purple/green Dracula palette',
+      brightness: Brightness.dark,
+      seed: Color(0xFFBD93F9),
+      primary: Color(0xFFBD93F9),
+      secondary: Color(0xFF50FA7B),
+      accent: Color(0xFFFF79C6),
+      surface: Color(0xFF1E1F29),
+      background: Color(0xFF13141A),
+      card: Color(0xFF232433),
+      preview: [Color(0xFFBD93F9), Color(0xFF50FA7B), Color(0xFFFF79C6)],
+    ),
+    ThemePalette(
+      id: AppThemeId.monokai,
+      name: 'Monokai',
+      description: 'Warm Monokai classic colors',
+      brightness: Brightness.dark,
+      seed: Color(0xFF66D9EF),
+      primary: Color(0xFF66D9EF),
+      secondary: Color(0xFFA6E22E),
+      accent: Color(0xFFF92672),
+      surface: Color(0xFF2D2A2E),
+      background: Color(0xFF211F22),
+      card: Color(0xFF2F2B30),
+      preview: [Color(0xFF66D9EF), Color(0xFFA6E22E), Color(0xFFF92672)],
+    ),
+    ThemePalette(
+      id: AppThemeId.solarizedDark,
+      name: 'Solarized Dark',
+      description: 'Teal/amber Solarized Dark palette',
+      brightness: Brightness.dark,
+      seed: Color(0xFF268BD2),
+      primary: Color(0xFF268BD2),
+      secondary: Color(0xFF2AA198),
+      accent: Color(0xFFB58900),
+      surface: Color(0xFF002B36),
+      background: Color(0xFF00212B),
+      card: Color(0xFF073642),
+      preview: [Color(0xFF268BD2), Color(0xFF2AA198), Color(0xFFB58900)],
+    ),
+    ThemePalette(
+      id: AppThemeId.highContrast,
+      name: 'High Contrast',
+      description: 'Max contrast for accessibility',
+      brightness: Brightness.dark,
+      seed: Color(0xFFFFFFFF),
+      primary: Color(0xFFFFFFFF),
+      secondary: Color(0xFF00E8FF),
+      accent: Color(0xFFFF4081),
+      surface: Color(0xFF000000),
+      background: Color(0xFF000000),
+      card: Color(0xFF0F0F0F),
+      preview: [Color(0xFFFFFFFF), Color(0xFF00E8FF), Color(0xFFFF4081)],
+    ),
+  ];
+
+  static ThemePalette palette(AppThemeId id) {
+    return palettes.firstWhere((p) => p.id == id);
+  }
+}
+
 class AppDimensions {
   AppDimensions._();
 
@@ -38,23 +176,31 @@ class AppDimensions {
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get lightTheme => _buildThemeData(Brightness.light);
-  static ThemeData get darkTheme => _buildThemeData(Brightness.dark);
+  static ThemeData fromPalette(
+    ThemePalette palette, {
+    Brightness? brightnessOverride,
+  }) =>
+      _buildThemeData(palette, brightnessOverride: brightnessOverride);
 
-  static ThemeData _buildThemeData(Brightness brightness) {
+  static ThemeData get lightTheme =>
+      _buildThemeData(AppThemes.palette(AppThemeId.vscodeLight));
+  static ThemeData get darkTheme =>
+      _buildThemeData(AppThemes.palette(AppThemeId.vscodeDark));
+
+  static ThemeData _buildThemeData(
+    ThemePalette palette, {
+    Brightness? brightnessOverride,
+  }) {
+    final brightness = brightnessOverride ?? palette.brightness;
     final isDark = brightness == Brightness.dark;
 
-    // Define colors based on brightness
-    final primaryColor = isDark
-        ? AppColors.auroraAccent
-        : AppColors.auroraPrimary;
-    final surfaceColor = isDark
-        ? AppColors.darkSurface
-        : AppColors.lightSurface;
-    final cardColor = isDark ? const Color(0xFF2A2A30) : Colors.white;
-    final snackBarColor = isDark
-        ? const Color(0xFF3C3C41)
-        : const Color(0xFF323232);
+    // Define colors based on palette
+    final primaryColor = palette.primary;
+    final surfaceColor = palette.surface;
+    final cardColor = palette.card;
+    final backgroundColor = palette.background;
+    final snackBarColor =
+        isDark ? const Color(0xFF3C3C41) : const Color(0xFF323232);
 
     // ✅ FIXED: High contrast colors for text
     final textPrimary = isDark ? Colors.white : Colors.black87;
@@ -65,35 +211,31 @@ class AppTheme {
     final borderFocused = isDark ? Colors.grey[300]! : primaryColor;
 
     // Create the ColorScheme
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.auroraPrimary,
+    final baseScheme = ColorScheme.fromSeed(
+      seedColor: palette.seed,
       brightness: brightness,
       primary: primaryColor,
-      secondary: AppColors.auroraSecondary,
-      tertiary: AppColors.auroraAccent,
+      secondary: palette.secondary,
+      tertiary: palette.accent,
       surface: surfaceColor,
       onSurface: textPrimary,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
-    );
+    ).copyWith(background: backgroundColor, surface: surfaceColor);
 
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
-      colorScheme: colorScheme,
+      colorScheme: baseScheme,
 
       // Scaffold background
-      scaffoldBackgroundColor: isDark
-          ? AppColors.darkBackground
-          : AppColors.lightBackground,
+      scaffoldBackgroundColor: backgroundColor,
 
       // Component Themes
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
-        backgroundColor: isDark
-            ? AppColors.darkSurface
-            : AppColors.auroraPrimary,
+        backgroundColor: isDark ? surfaceColor : primaryColor,
         foregroundColor: Colors.white,
         titleTextStyle: const TextStyle(
           fontSize: 20,
@@ -373,16 +515,33 @@ class AppTheme {
 // ============================================================================
 
 class ThemeProvider extends ChangeNotifier {
-  bool _isDarkMode = false;
+  AppThemeId _themeId = AppThemeId.vscodeLight;
   bool _useSystemTheme = false;
   Brightness? _systemBrightness;
 
-  bool get isDarkMode => _isDarkMode;
+  AppThemeId get currentThemeId => _themeId;
   bool get useSystemTheme => _useSystemTheme;
   Brightness? get systemBrightness => _systemBrightness;
+  List<ThemePalette> get availableThemes => AppThemes.palettes;
+  String get currentThemeName => AppThemes.palette(_themeId).name;
+  String get currentThemeDescription => AppThemes.palette(_themeId).description;
 
-  ThemeData get themeData =>
-      _isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme;
+  AppThemeId get _effectiveThemeId {
+    if (_useSystemTheme && _systemBrightness != null) {
+      return _systemBrightness == Brightness.dark
+          ? AppThemeId.vscodeDark
+          : AppThemeId.vscodeLight;
+    }
+    return _themeId;
+  }
+
+  bool get isDarkMode =>
+      AppThemes.palette(_effectiveThemeId).brightness == Brightness.dark;
+
+  ThemeData get themeData => AppTheme.fromPalette(
+        AppThemes.palette(_effectiveThemeId),
+        brightnessOverride: _useSystemTheme ? _systemBrightness : null,
+      );
 
   ThemeProvider() {
     _loadTheme();
@@ -391,7 +550,17 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> _loadTheme() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+      final savedTheme = prefs.getString('themeId');
+      if (savedTheme != null) {
+        _themeId = AppThemeId.values.firstWhere(
+          (t) => t.name == savedTheme,
+          orElse: () => AppThemeId.vscodeLight,
+        );
+      } else {
+        final legacyDark = prefs.getBool('isDarkMode') ?? false;
+        _themeId =
+            legacyDark ? AppThemeId.vscodeDark : AppThemeId.vscodeLight;
+      }
       _useSystemTheme = prefs.getBool('useSystemTheme') ?? false;
       notifyListeners();
     } catch (e) {
@@ -405,19 +574,39 @@ class ThemeProvider extends ChangeNotifier {
     await _loadTheme();
   }
 
+  Future<void> setTheme(AppThemeId id) async {
+    try {
+      _themeId = id;
+      // Manual choice disables auto system following
+      _useSystemTheme = false;
+      notifyListeners();
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('themeId', id.name);
+      await prefs.setBool(
+        'isDarkMode',
+        AppThemes.palette(id).brightness == Brightness.dark,
+      );
+      await prefs.setBool('useSystemTheme', _useSystemTheme);
+    } catch (e) {
+      debugPrint('Error saving theme preference: $e');
+    }
+  }
+
   /// Enable/disable system theme detection
   Future<void> setUseSystemTheme(bool value) async {
     try {
       _useSystemTheme = value;
+
+      if (value && _systemBrightness != null) {
+        _themeId = _systemBrightness == Brightness.dark
+            ? AppThemeId.vscodeDark
+            : AppThemeId.vscodeLight;
+      }
       notifyListeners();
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('useSystemTheme', value);
-
-      if (value && _systemBrightness != null) {
-        _isDarkMode = _systemBrightness == Brightness.dark;
-        notifyListeners();
-      }
     } catch (e) {
       debugPrint('Error saving system theme preference: $e');
     }
@@ -430,7 +619,9 @@ class ThemeProvider extends ChangeNotifier {
 
       // Auto-switch if using system theme
       if (_useSystemTheme) {
-        _isDarkMode = brightness == Brightness.dark;
+        _themeId = brightness == Brightness.dark
+            ? AppThemeId.vscodeDark
+            : AppThemeId.vscodeLight;
         notifyListeners();
       }
     }
@@ -443,11 +634,11 @@ class ThemeProvider extends ChangeNotifier {
         await setUseSystemTheme(false);
       }
 
-      _isDarkMode = !_isDarkMode;
-      notifyListeners();
+      final nextTheme = _themeId == AppThemeId.vscodeDark
+          ? AppThemeId.vscodeLight
+          : AppThemeId.vscodeDark;
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isDarkMode', _isDarkMode);
+      await setTheme(nextTheme);
     } catch (e) {
       debugPrint('Error saving theme preference: $e');
     }

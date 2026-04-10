@@ -11,41 +11,54 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 // MOCK SUPABASE CLIENT
 // ============================================================================
 
-class MockSupabaseClient extends Mock implements SupabaseClient {}
+class MockSupabaseClient extends Mock implements SupabaseClient {
+  final MockAuth _auth = MockAuth();
 
-class MockAuth extends Mock implements GoarClient {
+  @override
+  GoTrueClient get auth => _auth;
+}
+
+class MockAuth extends Mock implements GoTrueClient {
   final Map<String, dynamic> _users = {};
   String? _currentUser;
 
   @override
-  AuthResponse? user() {
-    if (_currentUser == null) return null;
-    final user = _users[_currentUser];
-    if (user == null) return null;
-    return AuthResponse(user: user);
-  }
-
-  @override
   Future<AuthResponse> signUp({
-    required String email,
+    String? email,
     required String password,
     Map<String, dynamic>? data,
+    String? phone,
+    String? captchaToken,
+    String? emailRedirectTo,
+    OtpChannel? channel,
   }) async {
     final userId = 'user-${DateTime.now().millisecondsSinceEpoch}';
-    final user = {
+    final user = User.fromJson({
+      'id': userId,
+      'email': email,
+      'app_metadata': <String, dynamic>{},
+      'user_metadata': data ?? <String, dynamic>{},
+      'aud': 'authenticated',
+      'created_at': DateTime.now().toIso8601String(),
+    });
+    _users[userId] = {
       'id': userId,
       'email': email,
       'user_metadata': data ?? {},
+      'app_metadata': <String, dynamic>{},
+      'aud': 'authenticated',
+      'created_at': DateTime.now().toIso8601String(),
     };
-    _users[userId] = user;
     _currentUser = userId;
     return AuthResponse(user: user);
   }
 
   @override
   Future<AuthResponse> signInWithPassword({
-    required String email,
+    String? email,
     required String password,
+    String? phone,
+    String? captchaToken,
   }) async {
     // Find user by email
     final userEntry = _users.entries.firstWhere(
@@ -56,27 +69,45 @@ class MockAuth extends Mock implements GoarClient {
       throw AuthException('Invalid credentials');
     }
     _currentUser = userEntry.key;
-    return AuthResponse(user: userEntry.value);
+    final user = User.fromJson({
+      'id': userEntry.key,
+      'email': userEntry.value['email'],
+      'app_metadata': <String, dynamic>{},
+      'user_metadata': userEntry.value['user_metadata'],
+      'aud': 'authenticated',
+      'created_at': DateTime.now().toIso8601String(),
+    });
+    return AuthResponse(user: user);
   }
 
   @override
-  Future<void> signOut() async {
+  Future<void> signOut({SignOutScope scope = SignOutScope.local}) async {
     _currentUser = null;
   }
 
   @override
-  Stream<AuthState> onAuthStateChange() async* {
+  Stream<AuthState> get onAuthStateChange async* {
     // Simplified auth state stream for testing
-    yield AuthState(
-      session: _currentUser != null
-          ? Session(
-              accessToken: 'test-token',
-              refreshToken: 'test-refresh',
-              expiresAt: DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch,
-              user: _users[_currentUser]!,
-            )
-          : null,
-    );
+    if (_currentUser != null) {
+      final userData = _users[_currentUser]!;
+      yield AuthState(
+        AuthChangeEvent.signedIn,
+        Session.fromJson({
+          'access_token': 'test-token',
+          'token_type': 'bearer',
+          'expires_in': 3600,
+          'refresh_token': 'test-refresh',
+          'user': {
+            'id': userData['id'],
+            'email': userData['email'],
+            'app_metadata': userData['app_metadata'] ?? <String, dynamic>{},
+            'user_metadata': userData['user_metadata'] ?? <String, dynamic>{},
+            'aud': userData['aud'] ?? 'authenticated',
+            'created_at': userData['created_at'],
+          },
+        }),
+      );
+    }
   }
 }
 
@@ -126,36 +157,37 @@ void setupMockMethodChannels() {
   // Mock path_provider
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(SystemChannels.platform, (message) async {
-    if (message.method == 'getTemporaryDirectory') {
-      return '/tmp';
-    }
-    if (message.method == 'getApplicationDocumentsDirectory') {
-      return '/documents';
-    }
-    if (message.method == 'getLibraryDirectory') {
-      return '/library';
-    }
-    return null;
-  });
+        if (message.method == 'getTemporaryDirectory') {
+          return '/tmp';
+        }
+        if (message.method == 'getApplicationDocumentsDirectory') {
+          return '/documents';
+        }
+        if (message.method == 'getLibraryDirectory') {
+          return '/library';
+        }
+        return null;
+      });
 
   // Mock secure storage
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-      .setMockMethodCallHandler(const MethodChannel('flutter_secure_storage'),
-          (message) async {
-    if (message.method == 'read') {
-      return null;
-    }
-    if (message.method == 'write') {
-      return null;
-    }
-    if (message.method == 'delete') {
-      return null;
-    }
-    if (message.method == 'deleteAll') {
-      return null;
-    }
-    return null;
-  });
+      .setMockMethodCallHandler(const MethodChannel('flutter_secure_storage'), (
+        message,
+      ) async {
+        if (message.method == 'read') {
+          return null;
+        }
+        if (message.method == 'write') {
+          return null;
+        }
+        if (message.method == 'delete') {
+          return null;
+        }
+        if (message.method == 'deleteAll') {
+          return null;
+        }
+        return null;
+      });
 }
 
 /// Initialize test environment with all necessary mocks
@@ -163,7 +195,7 @@ Future<void> initializeTestEnvironment() async {
   TestWidgetsFlutterBinding.ensureInitialized();
   setupMockMethodChannels();
   SharedPreferences.setMockInitialValues({});
-  
+
   // Wait for initialization
   await Future.delayed(const Duration(milliseconds: 50));
 }
@@ -173,7 +205,10 @@ Future<void> cleanupTestEnvironment() async {
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(SystemChannels.platform, null);
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-      .setMockMethodCallHandler(const MethodChannel('flutter_secure_storage'), null);
+      .setMockMethodCallHandler(
+        const MethodChannel('flutter_secure_storage'),
+        null,
+      );
 }
 
 // ============================================================================

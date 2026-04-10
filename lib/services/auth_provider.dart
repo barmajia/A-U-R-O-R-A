@@ -184,6 +184,8 @@ class AuthProvider extends ChangeNotifier {
     required String currency,
     required String email,
     required String password,
+    double? latitude,
+    double? longitude,
   }) async {
     _setLoading(true);
     _clearError();
@@ -218,6 +220,8 @@ class AuthProvider extends ChangeNotifier {
             phone: phone,
             location: location,
             currency: currency,
+            latitude: latitude,
+            longitude: longitude,
           );
         }
 
@@ -329,6 +333,8 @@ class AuthProvider extends ChangeNotifier {
     required String phone,
     required String location,
     required String currency,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
       final nameParts = fullName.split(' ');
@@ -343,12 +349,18 @@ class AuthProvider extends ChangeNotifier {
         'email': email,
         'full_name': fullName,
         'firstname': firstname,
-        'secondname': secondname,
+        // Schema uses snake_case columns
+        'second_name': secondname,
         'thirdname': thirdname,
-        'fourthname': fourthname,
+        'fourth_name': fourthname,
+        // Backward compatibility for legacy code paths
+        'secondname': secondname,
+        'forthname': fourthname,
         'phone': phone,
         'location': location,
         'currency': currency,
+        'latitude': latitude,
+        'longitude': longitude,
         'account_type': 'seller',
         'is_verified': false,
         'created_at': DateTime.now().toIso8601String(),
@@ -368,6 +380,8 @@ class AuthProvider extends ChangeNotifier {
         'currency': currency,
         'account_type': 'seller',
         'is_verified': 0,
+        'latitude': latitude,
+        'longitude': longitude,
         'created_at': DateTime.now().toIso8601String(),
       });
 

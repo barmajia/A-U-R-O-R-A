@@ -2,11 +2,15 @@ import 'package:aurora/models/aurora_product.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/services/supabase_storage.dart';
 import 'package:aurora/backend/sellerdb.dart';
+import 'package:aurora/backend/products_db.dart';
 import 'package:aurora/theme/themeprovider.dart';
 import 'package:aurora/pages/product/brand_data.dart';
+import 'package:aurora/utils/connectivity_helper.dart';
+import 'package:aurora/services/offline_queue_service.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
@@ -359,6 +363,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   List<File> _productImages = [];
   List<String> _uploadedImageUrls = [];
 
+  // Offline-first support
+  bool _isOnline = true;
+  bool _isSyncing = false;
+  int _pendingSyncCount = 0;
+  StreamSubscription? _connectivitySubscription;
+  StreamSubscription? _syncStartedSubscription;
+  StreamSubscription? _syncCompletedSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -401,12 +413,46 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
 
     _loadAccountCurrency();
+    _checkConnectivity();
+    _setupSyncListeners();
+
     if (widget.product?.images != null && widget.product!.images!.isNotEmpty) {
       _uploadedImageUrls = widget.product!.images!
           .map((e) => e.url ?? '')
           .where((url) => url.isNotEmpty)
           .toList();
     }
+  }
+
+  /// Check initial connectivity status
+  Future<void> _checkConnectivity() async {
+    final hasInternet = await ConnectivityHelper.hasInternet;
+    setState(() {
+      _isOnline = hasInternet;
+    });
+  }
+
+  /// Setup sync event listeners
+  void _setupSyncListeners() {
+    _syncStartedSubscription = OfflineQueueService().onSyncStarted.listen((
+      count,
+    ) {
+      setState(() {
+        _isSyncing = true;
+        _pendingSyncCount = count;
+      });
+    });
+
+    _syncCompletedSubscription = OfflineQueueService().onSyncCompleted.listen((
+      _,
+    ) {
+      setState(() {
+        _isSyncing = false;
+        _pendingSyncCount = 0;
+      });
+      // Refresh the screen to show updated sync status
+      _checkConnectivity();
+    });
   }
 
   Future<void> _loadAccountCurrency() async {
@@ -438,6 +484,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     _priceController.dispose();
     _quantityController.dispose();
     _customBrandController.dispose();
+    _connectivitySubscription?.cancel();
+    _syncStartedSubscription?.cancel();
+    _syncCompletedSubscription?.cancel();
     super.dispose();
   }
 
@@ -541,7 +590,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   }
 
   Future<void> _saveProduct() async {
-    // Unfocus to close keyboard and prevent flickering
+    // Unfocus to close keyboard and prevent keyboard flickering
     _focusNode.unfocus();
 
     if (!_formKey.currentState!.validate()) return;
@@ -555,25 +604,44 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     setState(() {
       _isLoading = true;
     });
+
     try {
       final supabaseProvider = context.read<SupabaseProvider>();
+      final supabase = supabaseProvider.client;
       final user = supabaseProvider.currentUser;
       if (user == null) throw Exception('User not logged in');
 
       // ======================================================================
-      // STEP 1: Generate SKU locally BEFORE calling edge function
+      // STEP 1: Check connectivity
+      // ======================================================================
+      final hasInternet = await ConnectivityHelper.hasInternet;
+
+      if (!hasInternet && widget.product == null) {
+        // Offline + New product: Save locally and queue for sync
+        await _saveProductOffline(user.id);
+        return;
+      }
+
+      // ======================================================================
+      // STEP 2: Generate IDs locally (UUID)
       // ======================================================================
       final generatedSku = const Uuid().v4();
-      debugPrint('✓ Generated SKU: $generatedSku');
+      final generatedAsin = const Uuid().v4();
+      debugPrint('✓ Generated SKU: $generatedSku, ASIN: $generatedAsin');
 
-      // For image upload: use existing ASIN for edits, temp ID for storage path only
+      // For image upload: use existing ASIN for edits, new ASIN for new products
       final existingAsin = widget.product?.asin;
-      final storageId =
-          existingAsin ?? 'temp-${DateTime.now().millisecondsSinceEpoch}';
+      final storageId = existingAsin ?? generatedAsin;
 
       List<String> imageUrls = _uploadedImageUrls;
       if (_productImages.isNotEmpty) {
-        imageUrls = await _uploadImages(user.id, storageId);
+        // Try to upload images, but handle offline gracefully
+        try {
+          imageUrls = await _uploadImages(user.id, storageId);
+        } catch (e) {
+          debugPrint('Image upload failed, continuing without new images: $e');
+          // Continue with existing URLs only
+        }
       }
 
       // Determine final brand name
@@ -591,7 +659,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         isLocalBrand = false;
       }
 
-      // GENERATE DESCRIPTION FROM METADATA
+      // Generate description from metadata
       String generatedDescription = DescriptionGenerator.generate(
         title: _titleController.text.trim(),
         brand: finalBrandName,
@@ -602,142 +670,216 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       );
 
       // ======================================================================
-      // STEP 2: Call edge function (server generates ASIN, we send SKU)
+      // STEP 3: Prepare product data
       // ======================================================================
-      final result = widget.product != null
-          // UPDATE: Existing product has ASIN
-          ? await supabaseProvider.updateProductWithEdgeFunction(
-              asin: widget.product!.asin!,
-              updates: {
-                'title': _titleController.text.trim(),
-                'description': generatedDescription,
-                'brand': finalBrandName,
-                'price': double.tryParse(_priceController.text.trim()),
-                'quantity': int.tryParse(_quantityController.text.trim()) ?? 0,
-                'status': _status,
-                'category': _selectedCategory,
-                'subcategory': _selectedSubcategory,
-                'attributes': _productAttributes,
-                'brand_id': finalBrandId,
-                'is_local_brand': isLocalBrand,
-                'images': imageUrls.map((url) => {'url': url}).toList(),
-              },
-            )
-          // CREATE: New product - send generated SKU, server generates ASIN
-          : await supabaseProvider.createProductWithEdgeFunction(
-              title: _titleController.text.trim(),
-              brand: finalBrandName,
-              category: _selectedCategory!,
-              subcategory: _selectedSubcategory!,
-              price: double.tryParse(_priceController.text.trim()) ?? 0,
-              quantity: int.tryParse(_quantityController.text.trim()) ?? 0,
-              description: generatedDescription,
-              attributes: _productAttributes,
-              brandId: finalBrandId,
-              isLocalBrand: isLocalBrand,
-              images: imageUrls.map((url) => {'url': url}).toList(),
-              status: _status,
-              currency: _accountCurrency,
-              sku: generatedSku, // Send our generated SKU to server
-            );
+      final productData = {
+        'title': _titleController.text.trim(),
+        'description': generatedDescription,
+        'brand': finalBrandName,
+        'price': double.tryParse(_priceController.text.trim()),
+        'quantity': int.tryParse(_quantityController.text.trim()) ?? 0,
+        'status': _status,
+        'category': _selectedCategory,
+        'subcategory': _selectedSubcategory,
+        'attributes': _productAttributes,
+        'color_hex': _selectedColor?.hexCode,
+        'brand_id': finalBrandId,
+        'is_local_brand': isLocalBrand,
+        'images': imageUrls.map((url) => {'url': url}).toList(),
+        'seller_id': user.id,
+        'currency': _accountCurrency,
+        'sku': generatedSku,
+        'asin': generatedAsin,
+      };
 
       // ======================================================================
-      // STEP 3: Build QR code with ASIN (from server) + SKU (from us)
+      // STEP 4: Insert or Update directly to Supabase
       // ======================================================================
-      if (result.success && widget.product == null) {
-        final generatedAsin = result.data?['asin'] as String?;
-        final productData = result.data?['product'] as Map<String, dynamic>?;
-        final productAsin = productData?['asin'] as String?;
-        final productSku =
-            productData?['sku'] as String?; // Get SKU from server response
-        final sellerId = result.data?['seller_id'] as String?;
+      if (widget.product != null) {
+        // --- UPDATE EXISTING PRODUCT ---
+        final updates = {
+          'title': productData['title'],
+          'description': productData['description'],
+          'brand': productData['brand'],
+          'price': productData['price'],
+          'quantity': productData['quantity'],
+          'status': productData['status'],
+          'category': productData['category'],
+          'subcategory': productData['subcategory'],
+          'attributes': productData['attributes'],
+          'brand_id': productData['brand_id'],
+          'is_local_brand': productData['is_local_brand'],
+          'images': productData['images'],
+        };
 
-        final finalAsin = generatedAsin ?? productAsin;
-        final finalSku = productSku ?? generatedSku; // Use server-confirmed SKU
+        await supabase
+            .from('products')
+            .update(updates)
+            .eq('asin', existingAsin!);
 
-        if (finalAsin != null && mounted) {
-          debugPrint('========================================');
-          debugPrint('✅ PRODUCT CREATED SUCCESSFULLY');
-          debugPrint('   ASIN: $finalAsin');
-          debugPrint('   SKU: $finalSku');
-          debugPrint(
-            '   Seller ID: ${sellerId ?? supabaseProvider.currentUser!.id}',
+        debugPrint('========================================');
+        debugPrint('✅ PRODUCT UPDATED SUCCESSFULLY');
+        debugPrint('   ASIN: $existingAsin');
+        debugPrint('========================================');
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Product updated successfully'),
+              backgroundColor: Colors.green,
+            ),
           );
+          Navigator.pop(context, true);
+        }
+      } else {
+        // --- CREATE NEW PRODUCT ---
+        await supabase.from('products').insert(productData);
 
-          // Build product URL with seller UUID and ASIN
-          final productUrl =
-              'https://aurora-app.com/product?seller=${sellerId ?? supabaseProvider.currentUser!.id}&asin=$finalAsin';
+        debugPrint('========================================');
+        debugPrint('✅ PRODUCT CREATED SUCCESSFULLY');
+        debugPrint('   ASIN: $generatedAsin');
+        debugPrint('   SKU: $generatedSku');
+        debugPrint('   Seller ID: ${user.id}');
+        debugPrint('========================================');
 
-          // Build QR data with ASIN + SKU + URL
-          final qrData = jsonEncode({
-            'asin': finalAsin,
-            'sku': finalSku, // Use the confirmed SKU
-            'seller_id': sellerId ?? supabaseProvider.currentUser!.id,
-            'url': productUrl,
-            'title': _titleController.text.trim(),
-            'brand': finalBrandName,
-            'selling_price': double.tryParse(_priceController.text.trim()) ?? 0,
-            'currency': _accountCurrency,
-            'quantity': int.tryParse(_quantityController.text.trim()) ?? 0,
-          });
-
-          debugPrint('   QR Data: $qrData');
-
-          // Send QR data to server immediately
-          try {
-            final updateResult = await supabaseProvider.client
-                .from('products')
-                .update({'qr_data': qrData})
-                .eq('asin', finalAsin);
-
-            debugPrint('   QR Update Result: ${updateResult.toString()}');
-            debugPrint('✓ QR code saved to server');
-            debugPrint('Product URL: $productUrl');
-            debugPrint('SKU: $finalSku');
-            debugPrint('========================================');
-          } catch (e) {
-            debugPrint('✗ Error saving QR code: $e');
-            debugPrint(
-              'Note: The qr_data column may not exist in your products table.',
-            );
-            debugPrint(
-              'Product created successfully anyway. QR data is stored locally.',
-            );
-          }
-
-          // Show success with ASIN and SKU
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Product created! ASIN: $finalAsin | SKU: $finalSku',
+                'Product created! ASIN: $generatedAsin | SKU: $generatedSku',
               ),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 4),
             ),
           );
+          Navigator.pop(context, true);
         }
       }
+    } catch (e) {
+      debugPrint('Save Error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Save failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  /// Save product to local database when offline
+  Future<void> _saveProductOffline(String userId) async {
+    try {
+      debugPrint('[Offline Mode] Saving product locally...');
+
+      final generatedSku = const Uuid().v4();
+      final generatedAsin = const Uuid().v4();
+
+      // Determine final brand name
+      String finalBrandName;
+      String? finalBrandId;
+      bool isLocalBrand = false;
+
+      if (_selectedBrand?.isLocal == true) {
+        finalBrandName = _customBrandController.text.trim();
+        finalBrandId = null;
+        isLocalBrand = true;
+      } else {
+        finalBrandName = _selectedBrand?.name ?? '';
+        finalBrandId = _selectedBrand?.id;
+        isLocalBrand = false;
+      }
+
+      // Generate description
+      String generatedDescription = DescriptionGenerator.generate(
+        title: _titleController.text.trim(),
+        brand: finalBrandName,
+        condition: _status,
+        category: _selectedCategory!,
+        subcategory: _selectedSubcategory!,
+        attributes: _productAttributes,
+      );
+
+      // Create AuroraProduct model
+      final product = AuroraProduct(
+        asin: generatedAsin,
+        sku: generatedSku,
+        sellerId: userId,
+        title: _titleController.text.trim(),
+        description: generatedDescription,
+        brand: finalBrandName,
+        sellingPrice: double.tryParse(_priceController.text.trim()),
+        quantity: int.tryParse(_quantityController.text.trim()) ?? 0,
+        status: _status,
+        category: _selectedCategory,
+        subcategory: _selectedSubcategory,
+        attributes: _productAttributes,
+        colorHex: _selectedColor?.hexCode,
+        brandId: finalBrandId,
+        isLocalBrand: isLocalBrand,
+        currency: _accountCurrency,
+        images: _uploadedImageUrls
+            .map((url) => ProductImage(url: url))
+            .toList(),
+        qrData: jsonEncode({
+          'asin': generatedAsin,
+          'sku': generatedSku,
+          'seller_id': userId,
+          'title': _titleController.text.trim(),
+          'brand': finalBrandName,
+          'selling_price': double.tryParse(_priceController.text.trim()) ?? 0,
+          'currency': _accountCurrency,
+          'quantity': int.tryParse(_quantityController.text.trim()) ?? 0,
+        }),
+      );
+
+      // Save to local database
+      final productsDb = context.read<ProductsDB>();
+      await productsDb.addProduct(product);
+
+      // Queue for sync
+      final queueService = OfflineQueueService();
+      await queueService.init();
+      await queueService.enqueue(
+        operationType: QueueOperationType.createProduct,
+        data: product.toJson(),
+        productId: generatedAsin,
+      );
+
+      debugPrint('[Offline Mode] Product saved locally and queued for sync');
+      debugPrint('   ASIN: $generatedAsin');
+      debugPrint('   SKU: $generatedSku');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result.message),
-            backgroundColor: result.success ? Colors.green : Colors.red,
+            content: Text(
+              'Saved locally! Will sync when online. ASIN: $generatedAsin',
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 4),
           ),
         );
-        if (result.success) Navigator.pop(context, true);
+        Navigator.pop(context, true);
       }
     } catch (e) {
+      debugPrint('[Offline Mode] Error saving locally: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save locally: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
-    } finally {
-      if (mounted)
-        setState(() {
-          _isLoading = false;
-        });
+      rethrow;
     }
   }
 
@@ -749,8 +891,28 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Edit Product' : 'Add Product'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(isEditing ? 'Edit Product' : 'Add Product'),
+            const SizedBox(width: 12),
+            _buildSyncStatusIndicator(),
+          ],
+        ),
         actions: [
+          // Manual sync button (shown when offline items pending)
+          if (_pendingSyncCount > 0 && _isOnline)
+            IconButton(
+              icon: _isSyncing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.sync),
+              onPressed: _isSyncing ? null : _triggerSync,
+              tooltip: 'Sync pending items',
+            ),
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: _isLoading ? null : _saveProduct,
@@ -765,6 +927,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  // Offline banner
+                  if (!_isOnline) _buildOfflineBanner(),
                   _buildImagePickerSection(),
                   const SizedBox(height: 24),
                   _buildTextField(
@@ -1586,5 +1750,176 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
       checkmarkColor: Theme.of(context).primaryColor,
     );
+  }
+
+  // ============================================================================
+  // OFFLINE-FIRST UI WIDGETS
+  // ============================================================================
+
+  /// Build sync status indicator (shown in AppBar)
+  Widget _buildSyncStatusIndicator() {
+    if (_isSyncing) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.blue,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'Syncing...',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.blue,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!_isOnline) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off, size: 14, color: Colors.orange),
+            const SizedBox(width: 4),
+            Text(
+              'Offline',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.orange,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_pendingSyncCount > 0) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.amber.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.pending, size: 14, color: Colors.amber),
+            const SizedBox(width: 4),
+            Text(
+              '$_pendingSyncCount pending',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.amber,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Online and synced
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.cloud_done, size: 14, color: Colors.green),
+          const SizedBox(width: 4),
+          Text(
+            'Synced',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.green,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build offline banner
+  Widget _buildOfflineBanner() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.withOpacity(0.5), width: 1),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off, color: Colors.orange, size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'You\'re offline',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  'New products will be saved locally and synced when online',
+                  style: TextStyle(
+                    color: Colors.orange.withOpacity(0.8),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Trigger manual sync
+  Future<void> _triggerSync() async {
+    try {
+      await OfflineQueueService().trySync();
+    } catch (e) {
+      debugPrint('Error triggering sync: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sync failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

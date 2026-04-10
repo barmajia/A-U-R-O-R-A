@@ -23,6 +23,76 @@ class _SellerprofileState extends State<Sellerprofile> {
     _loadSellerData();
   }
 
+  /// Force fetch seller row directly from Supabase "sellers" table by UUID,
+  /// cache it locally, and update the UI.
+  Future<void> _fetchSellerFromSupabaseTable() async {
+    final supabaseProvider = context.read<SupabaseProvider>();
+    final sellerDb = context.read<SellerDB>();
+    final userId = supabaseProvider.currentUser?.id;
+
+    if (userId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('User not logged in')));
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await supabaseProvider.client
+          .from('sellers')
+          .select()
+          // Fetch by primary key UUID (id) to match sellers table schema
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (response == null) {
+        setState(() {
+          _sellerData = null;
+          _errorMessage = 'No seller record found for this account.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Ensure chat_room_id exists locally
+      final chatRoomId = await sellerDb.getOrCreateChatRoomId(userId);
+
+      // Save/update local cache
+      await sellerDb.updateSeller(userId, {
+        'firstname': response['firstname'] ?? '',
+        'secondname': response['secondname'] ?? '',
+        'thirdname': response['thirdname'] ?? '',
+        'fourthname': response['fourthname'] ?? '',
+        'full_name': response['full_name'] ?? '',
+        'location': response['location'] ?? '',
+        'phone': response['phone'] ?? '',
+        'currency': response['currency'] ?? 'EGP',
+        'is_verified':
+            (response['is_verified'] == true || response['is_verified'] == 1)
+            ? 1
+            : 0,
+        'latitude': (response['latitude'] as num?)?.toDouble(),
+        'longitude': (response['longitude'] as num?)?.toDouble(),
+        'chat_room_id': chatRoomId,
+      });
+
+      setState(() {
+        _sellerData = {...response, 'chat_room_id': chatRoomId};
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to fetch seller: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
   Future<void> _loadSellerData() async {
     setState(() {
       _isLoading = true;
@@ -42,29 +112,61 @@ class _SellerprofileState extends State<Sellerprofile> {
         return;
       }
 
-      // Try to get seller data from local SQLite first (faster)
       Map<String, dynamic>? sellerData;
+
+      // 1) Prefer fresh data from Supabase
       try {
-        sellerData = await sellerDb.getSellerByUserId(userId);
+        final result = await supabaseProvider.getSellerProfile(userId);
+        if (result.success && result.data?['sellers'] != null) {
+          sellerData = Map<String, dynamic>.from(result.data!['sellers']);
+        }
       } catch (e) {
-        debugPrint('Error getting seller from local DB: $e');
+        debugPrint('Error getting seller from Supabase: $e');
       }
 
-      // If not in local DB, try Supabase
+      // 2) Fall back to local cache if Supabase not available
       if (sellerData == null) {
         try {
-          final result = await supabaseProvider.getSellerProfile(userId);
-          if (result.success) {
-            sellerData = result.data?['seller'];
-          }
+          sellerData = await sellerDb.getSellerByUserId(userId);
         } catch (e) {
-          debugPrint('Error getting seller from Supabase: $e');
+          debugPrint('Error getting seller from local DB: $e');
+        }
+      }
+
+      // 3) Ensure a chat room id is present (stored locally)
+      if (sellerData != null) {
+        try {
+          final chatRoomId = await sellerDb.getOrCreateChatRoomId(userId);
+          sellerData['chat_room_id'] = chatRoomId;
+
+          // Update local cache with latest fields
+          await sellerDb.updateSeller(userId, {
+            'firstname': sellerData['firstname'] ?? '',
+            'secondname': sellerData['secondname'] ?? '',
+            'thirdname': sellerData['thirdname'] ?? '',
+            'fourthname': sellerData['fourthname'] ?? '',
+            'full_name': sellerData['full_name'] ?? '',
+            'location': sellerData['location'] ?? '',
+            'phone': sellerData['phone'] ?? '',
+            'currency': sellerData['currency'] ?? 'EGP',
+            'is_verified':
+                (sellerData['is_verified'] == true ||
+                    sellerData['is_verified'] == 1)
+                ? 1
+                : 0,
+            'latitude': sellerData['latitude'] as double?,
+            'longitude': sellerData['longitude'] as double?,
+            'chat_room_id': chatRoomId,
+          });
+        } catch (e) {
+          debugPrint('Error ensuring chat_room_id: $e');
         }
       }
 
       setState(() {
         _sellerData = sellerData;
         _isLoading = false;
+        _errorMessage = sellerData == null ? 'Seller record not found.' : null;
       });
     } catch (e) {
       setState(() {
@@ -85,8 +187,8 @@ class _SellerprofileState extends State<Sellerprofile> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _loadSellerData,
-            tooltip: 'Refresh',
+            onPressed: _fetchSellerFromSupabaseTable,
+            tooltip: 'Refresh from Supabase',
           ),
         ],
       ),
@@ -656,14 +758,9 @@ class _SellerprofileState extends State<Sellerprofile> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () {
-              // TODO: Navigate to edit profile page
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Edit profile coming soon')),
-              );
-            },
-            icon: const Icon(Icons.edit),
-            label: const Text('Edit Profile'),
+            onPressed: _loadSellerDataFromSupabase,
+            icon: const Icon(Icons.cloud_download_outlined),
+            label: const Text('Refresh from Supabase (UUID)'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -676,14 +773,9 @@ class _SellerprofileState extends State<Sellerprofile> {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: () {
-              // TODO: Navigate to settings
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings coming soon')),
-              );
-            },
-            icon: const Icon(Icons.settings_outlined),
-            label: const Text('Settings'),
+            onPressed: _loadSellerDataFromLocalDb,
+            icon: const Icon(Icons.storage_outlined),
+            label: const Text('Refresh from Local DB (UUID)'),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -694,6 +786,81 @@ class _SellerprofileState extends State<Sellerprofile> {
         ),
       ],
     );
+  }
+
+  /// Force-fetch seller data from Supabase using the current user's UUID.
+  Future<void> _loadSellerDataFromSupabase() async {
+    final supabaseProvider = context.read<SupabaseProvider>();
+    final userId = supabaseProvider.currentUser?.id;
+    if (userId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('User not logged in')));
+      return;
+    }
+    try {
+      setState(() => _isLoading = true);
+      final result = await supabaseProvider.getSellerProfile(userId);
+      if (result.success && result.data?['seller'] != null) {
+        setState(() {
+          _sellerData = result.data!['seller'] as Map<String, dynamic>;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load from Supabase: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Force-fetch seller data from local SellerDB using the current user's UUID.
+  Future<void> _loadSellerDataFromLocalDb() async {
+    final supabaseProvider = context.read<SupabaseProvider>();
+    final sellerDb = context.read<SellerDB>();
+    final userId = supabaseProvider.currentUser?.id;
+    if (userId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('User not logged in')));
+      return;
+    }
+    try {
+      setState(() => _isLoading = true);
+      final data = await sellerDb.getSellerByUserId(userId);
+      if (data != null) {
+        setState(() {
+          _sellerData = data;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No local record found for this UUID'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load from local DB: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   String _formatDate(String dateString) {

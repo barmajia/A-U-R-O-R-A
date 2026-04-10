@@ -7,6 +7,7 @@ A comprehensive Flutter-based e-commerce application with multi-vendor marketpla
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green)
 ![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android%20%7C%20Web-lightgrey)
 ![License](https://img.shields.io/badge/License-Private-red)
+![Last Updated](https://img.shields.io/badge/Updated-April%202026-blue)
 
 ---
 
@@ -20,9 +21,12 @@ A comprehensive Flutter-based e-commerce application with multi-vendor marketpla
 - [Configuration](#-configuration)
 - [Database Setup](#-database-setup)
 - [Usage](#-usage)
+- [Architecture](#-architecture)
 - [Key Modules](#-key-modules)
 - [Security](#-security)
 - [Documentation](#-documentation)
+- [Testing](#-testing)
+- [Building for Production](#-building-for-production)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -100,6 +104,18 @@ A comprehensive Flutter-based e-commerce application with multi-vendor marketpla
 - Wishlist management
 - Address management
 - User profile settings
+
+### 👤 Seller Profile Management
+
+- Complete seller profile with verification status
+- Account information with UUID identification
+- Contact details (email, phone)
+- Location & currency settings
+- Real-time sync with Supabase backend
+- Local database caching for offline access
+- Copy UUID to clipboard
+- Refresh data from Supabase or local DB
+- Verification badge and status tracking
 
 ### 🔐 Authentication & Security
 
@@ -236,6 +252,44 @@ A-U-R-O-R-A/
 
 ## 🚀 Getting Started
 
+### For New Developers
+
+**Quick Start Guide:**
+
+1. **Clone & Install**
+
+   ```bash
+   git clone <repository-url>
+   cd A-U-R-O-R-A
+   flutter pub get
+   ```
+
+2. **Configure Supabase**
+   - Copy `.env.example` to `.env`
+   - Update with your Supabase credentials
+   - Or use command-line flags:
+
+   ```bash
+   flutter run --dart-define=SUPABASE_URL=your_url --dart-define=SUPABASE_ANON_KEY=your_key
+   ```
+
+3. **Run Database Migrations**
+   - Open Supabase Dashboard → SQL Editor
+   - Execute migrations in order:
+     - `supabase/migrations/005_customers_sales_analytics_complete.sql`
+     - Additional migrations as needed
+
+4. **Run the App**
+
+   ```bash
+   flutter run
+   ```
+
+5. **Explore Documentation**
+   - Start with [`COMPLETE_IMPLEMENTATION_SUMMARY.md`](COMPLETE_IMPLEMENTATION_SUMMARY.md)
+   - Read [`QUICK_TESTING_GUIDE.md`](QUICK_TESTING_GUIDE.md) for testing
+   - Check [`TROUBLESHOOTING_GUIDE.md`](TROUBLESHOOTING_GUIDE.md) for common issues
+
 ### Prerequisites
 
 - Flutter SDK (>= 3.10.7)
@@ -304,22 +358,41 @@ const String supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
 │                      auth.users                              │
 │                   (Supabase Auth)                            │
 └─────────────────────┬───────────────────────────────────────┘
-                      │ seller_id (UUID)
+                      │ seller_id / user_id (UUID)
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  customers            │  sales              │  analytics_   │
+│  sellers              │  sales              │  analytics_   │
 │  ─────────────────    │  ─────────────────  │  snapshots    │
-│  id (UUID)            │  id (UUID)          │  ───────────  │
-│  seller_id (FK)       │  customer_id (FK)   │  id (UUID)    │
-│  name                 │  product_id (FK)    │  seller_id    │
-│  phone                │  quantity           │  period_type  │
-│  email                │  unit_price         │  period_start │
-│  age_range            │  total_price        │  period_end   │
-│  notes                │  discount           │  analytics_   │
-│  total_orders ⚡      │  payment_method     │    data (JSON)│
-│  total_spent ⚡       │  payment_status     │  is_current   │
-│  last_purchase_date ⚡│  sale_date          │               │
-│                       │  payment_status     │               │
+│  id (UUID, PK)        │  id (UUID)          │  ───────────  │
+│  user_id (FK)         │  customer_id (FK)   │  id (UUID)    │
+│  firstname            │  product_id (FK)    │  seller_id    │
+│  secondname           │  quantity           │  period_type  │
+│  thirdname            │  unit_price         │  period_start │
+│  fourthname           │  total_price        │  period_end   │
+│  full_name            │  discount           │  analytics_   │
+│  email                │  payment_method     │    data (JSON)│
+│  location             │  payment_status     │  is_current   │
+│  phone                │  sale_date          │               │
+│  currency             │  created_at         │               │
+│  account_type         │                     │               │
+│  is_verified          │  customers          │               │
+│  latitude             │  ─────────────────  │               │
+│  longitude            │  id (UUID)          │               │
+│  chat_room_id         │  seller_id (FK)     │               │
+│  created_at           │  name               │               │
+│  updated_at           │  phone              │               │
+│                       │  email              │               │
+│  products             │  age_range          │               │
+│  ─────────────────    │  notes              │               │
+│  id (UUID)            │  total_orders ⚡     │               │
+│  seller_id (FK)       │  total_spent ⚡      │               │
+│  asin                 │  last_purchase ⚡    │               │
+│  sku                  │                     │               │
+│  qr_data              │                     │               │
+│  title                │                     │               │
+│  price                │                     │               │
+│  images               │                     │               │
+│                       │                     │               │
 └─────────────────────────────────────────────────────────────┘
                          ⚡ = Auto-updated by triggers
 ```
@@ -327,6 +400,21 @@ const String supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
 ---
 
 ## 📱 Usage
+
+### Seller Profile
+
+1. Navigate to **Seller Profile** from the main menu
+2. View your complete profile information:
+   - **Profile Header**: Avatar, full name, email, account type badge
+   - **Account Information**: UUID (copyable), full name, account type
+   - **Contact Card**: Email and phone number
+   - **Location & Currency**: Physical location and currency setting
+   - **Verification Status**: Verified badge or pending verification
+3. **Refresh Data**:
+   - Pull down to refresh from Supabase
+   - Use "Refresh from Supabase" button for UUID-based fetch
+   - Use "Refresh from Local DB" button for offline cache
+4. **Copy UUID**: Tap the copy icon next to your UUID to share with support
 
 ### Recording a Sale
 
@@ -392,6 +480,20 @@ const String supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
 - [`factory_page.dart`](lib/pages/factory/factory_page.dart) - Factory management
 - [`factory_discovery_page.dart`](lib/pages/factory/factory_discovery_page.dart) - Discover and link factories
 
+### Seller Module
+
+- [`sellerProfile.dart`](lib/pages/seller/sellerProfile.dart) - Complete seller profile management
+  - Profile header with avatar and account type badge
+  - Account information section (UUID, full name, account type)
+  - Contact card (email, phone)
+  - Location & currency card
+  - Verification status with badge
+  - Refresh from Supabase (UUID-based)
+  - Refresh from local database
+  - Copy UUID to clipboard
+  - Pull-to-refresh functionality
+  - Error handling and loading states
+
 ### Chat Module
 
 - [`chat_page.dart`](lib/pages/chat/chat_page.dart) - Real-time messaging
@@ -409,6 +511,87 @@ const String supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
 - [`supabase.dart`](lib/services/supabase.dart) - Database operations and business logic
 - [`auth_service.dart`](lib/services/auth_service.dart) - Authentication management
 - [`edge_functions.dart`](lib/services/edge_functions.dart) - Edge function integration
+
+### Backend & Local Database
+
+- [`sellerdb.dart`](lib/backend/sellerdb.dart) - Local SQLite seller database
+  - Seller data caching
+  - Chat room ID management
+  - Location storage
+  - CRUD operations
+- [`products_db.dart`](lib/backend/products_db.dart) - Local SQLite product database
+  - Product catalog caching
+  - Offline product access
+
+---
+
+## 🏗️ Architecture
+
+### Seller Profile Architecture
+
+The seller profile system uses a dual-source data architecture:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                    Seller Profile UI                          │
+│  (lib/pages/seller/sellerProfile.dart)                       │
+└────────────────────┬─────────────────────────────────────────┘
+                     │
+         ┌───────────┴───────────┐
+         │                       │
+         ▼                       ▼
+┌─────────────────┐     ┌─────────────────┐
+│  Supabase       │     │  Local SQLite   │
+│  (Primary)      │     │  (Cache)        │
+│                 │     │                 │
+│  - sellers      │     │  - sellers.db   │
+│    table        │     │    (offline)    │
+│  - Real-time    │     │  - Fast access  │
+│  - UUID-based   │     │  - Fallback     │
+└─────────────────┘     └─────────────────┘
+```
+
+**Data Flow:**
+
+1. **Primary Source**: Fetch from Supabase `sellers` table by UUID
+2. **Fallback**: Load from local SQLite if offline
+3. **Cache**: Store fetched data locally for quick access
+4. **Chat Room ID**: Generate/persist unique chat room ID per seller
+
+**Key Features:**
+
+- UUID-based primary key integration
+- Pull-to-refresh with Supabase sync
+- Local database caching for offline access
+- Error handling with retry functionality
+- Loading states for smooth UX
+- Verification status tracking
+- Copy UUID to clipboard
+
+### Local Database Schema (SQLite)
+
+```sql
+CREATE TABLE sellers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL UNIQUE,
+  firstname TEXT NOT NULL,
+  secondname TEXT NOT NULL DEFAULT '',
+  thirdname TEXT NOT NULL DEFAULT '',
+  fourthname TEXT NOT NULL DEFAULT '',
+  full_name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  location TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  currency TEXT,
+  account_type TEXT DEFAULT 'seller',
+  is_verified INTEGER DEFAULT 0,
+  latitude REAL,
+  longitude REAL,
+  chat_room_id TEXT,
+  created_at TEXT,
+  updated_at TEXT
+);
+```
 
 ---
 
@@ -563,6 +746,14 @@ Additional documentation files:
 | [`INTEGRATION_SUMMARY.md`](INTEGRATION_SUMMARY.md)                   | Integration overview      |
 | [`IMPLEMENTATION_COMPLETE.md`](IMPLEMENTATION_COMPLETE.md)           | Implementation completion |
 
+### Seller Profile & Management
+
+| Document            | Description                                        |
+| ------------------- | -------------------------------------------------- |
+| Seller Profile      | Built into `lib/pages/seller/sellerProfile.dart`   |
+| Seller Database     | `lib/backend/sellerdb.dart` - Local SQLite caching |
+| Verification System | In-app verification status tracking                |
+
 ### Backup & Recovery
 
 | Document                                                 | Description               |
@@ -589,7 +780,20 @@ Additional documentation files:
 
 ---
 
-## 🆕 Recent Updates (March 2026)
+## 🆕 Recent Updates (March - April 2026)
+
+### Seller Profile Management
+
+- ✅ **Seller Profile Page** - Complete profile management with verification status
+- ✅ **UUID-Based Identification** - Primary key integration with Supabase
+- ✅ **Dual Data Source** - Sync from Supabase or local SQLite cache
+- ✅ **Account Information Card** - Display UUID, full name, account type
+- ✅ **Contact & Location Cards** - Split view for contact info and location/currency
+- ✅ **Verification Badge** - Visual verification status with pending/verified states
+- ✅ **Copy UUID to Clipboard** - One-tap UUID copying for seller identification
+- ✅ **Pull-to-Refresh** - Refresh profile data with swipe gesture
+- ✅ **Error Handling** - Comprehensive error states and retry functionality
+- ✅ **Loading States** - Smooth loading indicators during data fetch
 
 ### Product QR Code & Sharing Features
 
@@ -745,6 +949,46 @@ flutter build web --release
 
 ---
 
+## 📊 Project Summary
+
+### Key Statistics
+
+| Metric                  | Count     |
+| ----------------------- | --------- |
+| **Total Pages**         | 30+       |
+| **Documentation Files** | 100+      |
+| **Test Files**          | 8         |
+| **Edge Functions**      | 10+       |
+| **Database Tables**     | 15+       |
+| **Dependencies**        | 35+       |
+| **Supported Locales**   | 2 (EN/AR) |
+| **Platforms**           | 4         |
+
+### Core Features
+
+✅ **Multi-Vendor Marketplace** - Complete seller management with UUID-based identification  
+✅ **Product Management** - ASIN/SKU generation, QR codes, image uploads  
+✅ **Sales Tracking** - Customer linkage, payment methods, analytics  
+✅ **Customer Management** - Profiles, statistics, age demographics  
+✅ **Real-time Chat** - Buyer-seller communication with deal proposals  
+✅ **Factory System** - Factory discovery and production tracking  
+✅ **Analytics Dashboard** - KPIs, trends, business insights  
+✅ **User Payment Methods** - Saved cards with secure storage  
+✅ **Location Services** - Geolocation and nearby discovery  
+✅ **Biometric Auth** - Fingerprint/Face ID authentication  
+✅ **Seller Profile** - Verification status, contact info, location
+
+### Technology Highlights
+
+- **Backend**: Supabase (PostgreSQL + Realtime + Auth + Storage)
+- **Local Storage**: SQLite for offline caching
+- **State Management**: Provider pattern
+- **UI Framework**: Material Design 3
+- **Testing**: Unit, Widget, and SQL tests
+- **CI/CD**: GitHub Actions for automated testing
+
+---
+
 ## 🤝 Contributing
 
 This is a private project. For internal development only.
@@ -776,5 +1020,7 @@ For questions or support, contact the development team.
 <div align="center">
 
 **Built with ❤️ using Flutter & Supabase**
+
+![Aurora Platform](https://img.shields.io/badge/Aurora-E--commerce%20Platform-blue?style=for-the-badge)
 
 </div>

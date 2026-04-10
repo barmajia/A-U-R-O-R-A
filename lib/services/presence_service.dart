@@ -77,10 +77,17 @@ class UserPresence {
 /// Service for tracking user presence
 class PresenceService extends ChangeNotifier {
   static final PresenceService _instance = PresenceService._internal();
-  factory PresenceService() => _instance;
-  PresenceService._internal();
+  factory PresenceService([SupabaseClient? client]) {
+    if (client != null) {
+      return PresenceService._withClient(client);
+    }
+    return _instance;
+  }
+  PresenceService._internal() : _client = Supabase.instance.client;
+  PresenceService._withClient(SupabaseClient client) : _client = client;
 
-  final SupabaseClient _client = Supabase.instance.client;
+  final SupabaseClient _client;
+  SupabaseClient get client => _client;
   final ErrorHandler _errorHandler = ErrorHandler();
 
   // State
@@ -126,7 +133,7 @@ class PresenceService extends ChangeNotifier {
   Future<void> _subscribeToPresence() async {
     try {
       // Use single presence channel for all users
-      _presenceChannel = _client.channel('presence:online');
+      _presenceChannel = client.channel('presence:online');
 
       _presenceChannel!
           .onPostgresChanges(
@@ -200,7 +207,7 @@ class PresenceService extends ChangeNotifier {
 
     try {
       // Update sellers table
-      await _client
+      await client
           .from('sellers')
           .update({'last_seen': DateTime.now().toIso8601String()})
           .eq('user_id', _currentUserId!);
@@ -255,7 +262,7 @@ class PresenceService extends ChangeNotifier {
 
     try {
       // Update typing status in conversation
-      await _client
+      await client
           .from('conversation_participants')
           .update({
             'is_typing': isTyping,

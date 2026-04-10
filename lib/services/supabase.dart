@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:aurora/backend/sellerdb.dart';
 import 'package:aurora/backend/products_db.dart';
 import 'package:aurora/models/aurora_product.dart';
 import 'package:aurora/models/customer.dart'; // Deprecated - kept for seller-managed customers
 import 'package:aurora/models/sale.dart';
 import 'package:aurora/services/queue_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -540,6 +540,8 @@ class SupabaseProvider extends ChangeNotifier {
     required String email,
     required String password,
     String? language,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
       // Step 1: Create auth user
@@ -570,6 +572,8 @@ class SupabaseProvider extends ChangeNotifier {
           location: location,
           currency: currency,
           password: password,
+          latitude: latitude,
+          longitude: longitude,
         );
       }
 
@@ -625,6 +629,35 @@ class SupabaseProvider extends ChangeNotifier {
     } catch (e) {
       _errorHandler.handleError(e, 'Password Reset');
       return _failure('Failed to send reset email: $e');
+    }
+  }
+
+  /// Sign in with Google OAuth.
+  ///
+  /// For first-time users, this also ensures a minimal seller profile exists
+  /// so the current app can continue using seller-based flows.
+  Future<AuthResult> signInWithGoogle() async {
+    try {
+      final redirectUrl = kIsWeb
+          ? Uri.base.toString()
+          : 'io.supabase.flutter://login-callback/';
+
+      await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: redirectUrl,
+        queryParams: const {
+          // Forces account picker so the user isn't auto-signed into a wrong account
+          'prompt': 'select_account',
+        },
+      );
+
+      return _success('Google sign-in started successfully');
+    } on AuthException catch (e) {
+      _errorHandler.handleError(e, 'Google Sign-In');
+      return _failure(_mapAuthError(e.message));
+    } catch (e) {
+      _errorHandler.handleError(e, 'Google Sign-In');
+      return _failure('Failed to sign in with Google: $e');
     }
   }
 
@@ -700,6 +733,13 @@ class SupabaseProvider extends ChangeNotifier {
       _errorHandler.handleError(e, 'Update Seller Profile');
       return _failure('Failed to update profile: $e');
     }
+  }
+
+  /// Get or create a seller chat room id (stored securely in local SellerDB).
+  Future<String?> getSellerChatRoomId() async {
+    if (!isLoggedIn) return null;
+    if (_sellerDb == null) return null;
+    return await _sellerDb!.getOrCreateChatRoomId(currentUser!.id);
   }
 
   // --------------------------------------------------------------------------
@@ -2773,6 +2813,12 @@ class SupabaseProvider extends ChangeNotifier {
   void _initProvider() {
     // Listen to auth state changes
     _client.auth.onAuthStateChange.listen((data) {
+      final session = data.session;
+      if (session != null) {
+        // Automatically ensure seller profile exists for any logged in user.
+        // This handles both new Google sign-ups and returning users.
+        _ensureSellerProfileForOAuthUser(session.user);
+      }
       _isCheckingSession = false;
       notifyListeners();
     });
@@ -2846,12 +2892,76 @@ class SupabaseProvider extends ChangeNotifier {
     try {
       return await _client
           .from(SupabaseConstants.tableSellers)
-          .select()
+          .select(
+            'user_id, full_name, firstname, second_name, thirdname, fourth_name, email, phone, location, currency, latitude, longitude, is_verified, created_at, updated_at',
+          )
           .eq('user_id', userId)
           .maybeSingle();
     } on PostgrestException catch (e) {
       if (e.code == 'PGRST116') return null;
       rethrow;
+    }
+  }
+
+  /// Public helper to fetch seller profile (cloud first, then local fallback).
+  Future<Map<String, dynamic>?> fetchSellerProfile({String? userId}) async {
+    final id = userId ?? currentUser?.id;
+    if (id == null) return null;
+
+    // Try Supabase first
+    final cloud = await _fetchSeller(id);
+    if (cloud != null) return cloud;
+
+    // Fallback to local DB if available
+    if (_sellerDb != null) {
+      return await _sellerDb!.getSellerByUserId(id);
+    }
+    return null;
+  }
+
+  Future<void> _ensureSellerProfileForOAuthUser(User user) async {
+    try {
+      final existingSeller = await _fetchSeller(user.id);
+      if (existingSeller != null) return;
+
+      final metadata = user.userMetadata ?? {};
+      final fullName =
+          (metadata[SupabaseConstants.keyFullName] as String?) ??
+          (metadata['name'] as String?) ??
+          (user.email?.split('@').first ?? 'Aurora User');
+      final email = user.email ?? 'unknown@example.com';
+
+      // Use constants for metadata consistency
+      final phone = (metadata[SupabaseConstants.keyPhone] as String?) ?? '';
+      final location =
+          (metadata[SupabaseConstants.keyLocation] as String?) ??
+          'Not provided';
+      final currency =
+          (metadata[SupabaseConstants.keyCurrency] as String?) ?? 'USD';
+
+      // Create the record in both Supabase and Local SQLite
+      await _createSellerRecord(
+        userId: user.id,
+        email: email,
+        fullName: fullName,
+        phone: phone,
+        location: location,
+        currency: currency,
+        password: '',
+      );
+
+      // Trigger the edge function to process the new signup
+      await _invokeSignupFunction(
+        userId: user.id,
+        email: email,
+        fullName: fullName,
+        accountType: 'seller',
+        phone: phone,
+        location: location,
+        currency: currency,
+      );
+    } catch (e) {
+      _errorHandler.handleError(e, 'Ensure OAuth Seller Profile');
     }
   }
 
@@ -2864,6 +2974,8 @@ class SupabaseProvider extends ChangeNotifier {
     required String location,
     required String currency,
     required String password,
+    double? latitude,
+    double? longitude,
   }) async {
     final nameParts = fullName.split(' ');
     final firstname = nameParts.isNotEmpty ? nameParts[0] : '';
@@ -2877,12 +2989,18 @@ class SupabaseProvider extends ChangeNotifier {
         'email': email,
         'full_name': fullName,
         'firstname': firstname,
-        'secondname': secondname,
+        // DB columns are second_name / fourth_name (with underscore)
+        'second_name': secondname,
         'thirdname': thirdname,
-        'fourthname': fourthname,
+        'fourth_name': fourthname,
+        // Backward compatibility for legacy edge functions expecting these typos
+        'forthname': fourthname,
+        'secondname': secondname,
         'phone': phone,
         'location': location,
         'currency': currency,
+        'latitude': latitude,
+        'longitude': longitude,
         SupabaseConstants.keyAccountType: 'seller',
         'is_verified': false,
         'created_at': DateTime.now().toIso8601String(),
@@ -2909,6 +3027,8 @@ class SupabaseProvider extends ChangeNotifier {
           'currency': currency,
           'account_type': 'seller',
           'is_verified': 0,
+          'latitude': latitude,
+          'longitude': longitude,
           'created_at': DateTime.now().toIso8601String(),
         });
         if (kDebugMode) print('Seller created in local SQLite');

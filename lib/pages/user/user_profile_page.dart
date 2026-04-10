@@ -58,9 +58,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
         _isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load profile: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load profile: $e')));
       }
     }
   }
@@ -71,16 +71,18 @@ class _UserProfilePageState extends State<UserProfilePage> {
     setState(() => _isSaving = true);
 
     try {
-      // TODO: Connect to backend when updateUserProfile is implemented
-      // final supabase = context.read<SupabaseProvider>();
-      // final result = await supabase.updateUserProfile(
-      //   fullName: _fullNameController.text,
-      //   phone: _phoneController.text,
-      // );
-      
-      // Simulate API call
-      await Future.delayed(const Duration(milliseconds: 800));
-      
+      final supabase = context.read<SupabaseProvider>();
+      final user = supabase.currentUser;
+      if (user == null) return;
+
+      await supabase.updateSellerProfile(
+        userId: user.id,
+        data: {
+          'full_name': _fullNameController.text,
+          'phone': _phoneController.text,
+        },
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -92,9 +94,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save profile: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save profile: $e')));
       }
     } finally {
       setState(() => _isSaving = false);
@@ -176,10 +178,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           decoration: BoxDecoration(
             color: Theme.of(context).primaryColor.withOpacity(0.1),
             shape: BoxShape.circle,
-            border: Border.all(
-              color: Theme.of(context).primaryColor,
-              width: 3,
-            ),
+            border: Border.all(color: Theme.of(context).primaryColor, width: 3),
           ),
           child: Center(
             child: Text(
@@ -333,11 +332,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Widget _buildDivider() {
-    return Container(
-      height: 40,
-      width: 1,
-      color: Colors.grey[300],
-    );
+    return Container(height: 40, width: 1, color: Colors.grey[300]);
   }
 
   Widget _buildStatItem({
@@ -359,18 +354,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
         const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
       ],
     );
   }
@@ -409,7 +395,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
               onTap: () {
                 // Navigate to payment methods page
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Payment Methods - Coming Soon')),
+                  const SnackBar(
+                    content: Text('Payment Methods - Coming Soon'),
+                  ),
                 );
               },
             ),
@@ -454,10 +442,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         ),
         child: Icon(icon, color: color, size: 20),
       ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(
         subtitle,
         style: TextStyle(fontSize: 12, color: Colors.grey[600]),

@@ -33,13 +33,14 @@ import 'package:aurora/pages/singup/login.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/services/auth_provider.dart';
 import 'package:aurora/services/product_provider.dart';
-import 'package:aurora/services/chat_provider.dart';
 import 'package:aurora/services/permissions.dart';
 import 'package:aurora/services/notification_service.dart';
 import 'package:aurora/services/user_preferences_service.dart';
 import 'package:aurora/services/presence_service.dart';
 import 'package:aurora/theme/themeprovider.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -54,12 +55,18 @@ Future<void> main() async {
     debugPrint('  --dart-define=SUPABASE_URL=your_url');
     debugPrint('  --dart-define=SUPABASE_ANON_KEY=your_key');
     debugPrint('  OR create .env file from .env.example');
+    return; // Abort startup to avoid initializing Supabase with invalid config
   }
 
   // Initialize Supabase
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
+    authOptions: FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.pkce,
+      autoRefreshToken: true,
+      detectSessionInUri: true,
+    ),
   );
 
   // Request permissions on first launch
@@ -95,7 +102,6 @@ Future<void> main() async {
     productsDb,
   );
   final productProvider = ProductProvider(Supabase.instance.client, productsDb);
-  final chatProvider = ChatProvider(authProvider);
 
   // Wait a bit for DBs to initialize
   await Future.delayed(const Duration(milliseconds: 300));
@@ -111,9 +117,6 @@ Future<void> main() async {
 
         // Product Management
         ChangeNotifierProvider.value(value: productProvider),
-
-        // Chat & Messaging
-        ChangeNotifierProvider.value(value: chatProvider),
 
         // Notifications
         ChangeNotifierProvider.value(value: notificationService),
@@ -153,6 +156,17 @@ class Aurora extends StatelessWidget {
                 debugShowCheckedModeBanner: false,
                 title: 'Aurora E-commerce',
                 theme: themeProvider.themeData,
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [
+                  Locale('en'), // English
+                  Locale('ar'), // Arabic
+                ],
+                locale: const Locale('en'), // Default locale
                 home: const Scaffold(
                   body: Center(child: CircularProgressIndicator()),
                 ),
@@ -173,11 +187,27 @@ class Aurora extends StatelessWidget {
               });
             }
 
+            // Get user's preferred language
+            final userPreferencesService = context
+                .watch<UserPreferencesService>();
+            final locale = userPreferencesService.locale;
+
             if (authProvider.isLoggedIn) {
               return MaterialApp(
                 debugShowCheckedModeBanner: false,
                 title: 'Aurora E-commerce',
                 theme: themeProvider.themeData,
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [
+                  Locale('en'), // English
+                  Locale('ar'), // Arabic
+                ],
+                locale: locale,
                 home: const Homepage(),
                 routes: {
                   '/login': (context) => const Login(),
@@ -189,6 +219,17 @@ class Aurora extends StatelessWidget {
                 debugShowCheckedModeBanner: false,
                 title: 'Aurora E-commerce',
                 theme: themeProvider.themeData,
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [
+                  Locale('en'), // English
+                  Locale('ar'), // Arabic
+                ],
+                locale: locale,
                 home: const Login(),
                 routes: {
                   '/login': (context) => const Login(),

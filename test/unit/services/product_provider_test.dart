@@ -20,14 +20,14 @@ void main() {
     // Mock method channels
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, (message) async {
-      if (message.method == 'getTemporaryDirectory') {
-        return '/tmp';
-      }
-      if (message.method == 'getApplicationDocumentsDirectory') {
-        return '/documents';
-      }
-      return null;
-    });
+          if (message.method == 'getTemporaryDirectory') {
+            return '/tmp';
+          }
+          if (message.method == 'getApplicationDocumentsDirectory') {
+            return '/documents';
+          }
+          return null;
+        });
 
     SharedPreferences.setMockInitialValues({});
 
@@ -47,7 +47,7 @@ void main() {
   setUp(() async {
     // Clear products before each test
     await productsDb.deleteAllProducts();
-    
+
     productProvider = ProductProvider(supabaseClient, productsDb);
   });
 
@@ -63,7 +63,7 @@ void main() {
       });
 
       test('should start with empty product list', () {
-        expect(productProvider.products, isEmpty);
+        expect(productProvider.cachedProducts, isEmpty);
       });
     });
 
@@ -72,10 +72,12 @@ void main() {
         // Missing title
         expect(
           () => productProvider.createProduct(
-            title: '',
-            brand: 'Test Brand',
-            sellingPrice: 99.99,
-            currency: 'USD',
+            AuroraProduct(
+              title: '',
+              brand: 'Test Brand',
+              sellingPrice: 99.99,
+              currency: 'USD',
+            ),
           ),
           throwsA(isA<ArgumentError>()),
         );
@@ -83,10 +85,12 @@ void main() {
         // Missing brand
         expect(
           () => productProvider.createProduct(
-            title: 'Test Product',
-            brand: '',
-            sellingPrice: 99.99,
-            currency: 'USD',
+            AuroraProduct(
+              title: 'Test Product',
+              brand: '',
+              sellingPrice: 99.99,
+              currency: 'USD',
+            ),
           ),
           throwsA(isA<ArgumentError>()),
         );
@@ -94,40 +98,45 @@ void main() {
         // Missing price
         expect(
           () => productProvider.createProduct(
-            title: 'Test Product',
-            brand: 'Test Brand',
-            sellingPrice: null,
-            currency: 'USD',
+            AuroraProduct(
+              title: 'Test Product',
+              brand: 'Test Brand',
+              sellingPrice: null,
+              currency: 'USD',
+            ),
           ),
           throwsA(isA<ArgumentError>()),
         );
       });
 
-      test('createProduct should create product with required fields', () async {
-        final product = AuroraProduct(
-          title: 'Test Product',
-          brand: 'Test Brand',
-          sellingPrice: 99.99,
-          currency: 'USD',
-          quantity: 100,
-        );
+      test(
+        'createProduct should create product with required fields',
+        () async {
+          final product = AuroraProduct(
+            title: 'Test Product',
+            brand: 'Test Brand',
+            sellingPrice: 99.99,
+            currency: 'USD',
+            quantity: 100,
+          );
 
-        // Save to local DB
-        await productsDb.addProduct(product);
+          // Save to local DB
+          await productsDb.addProduct(product);
 
-        final saved = await productsDb.getProductByAsin(product.asin ?? '');
-        
-        // Since ASIN might be null, search by title
-        final allProducts = await productsDb.getAllProducts();
-        final found = allProducts.firstWhere(
-          (p) => p.title == 'Test Product',
-          orElse: () => AuroraProduct(),
-        );
+          final saved = await productsDb.getProductByAsin(product.asin ?? '');
 
-        expect(found.title, 'Test Product');
-        expect(found.brand, 'Test Brand');
-        expect(found.sellingPrice, 99.99);
-      });
+          // Since ASIN might be null, search by title
+          final allProducts = await productsDb.getAllProducts();
+          final found = allProducts.firstWhere(
+            (p) => p.title == 'Test Product',
+            orElse: () => AuroraProduct(),
+          );
+
+          expect(found.title, 'Test Product');
+          expect(found.brand, 'Test Brand');
+          expect(found.sellingPrice, 99.99);
+        },
+      );
 
       test('createProduct should generate SKU if not provided', () async {
         final product = AuroraProduct(
@@ -195,10 +204,13 @@ void main() {
         expect(found!.title, 'Specific Product');
       });
 
-      test('getProductByAsin should return null for non-existent ASIN', () async {
-        final found = await productsDb.getProductByAsin('B0NONEXISTENT');
-        expect(found, isNull);
-      });
+      test(
+        'getProductByAsin should return null for non-existent ASIN',
+        () async {
+          final found = await productsDb.getProductByAsin('B0NONEXISTENT');
+          expect(found, isNull);
+        },
+      );
     });
 
     group('Update Product', () {
@@ -316,7 +328,9 @@ void main() {
       });
 
       test('searchProducts should return empty for no matches', () async {
-        final results = await productsDb.searchProducts('NonExistentProduct123');
+        final results = await productsDb.searchProducts(
+          'NonExistentProduct123',
+        );
         expect(results, isEmpty);
       });
     });
@@ -420,7 +434,10 @@ void main() {
           asin: 'B0IMAGE',
           title: 'Product with Images',
           images: [
-            ProductImage(url: 'https://example.com/image1.jpg', isPrimary: true),
+            ProductImage(
+              url: 'https://example.com/image1.jpg',
+              isPrimary: true,
+            ),
             ProductImage(url: 'https://example.com/image2.jpg'),
           ],
         );
@@ -431,9 +448,7 @@ void main() {
       });
 
       test('mainImage should return null when no images', () {
-        final product = AuroraProduct(
-          title: 'No Images',
-        );
+        final product = AuroraProduct(title: 'No Images');
 
         expect(product.mainImage, isNull);
       });
@@ -471,36 +486,25 @@ void main() {
       });
 
       test('price getter should return listPrice when no sellingPrice', () {
-        final product = AuroraProduct(
-          title: 'Pricing Test',
-          listPrice: 100.0,
-        );
+        final product = AuroraProduct(title: 'Pricing Test', listPrice: 100.0);
 
         expect(product.price, 100.0);
       });
 
       test('isInStock should return true when quantity > 0', () {
-        final product = AuroraProduct(
-          title: 'Stock Test',
-          quantity: 10,
-        );
+        final product = AuroraProduct(title: 'Stock Test', quantity: 10);
 
         expect(product.isInStock, isTrue);
       });
 
       test('isInStock should return false when quantity is 0', () {
-        final product = AuroraProduct(
-          title: 'Stock Test',
-          quantity: 0,
-        );
+        final product = AuroraProduct(title: 'Stock Test', quantity: 0);
 
         expect(product.isInStock, isFalse);
       });
 
       test('isInStock should return false when quantity is null', () {
-        final product = AuroraProduct(
-          title: 'Stock Test',
-        );
+        final product = AuroraProduct(title: 'Stock Test');
 
         expect(product.isInStock, isFalse);
       });

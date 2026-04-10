@@ -4,6 +4,7 @@ import 'package:aurora/pages/customers/customers_page.dart';
 import 'package:aurora/pages/product/product.dart';
 import 'package:aurora/pages/sales/record_sale_screen.dart';
 import 'package:aurora/pages/sales/sales_page.dart';
+import 'package:aurora/models/aurora_product.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/widgets/drawer.dart';
 import 'package:flutter/material.dart';
@@ -49,50 +50,55 @@ class _HomepageState extends State<Homepage> {
     try {
       final supabaseProvider = context.read<SupabaseProvider>();
       final userId = supabaseProvider.currentUser!.id;
+      final sellerDb = supabaseProvider.sellerDb;
       debugPrint('Loading seller data for user: $userId');
 
-      // Fetch seller profile from local database to get first name
-      final sellerDb = supabaseProvider.sellerDb;
-      if (sellerDb != null) {
-        final localSeller = await sellerDb.getSellerByUserId(userId);
-        debugPrint('Seller data from DB: $localSeller');
-        if (localSeller != null) {
-          _sellerFirstName = localSeller['firstname'] as String? ?? '';
-          debugPrint('First name: "$_sellerFirstName"');
-        } else {
-          debugPrint('No seller data in local DB, fetching from Supabase...');
-          // Fallback: Get from Supabase profile
-          final supabaseSeller = await supabaseProvider
-              .getCurrentSellerProfile();
-          if (supabaseSeller != null) {
-            final fullName = supabaseSeller['full_name'] as String? ?? '';
-            final nameParts = fullName.split(' ');
-            _sellerFirstName = nameParts.isNotEmpty ? nameParts[0] : 'Seller';
-            debugPrint('Got name from Supabase: "$_sellerFirstName"');
-          }
-        }
-      } else {
-        debugPrint('SellerDB is null');
-      }
-      debugPrint('Final display name: "$_sellerFirstName"');
-
-      // Fetch KPIs from database (includes revenue from sales)
-      final kpis = await supabaseProvider.getSellerKPIs(period: '30d');
-
-      // Fetch orders to get real order count
-      final ordersData = await _getSellerOrders(supabaseProvider);
-
-      // Fetch recent sales for activity feed
-      final recentSales = await supabaseProvider.getSales(
+      // Kick off all data fetches in parallel to reduce dashboard load time
+      final sellerFuture =
+          sellerDb != null ? sellerDb.getSellerByUserId(userId) : Future.value();
+      final kpisFuture = supabaseProvider.getSellerKPIs(period: '30d');
+      final ordersFuture = _getSellerOrders(supabaseProvider);
+      final recentSalesFuture = supabaseProvider.getSales(
         startDate: DateTime.now().subtract(const Duration(days: 7)),
         limit: 10,
       );
+      final customersFuture = supabaseProvider.getCustomers();
+      final productsFuture = supabaseProvider.getAllProducts();
 
-      // Fetch customers count
-      final customers = await supabaseProvider.getCustomers();
+      final results = await Future.wait([
+        sellerFuture,
+        kpisFuture,
+        ordersFuture,
+        recentSalesFuture,
+        customersFuture,
+        productsFuture,
+      ]);
 
-      // Build enhanced activity list
-      final activities = await _buildEnhancedActivity();
+      final localSeller = results[0] as Map<String, dynamic>?;
+      final kpis = results[1] as Map<String, dynamic>;
+      final ordersData = results[2] as Map<String, int>;
+      final recentSales = results[3] as List<Sale>;
+      final customers = results[4] as List;
+      final products = results[5] as List<AuroraProduct>;
+
+      // Resolve display name
+      if (localSeller != null) {
+        _sellerFirstName = localSeller['firstname'] as String? ?? '';
+      } else {
+        final supabaseSeller = await supabaseProvider.getCurrentSellerProfile();
+        if (supabaseSeller != null) {
+          final fullName = supabaseSeller['full_name'] as String? ?? '';
+          final nameParts = fullName.split(' ');
+          _sellerFirstName = nameParts.isNotEmpty ? nameParts[0] : 'Seller';
+        }
+      }
+      debugPrint('Final display name: "$_sellerFirstName"');
+
+      // Build enhanced activity list using already-fetched data
+      final activities = _buildEnhancedActivity(
+        recentSales: recentSales,
+        products: products,
+      );
 
       if (!mounted) return;
       setState(() {
@@ -169,58 +175,47 @@ class _HomepageState extends State<Homepage> {
     }).toList();
   }
 
-  /// Build enhanced activity list from multiple sources
-  Future<List<ActivityItem>> _buildEnhancedActivity() async {
+  /// Build enhanced activity list from already-fetched data
+  List<ActivityItem> _buildEnhancedActivity({
+    required List<Sale> recentSales,
+    required List<AuroraProduct> products,
+  }) {
     final activities = <ActivityItem>[];
-    final supabaseProvider = context.read<SupabaseProvider>();
 
-    try {
-      // Get recent sales
-      final sales = await supabaseProvider.getSales(
-        startDate: DateTime.now().subtract(const Duration(days: 7)),
-        limit: 5,
+    // Add recent sales
+    for (final sale in recentSales.take(3)) {
+      activities.add(
+        ActivityItem(
+          id: 'sale_${sale.id}',
+          title: 'Sale Completed',
+          subtitle:
+              '${sale.customer?.name ?? 'Customer'} - ${NumberFormat.currency(symbol: '\$').format(sale.netTotal)}',
+          icon: Icons.check_circle,
+          time: sale.relativeTime,
+          color: Colors.green,
+        ),
       );
-
-      // Add sales as activities
-      for (final sale in sales.take(3)) {
-        activities.add(
-          ActivityItem(
-            id: 'sale_${sale.id}',
-            title: 'Sale Completed',
-            subtitle:
-                '${sale.customer?.name ?? 'Customer'} - ${NumberFormat.currency(symbol: '\$').format(sale.netTotal)}',
-            icon: Icons.check_circle,
-            time: sale.relativeTime,
-            color: Colors.green,
-          ),
-        );
-      }
-
-      // Get products to check for low stock
-      final products = await supabaseProvider.getAllProducts();
-      final lowStockProducts = products
-          .where((p) => p.quantity != null && p.quantity! < 5)
-          .take(2);
-
-      for (final product in lowStockProducts) {
-        activities.add(
-          ActivityItem(
-            id: 'stock_${product.asin}',
-            title: 'Low Stock Alert',
-            subtitle: '${product.title} - Only ${product.quantity} left',
-            icon: Icons.warning_amber,
-            time: 'Recently',
-            color: Colors.red,
-          ),
-        );
-      }
-
-      // Sort by time (newest first) - simplified sorting
-      return activities.take(5).toList();
-    } catch (e) {
-      debugPrint('Error building enhanced activity: $e');
-      return activities;
     }
+
+    // Flag low stock items
+    final lowStockProducts = products
+        .where((p) => p.quantity != null && p.quantity! < 5)
+        .take(2);
+
+    for (final product in lowStockProducts) {
+      activities.add(
+        ActivityItem(
+          id: 'stock_${product.asin}',
+          title: 'Low Stock Alert',
+          subtitle: '${product.title} - Only ${product.quantity} left',
+          icon: Icons.warning_amber,
+          time: 'Recently',
+          color: Colors.red,
+        ),
+      );
+    }
+
+    return activities.take(5).toList();
   }
 
   final currencyFormat = NumberFormat.currency(symbol: '\$');

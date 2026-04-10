@@ -76,10 +76,17 @@ class NotificationModel {
 /// Notification service for managing user notifications
 class NotificationService extends ChangeNotifier {
   static final NotificationService _instance = NotificationService._internal();
-  factory NotificationService() => _instance;
-  NotificationService._internal();
+  factory NotificationService([SupabaseClient? client]) {
+    if (client != null) {
+      return NotificationService._withClient(client);
+    }
+    return _instance;
+  }
+  NotificationService._internal() : _client = Supabase.instance.client;
+  NotificationService._withClient(SupabaseClient client) : _client = client;
 
-  final SupabaseClient _client = Supabase.instance.client;
+  final SupabaseClient _client;
+  SupabaseClient get client => _client;
   final ErrorHandler _errorHandler = ErrorHandler();
 
   // State
@@ -161,13 +168,13 @@ class NotificationService extends ChangeNotifier {
   /// Fetch unread notification count
   Future<void> _fetchUnreadCount() async {
     try {
-      final result = await _client.rpc('get_unread_notification_count');
+      final result = await client.rpc('get_unread_notification_count');
       _unreadCount = (result as num).toInt();
       debugPrint('[NotificationService] Unread count: $_unreadCount');
     } catch (e, stackTrace) {
       // If RPC doesn't exist, fallback to query
       try {
-        final result = await _client
+        final result = await client
             .from('notifications')
             .select('id')
             .eq('is_read', false);
@@ -200,7 +207,7 @@ class NotificationService extends ChangeNotifier {
     _clearError();
 
     try {
-      final response = await _client
+      final response = await client
           .from('notifications')
           .select()
           .order('created_at', ascending: false)
@@ -235,7 +242,7 @@ class NotificationService extends ChangeNotifier {
   /// Mark a single notification as read
   Future<bool> markAsRead(String notificationId) async {
     try {
-      await _client
+      await client
           .from('notifications')
           .update({
             'is_read': true,
@@ -282,7 +289,7 @@ class NotificationService extends ChangeNotifier {
   /// Mark all notifications as read
   Future<bool> markAllAsRead() async {
     try {
-      final result = await _client.rpc('mark_all_notifications_read');
+      final result = await client.rpc('mark_all_notifications_read');
       final count = (result as num).toInt();
 
       // Update local state
@@ -348,7 +355,7 @@ class NotificationService extends ChangeNotifier {
   /// Delete a notification
   Future<bool> deleteNotification(String notificationId) async {
     try {
-      await _client.from('notifications').delete().eq('id', notificationId);
+      await client.from('notifications').delete().eq('id', notificationId);
 
       // Update local state
       _notifications.removeWhere((n) => n.id == notificationId);
@@ -370,7 +377,7 @@ class NotificationService extends ChangeNotifier {
   /// Clear all notifications
   Future<bool> clearAllNotifications() async {
     try {
-      await _client.from('notifications').delete().eq('is_read', true);
+      await client.from('notifications').delete().eq('is_read', true);
 
       // Update local state
       _notifications.removeWhere((n) => n.isRead);

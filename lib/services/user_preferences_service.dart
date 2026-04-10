@@ -140,6 +140,13 @@ class UserPreferencesService extends ChangeNotifier {
   String? get error => _error;
   DateTime? get lastSyncTime => _lastSyncTime;
 
+  /// Get the current locale
+  Locale get locale {
+    return _preferences.language == 'ar'
+        ? const Locale('ar')
+        : const Locale('en');
+  }
+
   // ==========================================================================
   // Initialization
   // ==========================================================================

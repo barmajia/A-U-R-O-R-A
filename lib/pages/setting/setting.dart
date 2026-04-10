@@ -497,6 +497,123 @@ class _SettingState extends State<Setting> {
     );
   }
 
+  void _showThemeSelector(ThemeProvider themeProvider) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        final themes = themeProvider.availableThemes;
+        final currentId = themeProvider.currentThemeId;
+
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.65,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: Row(
+                    children: [
+                      const Text(
+                        'Choose Theme',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                SwitchListTile.adaptive(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  title: const Text('Match system theme'),
+                  subtitle: const Text('Use device light / dark preference'),
+                  value: themeProvider.useSystemTheme,
+                  onChanged: (value) async {
+                    await themeProvider.setUseSystemTheme(value);
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          value
+                              ? 'System theme enabled'
+                              : 'System theme disabled',
+                        ),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                    if (value) Navigator.pop(context);
+                  },
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: themes.length,
+                    itemBuilder: (context, index) {
+                      final theme = themes[index];
+                      final isSelected = theme.id == currentId &&
+                          !themeProvider.useSystemTheme;
+
+                      return ListTile(
+                        leading: _buildThemePreview(theme.preview),
+                        title: Text(theme.name),
+                        subtitle: Text(theme.description),
+                        trailing: isSelected
+                            ? Icon(
+                                Icons.check,
+                                color:
+                                    Theme.of(context).colorScheme.primary,
+                              )
+                            : null,
+                        onTap: () async {
+                          await themeProvider.setTheme(theme.id);
+                          if (!mounted) return;
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${theme.name} applied'),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildThemePreview(List<Color> swatches) {
+    return SizedBox(
+      width: 64,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: swatches.take(3).map((color) {
+          return Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.black12, width: 1),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   void _showAboutDialog() {
     showDialog(
       context: context,
@@ -608,13 +725,10 @@ class _SettingState extends State<Setting> {
         _buildListTile(
           icon: Icons.palette_outlined,
           title: 'Theme',
-          subtitle: themeProvider.isDarkMode ? 'Dark mode' : 'Light mode',
-          trailing: Switch(
-            value: themeProvider.isDarkMode,
-            onChanged: (value) async {
-              await themeProvider.toggleTheme();
-            },
-          ),
+          subtitle: themeProvider.useSystemTheme
+              ? 'System (Auto)'
+              : themeProvider.currentThemeName,
+          onTap: () => _showThemeSelector(themeProvider),
         ),
         _buildListTile(
           icon: Icons.language,

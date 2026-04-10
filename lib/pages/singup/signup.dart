@@ -50,6 +50,7 @@ class _SignupState extends State<Signup> {
   );
 
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String? _errorMessage;
@@ -316,6 +317,8 @@ class _SignupState extends State<Signup> {
 
       // Get currency based on selected country (hidden, automatic)
       final currency = _getCurrencyByCountry(_selectedCountry.countryCode);
+      final latitude = _currentPosition?.latitude;
+      final longitude = _currentPosition?.longitude;
 
       // Determine account type (always seller)
       final accountType = AccountType.seller;
@@ -331,6 +334,8 @@ class _SignupState extends State<Signup> {
         currency: currency,
         email: emailController.text.trim(),
         password: passwordController.text,
+        latitude: latitude,
+        longitude: longitude,
       );
 
       if (mounted) {
@@ -375,6 +380,44 @@ class _SignupState extends State<Signup> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isGoogleLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final supabaseProvider = context.read<SupabaseProvider>();
+      final result = await supabaseProvider.signInWithGoogle();
+
+      if (!mounted) return;
+
+      if (!result.success) {
+        setState(() {
+          _errorMessage = result.message;
+          _isGoogleLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result.message), backgroundColor: Colors.red),
+        );
+        return;
+      }
+
+      setState(() {
+        _isGoogleLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Google sign up failed: $e';
+        _isGoogleLoading = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Google sign up failed: $e')));
     }
   }
 
@@ -625,8 +668,17 @@ class _SignupState extends State<Signup> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a password';
                     }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
+                    if (value.length < 8) {
+                      return 'Password must be at least 8 characters';
+                    }
+                    if (!value.contains(RegExp(r'[A-Z]'))) {
+                      return 'Password must contain at least one uppercase letter';
+                    }
+                    if (!value.contains(RegExp(r'[a-z]'))) {
+                      return 'Password must contain at least one lowercase letter';
+                    }
+                    if (!value.contains(RegExp(r'[0-9]'))) {
+                      return 'Password must contain at least one number';
                     }
                     return null;
                   },
@@ -703,6 +755,44 @@ class _SignupState extends State<Signup> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Text('Sign Up', style: TextStyle(fontSize: 16)),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'OR',
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: (_isLoading || _isGoogleLoading)
+                      ? null
+                      : _handleGoogleSignIn,
+                  icon: _isGoogleLoading
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.add_circle_outline),
+                  label: Text(
+                    _isGoogleLoading
+                        ? 'Connecting to Google...'
+                        : 'Sign up with Google',
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
 

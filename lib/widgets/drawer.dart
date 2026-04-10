@@ -1,16 +1,15 @@
 import 'package:aurora/pages/analytics/analytics_page.dart';
-import 'package:aurora/pages/chat/chat_list.dart';
-import 'package:aurora/screens/chat/nearby_users_screen.dart';
 import 'package:aurora/pages/customers/customers_page.dart';
 import 'package:aurora/pages/product/product.dart';
 import 'package:aurora/pages/sales/sales_page.dart';
 import 'package:aurora/pages/seller/sellerProfile.dart';
 import 'package:aurora/pages/setting/setting.dart';
+import 'package:aurora/screens/chat/nearby_users_screen.dart';
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/login.dart';
-import 'package:aurora/services/nearby_chat_service.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/theme/themeprovider.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -60,7 +59,7 @@ class AppDrawer extends StatelessWidget {
                         context,
                         icon: Icons.home_outlined,
                         activeIcon: Icons.home,
-                        title: 'Home',
+                        title: AppLocalizations.of(context).home,
                         pageName: 'home',
                         onTap: () =>
                             _navigateTo(context, const Homepage(), 'home'),
@@ -72,7 +71,7 @@ class AppDrawer extends StatelessWidget {
                           context,
                           icon: Icons.store_outlined,
                           activeIcon: Icons.store,
-                          title: 'Seller Profile',
+                          title: AppLocalizations.of(context).seller_profile,
                           pageName: 'seller_profile',
                           onTap: () => _navigateTo(
                             context,
@@ -84,7 +83,7 @@ class AppDrawer extends StatelessWidget {
                           context,
                           icon: Icons.inventory_2_outlined,
                           activeIcon: Icons.inventory_2,
-                          title: 'Products',
+                          title: AppLocalizations.of(context).products,
                           pageName: 'products',
                           onTap: () => _navigateTo(
                             context,
@@ -96,7 +95,7 @@ class AppDrawer extends StatelessWidget {
                           context,
                           icon: Icons.people_outlined,
                           activeIcon: Icons.people,
-                          title: 'Customers',
+                          title: AppLocalizations.of(context).customers,
                           pageName: 'customers',
                           onTap: () => _navigateTo(
                             context,
@@ -108,7 +107,7 @@ class AppDrawer extends StatelessWidget {
                           context,
                           icon: Icons.point_of_sale_outlined,
                           activeIcon: Icons.point_of_sale,
-                          title: 'Sales',
+                          title: AppLocalizations.of(context).sales,
                           pageName: 'sales',
                           onTap: () =>
                               _navigateTo(context, const SalesPage(), 'sales'),
@@ -117,7 +116,7 @@ class AppDrawer extends StatelessWidget {
                           context,
                           icon: Icons.analytics_outlined,
                           activeIcon: Icons.analytics,
-                          title: 'Analytics',
+                          title: AppLocalizations.of(context).analytics,
                           pageName: 'analytics',
                           onTap: () => _navigateTo(
                             context,
@@ -125,49 +124,26 @@ class AppDrawer extends StatelessWidget {
                             'analytics',
                           ),
                         ),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.chat_bubble_outline,
+                          activeIcon: Icons.chat_bubble,
+                          title: AppLocalizations.of(context).messages,
+                          pageName: 'messages',
+                          onTap: () => _navigateTo(
+                            context,
+                            const NearbyUsersScreen(),
+                            'messages',
+                          ),
+                        ),
                       ],
 
                       // Common Menu Items - Visible to all users
                       _buildMenuItem(
                         context,
-                        icon: Icons.chat_bubble_outline,
-                        activeIcon: Icons.chat_bubble,
-                        title: 'Messages',
-                        pageName: 'messages',
-                        badge: '5',
-                        onTap: () => _navigateTo(
-                          context,
-                          const ChatListScreen(),
-                          'messages',
-                        ),
-                      ),
-                      _buildMenuItem(
-                        context,
-                        icon: Icons.people_outline,
-                        activeIcon: Icons.people,
-                        title: 'Nearby Users',
-                        pageName: 'nearby_users',
-                        onTap: () {
-                          Navigator.pop(context); // Close drawer
-                          final supabaseProvider =
-                              context.read<SupabaseProvider>();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChangeNotifierProvider(
-                                create: (_) =>
-                                    NearbyChatService(supabaseProvider),
-                                child: const NearbyUsersScreen(),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildMenuItem(
-                        context,
                         icon: Icons.settings_outlined,
                         activeIcon: Icons.settings,
-                        title: 'Settings',
+                        title: AppLocalizations.of(context).settings,
                         pageName: 'settings',
                         onTap: () => Navigator.push(
                           context,
@@ -180,9 +156,12 @@ class AppDrawer extends StatelessWidget {
                         context,
                         icon: Icons.help_outline,
                         activeIcon: Icons.help,
-                        title: 'Help & Support',
+                        title: AppLocalizations.of(context).help,
                         pageName: 'help',
-                        onTap: () => _showComingSoon(context, 'Help & Support'),
+                        onTap: () => _showComingSoon(
+                          context,
+                          AppLocalizations.of(context).help,
+                        ),
                       ),
                     ],
                   ),
@@ -203,7 +182,8 @@ class AppDrawer extends StatelessWidget {
     dynamic user,
     AccountType accountType,
   ) {
-    final fullName = user?.userMetadata?['full_name'] ?? 'User';
+    final fullName =
+        user?.userMetadata?['full_name'] ?? AppLocalizations.of(context).user;
     final email = user?.email ?? 'email@example.com';
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
@@ -264,7 +244,7 @@ class AppDrawer extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'SELLER',
+                  AppLocalizations.of(context).seller.toUpperCase(),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -417,7 +397,7 @@ class AppDrawer extends StatelessWidget {
               onPressed: () => _showLogoutDialog(context, supabaseProvider),
               icon: Icon(Icons.logout, color: colorScheme.error),
               label: Text(
-                'Logout',
+                AppLocalizations.of(context).logout,
                 style: TextStyle(
                   color: colorScheme.error,
                   fontWeight: FontWeight.w600,
@@ -501,14 +481,14 @@ class AppDrawer extends StatelessWidget {
             children: [
               Icon(Icons.logout, color: Colors.red[700]),
               const SizedBox(width: 12),
-              const Text('Logout'),
+              Text(AppLocalizations.of(context).logout),
             ],
           ),
-          content: const Text('Are you sure you want to logout?'),
+          content: Text(AppLocalizations.of(context).are_you_sure),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context).cancel),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -528,7 +508,7 @@ class AppDrawer extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text('Logout'),
+              child: Text(AppLocalizations.of(context).logout),
             ),
           ],
         );

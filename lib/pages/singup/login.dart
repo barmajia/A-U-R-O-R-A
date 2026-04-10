@@ -1,6 +1,7 @@
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/signup.dart';
 import 'package:aurora/services/supabase.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -18,6 +19,7 @@ class _LoginState extends State<Login> {
   final FocusNode _emailFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
 
@@ -48,6 +50,17 @@ class _LoginState extends State<Login> {
 
     if (mounted) {
       if (result.success) {
+        // Verify if the user is a seller as per the analysis report requirements
+        if (supabaseProvider.accountType != AccountType.seller) {
+          await supabaseProvider.logout();
+          setState(() {
+            _errorMessage =
+                "This application is restricted to seller accounts.";
+            _isLoading = false;
+          });
+          return;
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result.message),
@@ -76,10 +89,40 @@ class _LoginState extends State<Login> {
     }
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isGoogleLoading = true;
+      _errorMessage = null;
+    });
+
+    final supabaseProvider = context.read<SupabaseProvider>();
+    final result = await supabaseProvider.signInWithGoogle();
+
+    if (!mounted) return;
+
+    if (!result.success) {
+      setState(() {
+        _errorMessage = result.message;
+        _isGoogleLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() {
+      _isGoogleLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login'), centerTitle: true),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).login),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -92,15 +135,18 @@ class _LoginState extends State<Login> {
                 const SizedBox(height: 40),
                 const Icon(Icons.person_outline, size: 80, color: Colors.grey),
                 const SizedBox(height: 16),
-                const Text(
-                  'Welcome Back!',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                Text(
+                  AppLocalizations.of(context).welcome_back,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Sign in to continue',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: const TextStyle(fontSize: 16, color: Colors.grey),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
@@ -114,7 +160,7 @@ class _LoginState extends State<Login> {
                   },
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
-                    labelText: 'Email',
+                    labelText: AppLocalizations.of(context).email,
                     prefixIcon: const Icon(Icons.email_outlined),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -122,10 +168,10 @@ class _LoginState extends State<Login> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
+                      return AppLocalizations.of(context).email_required;
                     }
                     if (!value.contains('@')) {
-                      return 'Please enter a valid email';
+                      return AppLocalizations.of(context).invalid_email;
                     }
                     return null;
                   },
@@ -140,7 +186,7 @@ class _LoginState extends State<Login> {
                   },
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: AppLocalizations.of(context).password,
                     prefixIcon: const Icon(Icons.lock_outlined),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -160,10 +206,10 @@ class _LoginState extends State<Login> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
+                      return AppLocalizations.of(context).password_required;
                     }
                     if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
+                      return AppLocalizations.of(context).invalid_password;
                     }
                     // Check for password complexity
                     final hasLowercase = value.contains(RegExp(r'[a-z]'));
@@ -198,7 +244,48 @@ class _LoginState extends State<Login> {
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Login', style: TextStyle(fontSize: 16)),
+                      : Text(
+                          AppLocalizations.of(context).login,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'OR',
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: (_isLoading || _isGoogleLoading)
+                      ? null
+                      : _handleGoogleSignIn,
+                  icon: _isGoogleLoading
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.login),
+                  label: Text(
+                    _isGoogleLoading
+                        ? 'Connecting to Google...'
+                        : 'Continue with Google',
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextButton(
@@ -209,7 +296,9 @@ class _LoginState extends State<Login> {
                       MaterialPageRoute(builder: (context) => Signup()),
                     );
                   },
-                  child: const Text("Don't have an account? Sign Up"),
+                  child: Text(
+                    "${AppLocalizations.of(context).dont_have_account} ${AppLocalizations.of(context).signup}",
+                  ),
                 ),
               ],
             ),
