@@ -255,7 +255,7 @@ class _SalesPageState extends State<SalesPage> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: color, size: 18),
@@ -278,7 +278,7 @@ class _SalesPageState extends State<SalesPage> {
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -326,8 +326,8 @@ class _SalesPageState extends State<SalesPage> {
               height: 50,
               decoration: BoxDecoration(
                 color: sale.paymentStatus == 'completed'
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.orange.withOpacity(0.1),
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -363,7 +363,7 @@ class _SalesPageState extends State<SalesPage> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: colorScheme.primary.withOpacity(0.1),
+                          color: colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -387,7 +387,7 @@ class _SalesPageState extends State<SalesPage> {
                     '${sale.quantity} item${sale.quantity > 1 ? 's' : ''} × ${currencyFormat.format(sale.unitPrice)}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -411,7 +411,7 @@ class _SalesPageState extends State<SalesPage> {
                   sale.relativeTime,
                   style: TextStyle(
                     fontSize: 11,
-                    color: colorScheme.onSurface.withOpacity(0.5),
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
               ],
@@ -430,14 +430,14 @@ class _SalesPageState extends State<SalesPage> {
           Icon(
             Icons.receipt_long,
             size: 80,
-            color: colorScheme.onSurface.withOpacity(0.3),
+            color: colorScheme.onSurface.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
             'No sales yet',
             style: TextStyle(
               fontSize: 18,
-              color: colorScheme.onSurface.withOpacity(0.7),
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 8),
@@ -445,7 +445,7 @@ class _SalesPageState extends State<SalesPage> {
             'Record your first sale to get started',
             style: TextStyle(
               fontSize: 14,
-              color: colorScheme.onSurface.withOpacity(0.5),
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 24),
@@ -476,7 +476,7 @@ class _SalesPageState extends State<SalesPage> {
             Icon(
               Icons.error_outline,
               size: 64,
-              color: colorScheme.error.withOpacity(0.5),
+              color: colorScheme.error.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(

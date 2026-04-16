@@ -880,7 +880,7 @@ class _SettingState extends State<Setting> {
               : 'Disabled - Tap to enable',
           trailing: Icon(
             Icons.chevron_right,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
           ),
           onTap: () {},
         ),

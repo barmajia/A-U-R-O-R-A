@@ -65,7 +65,7 @@ class _MetadataFormBuilderState extends State<MetadataFormBuilder> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Theme.of(context).primaryColor),
           ),
@@ -355,7 +355,7 @@ class _MetadataFormBuilderState extends State<MetadataFormBuilder> {
                         backgroundColor: Colors.white,
                         selectedColor: Theme.of(
                           context,
-                        ).primaryColor.withOpacity(0.2),
+                        ).primaryColor.withValues(alpha: 0.2),
                         checkmarkColor: Theme.of(context).primaryColor,
                       );
                     }).toList() ??

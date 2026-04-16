@@ -144,7 +144,7 @@ class _CustomersPageState extends State<CustomersPage> {
           style: TextStyle(color: colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: 'Search by name or phone...',
-            hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.5)),
+            hintStyle: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.5)),
             prefixIcon: Icon(Icons.search, color: colorScheme.onSurface),
             suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
@@ -169,7 +169,7 @@ class _CustomersPageState extends State<CustomersPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Text(
         '${_customers.length} customer${_customers.length != 1 ? 's' : ''}',
-        style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6), fontSize: 14),
+        style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14),
       ),
     );
   }
@@ -238,13 +238,13 @@ class _CustomersPageState extends State<CustomersPage> {
                     const SizedBox(height: 4),
                     Text(
                       '📱 ${customer.phone}',
-                      style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.6)),
+                      style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withValues(alpha: 0.6)),
                     ),
                     if (customer.ageRange != null) ...[
                       const SizedBox(height: 4),
                       Text(
                         customer.ageRangeDisplay,
-                        style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.6)),
+                        style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withValues(alpha: 0.6)),
                       ),
                     ],
                   ],
@@ -257,7 +257,7 @@ class _CustomersPageState extends State<CustomersPage> {
                 children: [
                   Text(
                     '${customer.totalOrders} orders',
-                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.6)),
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withValues(alpha: 0.6)),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -282,11 +282,11 @@ class _CustomersPageState extends State<CustomersPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline, size: 80, color: colorScheme.onSurface.withOpacity(0.3)),
+          Icon(Icons.people_outline, size: 80, color: colorScheme.onSurface.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           Text(
             'No customers yet',
-            style: TextStyle(fontSize: 18, color: colorScheme.onSurface.withOpacity(0.7)),
+            style: TextStyle(fontSize: 18, color: colorScheme.onSurface.withValues(alpha: 0.7)),
           ),
           const SizedBox(height: 8),
           ElevatedButton.icon(
@@ -311,7 +311,7 @@ class _CustomersPageState extends State<CustomersPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: colorScheme.error.withOpacity(0.5)),
+            Icon(Icons.error_outline, size: 64, color: colorScheme.error.withValues(alpha: 0.5)),
             const SizedBox(height: 16),
             Text(
               _errorMessage!,

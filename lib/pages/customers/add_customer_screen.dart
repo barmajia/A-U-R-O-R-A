@@ -38,8 +38,8 @@ class _LabeledInputField extends StatelessWidget {
     final inputDecoration = InputDecoration(
       labelText: label,
       hintText: hint,
-      labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
-      hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.4)),
+      labelStyle: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.7)),
+      hintStyle: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.4)),
       border: _border(colorScheme.outline),
       enabledBorder: _border(colorScheme.outline),
       focusedBorder: _border(colorScheme.primary, width: 2),
@@ -287,7 +287,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
 
   Widget _buildLoadingOverlay(ColorScheme colorScheme) {
     return Container(
-      color: colorScheme.surface.withOpacity(0.9),
+      color: colorScheme.surface.withValues(alpha: 0.9),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -342,7 +342,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 Text(
                   'Fields marked with * are required',
                   style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onPrimaryContainer.withOpacity(0.8),
+                    color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -389,7 +389,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
               decoration: InputDecoration(
                 labelText: 'Age Range',
                 labelStyle: TextStyle(
-                  color: colorScheme.onSurface.withOpacity(0.7),
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 border: _border(colorScheme.outline),
                 enabledBorder: _border(colorScheme.outline),

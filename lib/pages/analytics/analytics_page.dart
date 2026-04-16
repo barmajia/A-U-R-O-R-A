@@ -249,7 +249,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: color, size: 18),
@@ -272,7 +272,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               title,
               style: TextStyle(
                 fontSize: 12,
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 4),
@@ -280,7 +280,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               subtitle,
               style: TextStyle(
                 fontSize: 10,
-                color: colorScheme.onSurface.withOpacity(0.4),
+                color: colorScheme.onSurface.withValues(alpha: 0.4),
               ),
             ),
           ],
@@ -333,7 +333,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                   child: Text(
                     'No customer data yet',
                     style: TextStyle(
-                      color: colorScheme.onSurface.withOpacity(0.5),
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ),
@@ -396,7 +396,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                               '${customer['total_orders'] ?? 0} orders',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: colorScheme.onSurface.withOpacity(0.5),
+                                color: colorScheme.onSurface.withValues(alpha: 0.5),
                               ),
                             ),
                           ],
@@ -491,7 +491,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: (insight['color'] as Color).withOpacity(0.1),
+                        color: (insight['color'] as Color).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -517,7 +517,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                             insight['description'] as String,
                             style: TextStyle(
                               fontSize: 12,
-                              color: colorScheme.onSurface.withOpacity(0.6),
+                              color: colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -543,7 +543,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             Icon(
               Icons.error_outline,
               size: 64,
-              color: colorScheme.error.withOpacity(0.5),
+              color: colorScheme.error.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(

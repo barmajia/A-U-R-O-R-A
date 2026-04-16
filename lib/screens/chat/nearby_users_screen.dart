@@ -248,7 +248,7 @@ class _NearbyUsersScreenState extends State<NearbyUsersScreen> {
                 ? 'Getting your location...'
                 : 'Finding nearby users...',
             style: TextStyle(
-              color: colorScheme.onSurface.withOpacity(0.7),
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
               fontSize: 16,
             ),
           ),
@@ -280,7 +280,7 @@ class _NearbyUsersScreenState extends State<NearbyUsersScreen> {
                   'Please enable location services to find nearby users',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: colorScheme.onSurface.withOpacity(0.7),
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
                 fontSize: 14,
               ),
             ),
@@ -359,7 +359,7 @@ class _NearbyUsersScreenState extends State<NearbyUsersScreen> {
           Icon(
             isNoUsersAtAll ? Icons.people_outline : Icons.search_off,
             size: 80,
-            color: colorScheme.onSurface.withOpacity(0.3),
+            color: colorScheme.onSurface.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 24),
           Text(
@@ -369,7 +369,7 @@ class _NearbyUsersScreenState extends State<NearbyUsersScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface.withOpacity(0.7),
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 12),
@@ -379,7 +379,7 @@ class _NearbyUsersScreenState extends State<NearbyUsersScreen> {
                 : 'Try adjusting your filters',
             style: TextStyle(
               fontSize: 14,
-              color: colorScheme.onSurface.withOpacity(0.5),
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],
@@ -398,7 +398,7 @@ class _NearbyUsersScreenState extends State<NearbyUsersScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
-      shadowColor: colorScheme.shadow.withOpacity(0.1),
+      shadowColor: colorScheme.shadow.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () => _showUserOptions(user, service),
@@ -414,7 +414,7 @@ class _NearbyUsersScreenState extends State<NearbyUsersScreen> {
                     radius: 32,
                     backgroundColor: isDark
                         ? colorScheme.surfaceContainerHighest
-                        : colorScheme.primary.withOpacity(0.1),
+                        : colorScheme.primary.withValues(alpha: 0.1),
                     child: Text(
                       user.displayName.substring(0, 1).toUpperCase(),
                       style: TextStyle(
@@ -469,7 +469,7 @@ class _NearbyUsersScreenState extends State<NearbyUsersScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: colorScheme.primary.withOpacity(0.1),
+                              color: colorScheme.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -499,7 +499,7 @@ class _NearbyUsersScreenState extends State<NearbyUsersScreen> {
                       user.accountTypeDisplay,
                       style: TextStyle(
                         fontSize: 13,
-                        color: colorScheme.onSurface.withOpacity(0.6),
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                     // Bio removed - not available in simplified NearbyUser model
@@ -552,7 +552,7 @@ class _NearbyUsersScreenState extends State<NearbyUsersScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: colorScheme.onSurface.withOpacity(0.2),
+                color: colorScheme.onSurface.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -563,7 +563,7 @@ class _NearbyUsersScreenState extends State<NearbyUsersScreen> {
               children: [
                 CircleAvatar(
                   radius: 30,
-                  backgroundColor: colorScheme.primary.withOpacity(0.1),
+                  backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
                   child: Text(
                     user.displayName.substring(0, 1).toUpperCase(),
                     style: TextStyle(
@@ -591,7 +591,7 @@ class _NearbyUsersScreenState extends State<NearbyUsersScreen> {
                           fontSize: 14,
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -648,7 +648,7 @@ class _NearbyUsersScreenState extends State<NearbyUsersScreen> {
         subtitle,
         style: TextStyle(
           fontSize: 12,
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
         ),
       ),
       onTap: onTap,

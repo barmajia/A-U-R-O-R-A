@@ -36,8 +36,8 @@ class AppDrawer extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: isDark
-                ? [appBarBg, appBarBg.withOpacity(0.8), colorScheme.surface]
-                : [appBarBg, appBarBg.withOpacity(0.8), Colors.white],
+                ? [appBarBg, appBarBg.withValues(alpha: 0.8), colorScheme.surface]
+                : [appBarBg, appBarBg.withValues(alpha: 0.8), Colors.white],
             stops: const [0.0, 0.6, 1.0],
           ),
         ),
@@ -220,7 +220,7 @@ class AppDrawer extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               color: isDark
-                  ? colorScheme.onSurface.withOpacity(0.7)
+                  ? colorScheme.onSurface.withValues(alpha: 0.7)
                   : Colors.white70,
             ),
             textAlign: TextAlign.center,
@@ -230,8 +230,8 @@ class AppDrawer extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
               color: isDark
-                  ? colorScheme.primary.withOpacity(0.3)
-                  : Colors.white.withOpacity(0.2),
+                  ? colorScheme.primary.withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -279,16 +279,16 @@ class AppDrawer extends StatelessWidget {
         color: isActive
             ? (isDark ? colorScheme.surface : Colors.white)
             : (isDark
-                  ? colorScheme.surface.withOpacity(0.5)
-                  : Colors.white.withOpacity(0.9)),
+                  ? colorScheme.surface.withValues(alpha: 0.5)
+                  : Colors.white.withValues(alpha: 0.9)),
         borderRadius: BorderRadius.circular(12),
         border: isActive
             ? Border.all(color: colorScheme.primary, width: 2)
-            : Border.all(color: colorScheme.outline.withOpacity(0.2), width: 1),
+            : Border.all(color: colorScheme.outline.withValues(alpha: 0.2), width: 1),
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.2),
+                  color: colorScheme.primary.withValues(alpha: 0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -385,7 +385,7 @@ class AppDrawer extends StatelessWidget {
             ? colorScheme.surfaceContainerHighest
             : colorScheme.surfaceContainerHighest,
         border: Border(
-          top: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+          top: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
         ),
       ),
       child: Column(
@@ -420,7 +420,7 @@ class AppDrawer extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               color: isDark
-                  ? colorScheme.onSurface.withOpacity(0.6)
+                  ? colorScheme.onSurface.withValues(alpha: 0.6)
                   : colorScheme.onSurfaceVariant,
             ),
           ),
@@ -430,7 +430,7 @@ class AppDrawer extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               color: isDark
-                  ? colorScheme.onSurface.withOpacity(0.5)
+                  ? colorScheme.onSurface.withValues(alpha: 0.5)
                   : colorScheme.onSurfaceVariant,
             ),
           ),

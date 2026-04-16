@@ -384,7 +384,7 @@ class OnlineStatusIndicator extends StatelessWidget {
         boxShadow: isOnline
             ? [
                 BoxShadow(
-                  color: Colors.green.withOpacity(0.4),
+                  color: Colors.green.withValues(alpha: 0.4),
                   blurRadius: 4,
                   spreadRadius: 1,
                 ),
