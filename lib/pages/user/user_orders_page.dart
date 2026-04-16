@@ -278,7 +278,7 @@ class _UserOrdersPageState extends State<UserOrdersPage>
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
+                      color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.shopping_bag, color: Colors.blue),
@@ -313,12 +313,12 @@ class _UserOrdersPageState extends State<UserOrdersPage>
                     decoration: BoxDecoration(
                       color: _getOrderStatusColor(
                         order.status,
-                      ).withOpacity(0.1),
+                      ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                         color: _getOrderStatusColor(
                           order.status,
-                        ).withOpacity(0.3),
+                        ).withValues(alpha: 0.3),
                       ),
                     ),
                     child: Text(
@@ -445,7 +445,7 @@ class _OrderDetailsSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(

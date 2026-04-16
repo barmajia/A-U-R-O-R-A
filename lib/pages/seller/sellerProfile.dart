@@ -511,7 +511,7 @@ class _SellerprofileState extends State<Sellerprofile> {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+              borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
             ),
             filled: true,
             fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
@@ -719,7 +719,7 @@ class _SellerprofileState extends State<Sellerprofile> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: Theme.of(context).primaryColor, size: 20),

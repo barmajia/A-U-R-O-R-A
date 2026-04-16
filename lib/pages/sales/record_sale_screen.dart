@@ -295,7 +295,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
           value: _selectedCustomer,
           hint: Text(
             'Select customer (optional)',
-            style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5)),
+            style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.5)),
           ),
           isExpanded: true,
           icon: Icon(Icons.arrow_drop_down, color: colorScheme.onSurface),
@@ -333,7 +333,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
           value: _selectedProduct,
           hint: Text(
             'Select product (optional)',
-            style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5)),
+            style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.5)),
           ),
           isExpanded: true,
           icon: Icon(Icons.arrow_drop_down, color: colorScheme.onSurface),
@@ -382,7 +382,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         labelText: label,
         prefixText: prefixText,
         prefixStyle: TextStyle(color: colorScheme.onSurface),
-        labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
+        labelStyle: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.7)),
         prefixIcon: Icon(icon, color: colorScheme.onSurface),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -429,7 +429,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         setState(() => _paymentMethod = value);
       },
       backgroundColor: colorScheme.surfaceContainerHighest,
-      selectedColor: colorScheme.primary.withOpacity(0.2),
+      selectedColor: colorScheme.primary.withValues(alpha: 0.2),
       checkmarkColor: colorScheme.primary,
     );
   }

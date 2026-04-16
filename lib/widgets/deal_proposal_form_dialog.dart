@@ -59,10 +59,10 @@ class _DealProposalFormDialogState extends State<DealProposalFormDialog> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Colors.blue.withOpacity(0.3),
+                    color: Colors.blue.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -221,7 +221,7 @@ class _DealProposalFormDialogState extends State<DealProposalFormDialog> {
                         style: TextStyle(
                           color: _expiresAt != null
                               ? colorScheme.onSurface
-                              : colorScheme.onSurface.withOpacity(0.5),
+                              : colorScheme.onSurface.withValues(alpha: 0.5),
                         ),
                       ),
                       const Spacer(),
@@ -243,7 +243,7 @@ class _DealProposalFormDialogState extends State<DealProposalFormDialog> {
               Text(
                 'Leave empty for no expiration',
                 style: TextStyle(
-                  color: colorScheme.onSurface.withOpacity(0.5),
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
                   fontSize: 11,
                 ),
               ),

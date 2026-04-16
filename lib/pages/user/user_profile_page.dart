@@ -176,7 +176,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           width: 120,
           height: 120,
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
             shape: BoxShape.circle,
             border: Border.all(color: Theme.of(context).primaryColor, width: 3),
           ),
@@ -346,7 +346,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: color, size: 24),
@@ -437,7 +437,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: color, size: 20),

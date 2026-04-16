@@ -200,7 +200,7 @@ class _UserPaymentMethodsPageState extends State<UserPaymentMethodsPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.3),
+            color: Colors.blue.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -402,7 +402,7 @@ class _UserPaymentMethodsPageState extends State<UserPaymentMethodsPage> {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: _getCardColor(method.cardType).withOpacity(0.1),
+                color: _getCardColor(method.cardType).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -435,7 +435,7 @@ class _UserPaymentMethodsPageState extends State<UserPaymentMethodsPage> {
                           ),
                           decoration: BoxDecoration(
                             color:
-                                Theme.of(context).primaryColor.withOpacity(0.1),
+                                Theme.of(context).primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(

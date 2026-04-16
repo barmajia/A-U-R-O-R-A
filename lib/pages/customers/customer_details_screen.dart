@@ -228,7 +228,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         child: Text(
                           widget.customer.notes!,
                           style: TextStyle(
-                            color: colorScheme.onSurface.withOpacity(0.8),
+                            color: colorScheme.onSurface.withValues(alpha: 0.8),
                           ),
                         ),
                       ),
@@ -288,13 +288,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       Icon(
                         Icons.phone,
                         size: 14,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         widget.customer.phone,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 14,
                         ),
                       ),
@@ -358,7 +358,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   }) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: colorScheme?.onSurface.withOpacity(0.5)),
+        Icon(icon, size: 18, color: colorScheme?.onSurface.withValues(alpha: 0.5)),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -368,7 +368,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                 label,
                 style: TextStyle(
                   fontSize: 12,
-                  color: colorScheme?.onSurface.withOpacity(0.5),
+                  color: colorScheme?.onSurface.withValues(alpha: 0.5),
                 ),
               ),
               const SizedBox(height: 2),

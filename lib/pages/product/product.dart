@@ -630,7 +630,7 @@ class _ProductPageState extends State<ProductPage> {
                       bottom: 0,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.3),
+                          color: Colors.red.withValues(alpha: 0.3),
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(12),
                           ),

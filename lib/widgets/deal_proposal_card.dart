@@ -47,16 +47,16 @@ class DealProposalCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       elevation: 2,
-      shadowColor: statusColor.withOpacity(0.3),
+      shadowColor: statusColor.withValues(alpha: 0.3),
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [colorScheme.surface, statusColor.withOpacity(0.05)],
+            colors: [colorScheme.surface, statusColor.withValues(alpha: 0.05)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: statusColor.withOpacity(0.3), width: 1.5),
+          border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 1.5),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -108,7 +108,7 @@ class DealProposalCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.15),
+                color: statusColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(Icons.handshake, color: statusColor, size: 22),
@@ -137,7 +137,7 @@ class DealProposalCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: statusColor.withOpacity(0.4),
+            color: statusColor.withValues(alpha: 0.4),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -171,9 +171,9 @@ class DealProposalCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withOpacity(0.08),
+        color: colorScheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -184,7 +184,7 @@ class DealProposalCard extends StatelessWidget {
               Text(
                 'Commission Rate',
                 style: TextStyle(
-                  color: colorScheme.onSurface.withOpacity(0.7),
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                   fontSize: 13,
                 ),
               ),
@@ -202,7 +202,7 @@ class DealProposalCard extends StatelessWidget {
           Icon(
             Icons.percent,
             size: 40,
-            color: colorScheme.primary.withOpacity(0.5),
+            color: colorScheme.primary.withValues(alpha: 0.5),
           ),
         ],
       ),
@@ -215,13 +215,13 @@ class DealProposalCard extends StatelessWidget {
         Icon(
           Icons.inventory_2_outlined,
           size: 18,
-          color: colorScheme.onSurface.withOpacity(0.6),
+          color: colorScheme.onSurface.withValues(alpha: 0.6),
         ),
         const SizedBox(width: 8),
         Text(
           'Min Order:',
           style: TextStyle(
-            color: colorScheme.onSurface.withOpacity(0.7),
+            color: colorScheme.onSurface.withValues(alpha: 0.7),
             fontSize: 13,
           ),
         ),
@@ -247,13 +247,13 @@ class DealProposalCard extends StatelessWidget {
             Icon(
               Icons.description_outlined,
               size: 18,
-              color: colorScheme.onSurface.withOpacity(0.6),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             const SizedBox(width: 8),
             Text(
               'Terms & Conditions',
               style: TextStyle(
-                color: colorScheme.onSurface.withOpacity(0.7),
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
@@ -264,7 +264,7 @@ class DealProposalCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
@@ -289,8 +289,8 @@ class DealProposalCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: isExpired
-            ? Colors.red.withOpacity(0.1)
-            : Colors.blue.withOpacity(0.1),
+            ? Colors.red.withValues(alpha: 0.1)
+            : Colors.blue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -369,9 +369,9 @@ class DealProposalCard extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.amber.withOpacity(0.1),
+          color: Colors.amber.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.amber.withOpacity(0.3)),
+          border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -408,9 +408,9 @@ class DealProposalCard extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.green.withOpacity(0.1),
+          color: Colors.green.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.green.withOpacity(0.3)),
+          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -447,9 +447,9 @@ class DealProposalCard extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.1),
+          color: Colors.red.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.red.withOpacity(0.3)),
+          border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -473,9 +473,9 @@ class DealProposalCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.1),
+        color: Colors.grey.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

@@ -227,8 +227,8 @@ class _UserHomePageState extends State<UserHomePage> {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? Colors.white.withOpacity(0.2)
-                            : Theme.of(context).primaryColor.withOpacity(0.1),
+                            ? Colors.white.withValues(alpha: 0.2)
+                            : Theme.of(context).primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -361,7 +361,7 @@ class _UserHomePageState extends State<UserHomePage> {
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Icon(

@@ -316,8 +316,8 @@ class _HomepageState extends State<Homepage> {
         gradient: LinearGradient(
           colors: isDark
               ? [
-                  colorScheme.primary.withOpacity(0.8),
-                  colorScheme.secondary.withOpacity(0.6),
+                  colorScheme.primary.withValues(alpha: 0.8),
+                  colorScheme.secondary.withValues(alpha: 0.6),
                 ]
               : [const Color(0xFF260361), const Color(0xFF4C2A8C)],
           begin: Alignment.topLeft,
@@ -326,7 +326,7 @@ class _HomepageState extends State<Homepage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.3),
+            color: colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -342,14 +342,14 @@ class _HomepageState extends State<Homepage> {
                   children: [
                     Icon(
                       greetingIcon,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       size: 20,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       greeting,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -369,7 +369,7 @@ class _HomepageState extends State<Homepage> {
                 Text(
                   'Manage your store and track performance',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 13,
                   ),
                 ),
@@ -379,7 +379,7 @@ class _HomepageState extends State<Homepage> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(Icons.store, color: Colors.white, size: 32),
@@ -501,7 +501,7 @@ class _HomepageState extends State<Homepage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: gradientColors[0].withOpacity(0.3),
+            color: gradientColors[0].withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -516,7 +516,7 @@ class _HomepageState extends State<Homepage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: Colors.white, size: 20),
@@ -536,7 +536,7 @@ class _HomepageState extends State<Homepage> {
           Text(
             title,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -544,7 +544,7 @@ class _HomepageState extends State<Homepage> {
           Text(
             subtitle,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               fontSize: 11,
             ),
           ),
@@ -644,9 +644,9 @@ class _HomepageState extends State<Homepage> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
           ),
           child: Row(
             children: [
@@ -746,12 +746,12 @@ class _HomepageState extends State<Homepage> {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.1),
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -762,7 +762,7 @@ class _HomepageState extends State<Homepage> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: activity.color.withOpacity(0.1),
+              color: activity.color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(activity.icon, color: activity.color, size: 22),
