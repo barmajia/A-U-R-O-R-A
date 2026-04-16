@@ -19,7 +19,6 @@ CREATE EXTENSION IF NOT EXISTS "pg_cron" WITH SCHEMA "pg_catalog";
 
 
 
-
 COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
