@@ -1394,4 +1394,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectCategory => 'Select Category';
   @override
   String get selectSubcategory => 'Select Subcategory';
+
+  // Product Form
+  @override
+  String get addProduct => 'Add Product';
+  @override
+  String get editProduct => 'Edit Product';
+  @override
+  String get productFormTitle => 'Product Title';
+  @override
+  String get productFormTitleHint => 'Enter product title';
+  @override
+  String get fieldPrice => 'Price';
+  @override
+  String get fieldCurrency => 'Currency';
+  @override
+  String get fieldQuantity => 'Quantity';
+  @override
+  String get fieldCategory => 'Category';
+  @override
+  String get fieldSubcategory => 'Subcategory';
+  @override
+  String get fieldBrand => 'Brand';
+  @override
+  String get attributeColor => 'Color';
+  @override
+  String get saving => 'Saving...';
+  @override
+  String get update => 'Update';
+  @override
+  String get create => 'Create';
+  @override
+  String get syncPendingItems => 'Sync pending items';
+
+  // Validation Errors
+  @override
+  String get errorTitleRequired => 'Product title is required';
+  @override
+  String get errorRequired => 'This field is required';
+  @override
+  String get errorCategoryRequired => 'Please select a category';
+  @override
+  String get errorBrandRequired => 'Please select or create a brand';
+  @override
+  String get errorBrandNameRequired => 'Brand name is required';
 }

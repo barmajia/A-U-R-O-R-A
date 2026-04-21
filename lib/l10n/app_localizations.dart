@@ -2448,4 +2448,28 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   String get selectOption;
   String get selectCategory;
   String get selectSubcategory;
+
+  // Product Form
+  String get addProduct;
+  String get editProduct;
+  String get productFormTitle;
+  String get productFormTitleHint;
+  String get fieldPrice;
+  String get fieldCurrency;
+  String get fieldQuantity;
+  String get fieldCategory;
+  String get fieldSubcategory;
+  String get fieldBrand;
+  String get attributeColor;
+  String get saving;
+  String get update;
+  String get create;
+  String get syncPendingItems;
+
+  // Validation Errors
+  String get errorTitleRequired;
+  String get errorRequired;
+  String get errorCategoryRequired;
+  String get errorBrandRequired;
+  String get errorBrandNameRequired;
 }

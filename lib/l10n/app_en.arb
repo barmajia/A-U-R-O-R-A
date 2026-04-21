@@ -391,7 +391,6 @@
   "last_updated": "Last updated",
 
   "@@product_form": "Product Form Screen Translations",
-  "productFormTitle": "Product Details",
   "productNameLabel": "Product Name",
   "productNameHint": "Enter product name",
   "categoryLabel": "Category",
@@ -556,5 +555,30 @@
   "@@placeholders": "Placeholder Options",
   "selectOption": "Select an option",
   "selectCategory": "Select Category",
-  "selectSubcategory": "Select Subcategory"
+  "selectSubcategory": "Select Subcategory",
+
+  "@@product_form": "Product Form",
+  "addProduct": "Add Product",
+  "editProduct": "Edit Product",
+  "productFormTitle": "Product Title",
+  "productFormTitleHint": "Enter product title",
+  "fieldPrice": "Price",
+  "fieldCurrency": "Currency",
+  "fieldQuantity": "Quantity",
+  "fieldCategory": "Category",
+  "fieldSubcategory": "Subcategory",
+  "fieldBrand": "Brand",
+  "attributeColor": "Color",
+  "saving": "Saving...",
+  "save": "Save",
+  "update": "Update",
+  "create": "Create",
+  "syncPendingItems": "Sync pending items",
+
+  "@@validation_errors": "Validation Errors",
+  "errorTitleRequired": "Product title is required",
+  "errorRequired": "This field is required",
+  "errorCategoryRequired": "Please select a category",
+  "errorBrandRequired": "Please select or create a brand",
+  "errorBrandNameRequired": "Brand name is required"
 }

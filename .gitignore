@@ -1,31 +1,25 @@
 ```
+# Build artifacts
+/build/
+/dist/
+
 # Dependencies
-.dart_tool/
-.build/
-dependencies/
+/.dart_tool/
+/pub/
+/pubspec.lock
 
-# Generated code
-lib/l10n/app_localizations*.dart
-
-# Build outputs
-build/
-*.apk
-*.aab
-*.ipa
-*.app
+# Logs and temp files
+*.log
+*.tmp
 
 # Environment
 .env
 .env.local
-.env.*
+*.env.*
 
-# Logs
-*.log
-**/logs
-
-# IDE files
-.idea/
+# Editors
 .vscode/
+.idea/
 *.swp
 *.swo
 
@@ -34,31 +28,7 @@ build/
 Thumbs.db
 
 # Coverage
-coverage/
-htmlcov/
+/coverage/
+/htmlcov/
 .coverage
-
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
 ```

@@ -1391,4 +1391,48 @@ class AppLocalizationsAr extends AppLocalizations {
   String get selectCategory => 'اختر الفئة';
   @override
   String get selectSubcategory => 'اختر الفئة الفرعية';
+
+  // Product Form
+  @override
+  String get addProduct => 'إضافة منتج';
+  @override
+  String get editProduct => 'تعديل المنتج';
+  @override
+  String get productFormTitle => 'عنوان المنتج';
+  @override
+  String get productFormTitleHint => 'أدخل عنوان المنتج';
+  @override
+  String get fieldPrice => 'السعر';
+  @override
+  String get fieldCurrency => 'العملة';
+  @override
+  String get fieldQuantity => 'الكمية';
+  @override
+  String get fieldCategory => 'الفئة';
+  @override
+  String get fieldSubcategory => 'الفئة الفرعية';
+  @override
+  String get fieldBrand => 'العلامة التجارية';
+  @override
+  String get attributeColor => 'اللون';
+  @override
+  String get saving => 'جارٍ الحفظ...';
+  @override
+  String get update => 'تحديث';
+  @override
+  String get create => 'إنشاء';
+  @override
+  String get syncPendingItems => 'مزامنة العناصر المعلقة';
+
+  // Validation Errors
+  @override
+  String get errorTitleRequired => 'عنوان المنتج مطلوب';
+  @override
+  String get errorRequired => 'هذا الحقل مطلوب';
+  @override
+  String get errorCategoryRequired => 'يرجى اختيار فئة';
+  @override
+  String get errorBrandRequired => 'يرجى اختيار أو إنشاء علامة تجارية';
+  @override
+  String get errorBrandNameRequired => 'اسم العلامة التجارية مطلوب';
 }

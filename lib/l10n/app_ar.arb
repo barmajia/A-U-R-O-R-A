@@ -391,7 +391,6 @@
   "last_updated": "آخر تحديث",
 
   "@@product_form": "ترجمات شاشة نموذج المنتج",
-  "productFormTitle": "تفاصيل المنتج",
   "productNameLabel": "اسم المنتج",
   "productNameHint": "أدخل اسم المنتج",
   "categoryLabel": "الفئة",
@@ -556,5 +555,30 @@
   "@@placeholders": "خيارات العناصر النائبة",
   "selectOption": "اختر خياراً",
   "selectCategory": "اختر الفئة",
-  "selectSubcategory": "اختر الفئة الفرعية"
+  "selectSubcategory": "اختر الفئة الفرعية",
+
+  "@@product_form": "نموذج المنتج",
+  "addProduct": "إضافة منتج",
+  "editProduct": "تعديل المنتج",
+  "productFormTitle": "عنوان المنتج",
+  "productFormTitleHint": "أدخل عنوان المنتج",
+  "fieldPrice": "السعر",
+  "fieldCurrency": "العملة",
+  "fieldQuantity": "الكمية",
+  "fieldCategory": "الفئة",
+  "fieldSubcategory": "الفئة الفرعية",
+  "fieldBrand": "العلامة التجارية",
+  "attributeColor": "اللون",
+  "saving": "جارٍ الحفظ...",
+  "save": "حفظ",
+  "update": "تحديث",
+  "create": "إنشاء",
+  "syncPendingItems": "مزامنة العناصر المعلقة",
+
+  "@@validation_errors": "أخطاء التحقق",
+  "errorTitleRequired": "عنوان المنتج مطلوب",
+  "errorRequired": "هذا الحقل مطلوب",
+  "errorCategoryRequired": "يرجى اختيار فئة",
+  "errorBrandRequired": "يرجى اختيار أو إنشاء علامة تجارية",
+  "errorBrandNameRequired": "اسم العلامة التجارية مطلوب"
 }
