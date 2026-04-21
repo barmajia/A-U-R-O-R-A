@@ -32,7 +32,6 @@ enum AppThemeId {
   dracula,
   monokai,
   solarizedDark,
-  highContrast,
 }
 
 class ThemePalette {
@@ -138,20 +137,6 @@ class AppThemes {
       background: Color(0xFF00212B),
       card: Color(0xFF073642),
       preview: [Color(0xFF268BD2), Color(0xFF2AA198), Color(0xFFB58900)],
-    ),
-    ThemePalette(
-      id: AppThemeId.highContrast,
-      name: 'High Contrast',
-      description: 'Max contrast for accessibility',
-      brightness: Brightness.dark,
-      seed: Color(0xFFFFFFFF),
-      primary: Color(0xFFFFFFFF),
-      secondary: Color(0xFF00E8FF),
-      accent: Color(0xFFFF4081),
-      surface: Color(0xFF000000),
-      background: Color(0xFF000000),
-      card: Color(0xFF0F0F0F),
-      preview: [Color(0xFFFFFFFF), Color(0xFF00E8FF), Color(0xFFFF4081)],
     ),
   ];
 

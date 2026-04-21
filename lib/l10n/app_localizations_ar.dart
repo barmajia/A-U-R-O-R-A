@@ -1085,3 +1085,354 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get last_updated => 'آخر تحديث';
 }
+
+  // Product Form Screen
+  @override
+  String get productFormTitle => 'تفاصيل المنتج';
+  @override
+  String get productNameLabel => 'اسم المنتج';
+  @override
+  String get productNameHint => 'أدخل اسم المنتج';
+  @override
+  String get categoryLabel => 'الفئة';
+  @override
+  String get subcategoryLabel => 'الفئة الفرعية';
+  @override
+  String get brandLabel => 'العلامة التجارية';
+  @override
+  String get priceLabel => 'السعر';
+  @override
+  String get priceHint => '0.00';
+  @override
+  String get stockLabel => 'الكمية في المخزون';
+  @override
+  String get stockHint => '0';
+  @override
+  String get descriptionLabel => 'الوصف';
+  @override
+  String get descriptionHint => 'أدخل وصف المنتج';
+  @override
+  String get imagesLabel => 'صور المنتج';
+  @override
+  String get addImageBtn => 'إضافة صورة';
+  @override
+  String get removeImageBtn => 'إزالة';
+  @override
+  String get saveBtn => 'حفظ المنتج';
+  @override
+  String get cancelBtn => 'إلغاء';
+  @override
+  String get requiredFieldError => 'هذا الحقل مطلوب';
+  @override
+  String get invalidPriceError => 'يرجى إدخال سعر صحيح';
+  @override
+  String get invalidStockError => 'يرجى إدخال كمية مخزون صحيحة';
+  @override
+  String get minOneImageError => 'يرجى إضافة صورة واحدة على الأقل';
+
+  // Categories
+  @override
+  String get categoryFashion => 'الأزياء والملابس';
+  @override
+  String get categoryElectronics => 'الإلكترونيات';
+  @override
+  String get categoryLighting => 'الإضاءة والكهرباء';
+  @override
+  String get categoryHome => 'المنزل والمعيشة';
+  @override
+  String get categoryBeauty => 'الجمال والعناية الشخصية';
+  @override
+  String get categorySports => 'الرياضة والأنشطة الخارجية';
+
+  // Fashion Subcategories
+  @override
+  String get subcatMenShirts => 'قمصان رجالية';
+  @override
+  String get subcatMenPants => 'بناطيل رجالية';
+  @override
+  String get subcatWomenDresses => 'فساتين نسائية';
+  @override
+  String get subcatWomenTops => 'ملابس علوية نسائية';
+  @override
+  String get subcatKidsClothing => 'ملابس أطفال';
+  @override
+  String get subcatShoes => 'أحذية';
+  @override
+  String get subcatAccessories => 'إكسسوارات';
+
+  // Electronics Subcategories
+  @override
+  String get subcatSmartphones => 'هواتف ذكية';
+  @override
+  String get subcatLaptops => 'أجهزة لابتوب';
+  @override
+  String get subcatTablets => 'أجهزة تابلت';
+  @override
+  String get subcatAudio => 'أجهزة صوتية';
+  @override
+  String get subcatCameras => 'كاميرات';
+  @override
+  String get subcatWearables => 'أجهزة قابلة للارتداء';
+  @override
+  String get subcatGaming => 'ألعاب فيديو';
+
+  // Lighting Subcategories
+  @override
+  String get subcatBulbs => 'مصابيح وأنابيب';
+  @override
+  String get subcatFixtures => 'تركيبات إضاءة';
+  @override
+  String get subcatSmartLights => 'إضاءة ذكية';
+  @override
+  String get subcatOutdoorLights => 'إضاءة خارجية';
+  @override
+  String get subcatCommercialLights => 'إضاءة تجارية';
+
+  // Home Subcategories
+  @override
+  String get subcatFurniture => 'أثاث';
+  @override
+  String get subcatDecor => 'ديكور منزلي';
+  @override
+  String get subcatKitchen => 'مطبخ وطعام';
+  @override
+  String get subcatBedding => 'أغطية وأسرة';
+  @override
+  String get subcatStorage => 'تخزين وتنظيم';
+  @override
+  String get subcatBath => 'إكسسوارات حمام';
+
+  // Beauty Subcategories
+  @override
+  String get subcatSkincare => 'العناية بالبشرة';
+  @override
+  String get subcatMakeup => 'مستحضرات تجميل';
+  @override
+  String get subcatHaircare => 'العناية بالشعر';
+  @override
+  String get subcatFragrance => 'عطور';
+  @override
+  String get subcatPersonalCare => 'أدوات العناية الشخصية';
+
+  // Sports Subcategories
+  @override
+  String get subcatFitness => 'معدات اللياقة البدنية';
+  @override
+  String get subcatOutdoorSports => 'رياضات خارجية';
+  @override
+  String get subcatTeamSports => 'رياضات جماعية';
+  @override
+  String get subcatWaterSports => 'رياضات مائية';
+  @override
+  String get subcatCycling => 'معدات ركوب الدراجات';
+
+  // Product Attributes
+  @override
+  String get attrColor => 'اللون';
+  @override
+  String get attrSize => 'المقاس';
+  @override
+  String get attrMaterial => 'الخامة';
+  @override
+  String get attrWeight => 'الوزن';
+  @override
+  String get attrDimensions => 'الأبعاد';
+  @override
+  String get attrWarranty => 'فترة الضمان';
+  @override
+  String get attrModel => 'رقم الموديل';
+  @override
+  String get attrPowerConsumption => 'استهلاك الطاقة';
+  @override
+  String get attrBrightness => 'مستوى السطوع';
+  @override
+  String get attrColorTemperature => 'درجة حرارة اللون';
+  @override
+  String get attrDimmable => 'قابل للتعتيم';
+  @override
+  String get attrEnergyRating => 'تصنيف كفاءة الطاقة';
+  @override
+  String get attrRoomType => 'الغرفة الموصى بها';
+  @override
+  String get attrStyle => 'النمط';
+  @override
+  String get attrPattern => 'النقش';
+  @override
+  String get attrSeason => 'الموسم';
+  @override
+  String get attrGender => 'الجنس';
+  @override
+  String get attrAgeGroup => 'الفئة العمرية';
+  @override
+  String get attrSkinType => 'نوع البشرة';
+  @override
+  String get attrVolume => 'الحجم';
+  @override
+  String get attrSPF => 'مستوى حماية SPF';
+  @override
+  String get attrBatteryLife => 'عمر البطارية';
+  @override
+  String get attrConnectivity => 'الاتصال';
+  @override
+  String get attrScreenSize => 'حجم الشاشة';
+  @override
+  String get attrStorageCapacity => 'سعة التخزين';
+  @override
+  String get attrProcessor => 'المعالج';
+  @override
+  String get attrRAM => 'الذاكرة العشوائية';
+  @override
+  String get attrResolution => 'الدقة';
+  @override
+  String get attrFrameRate => 'معدل الإطارات';
+  @override
+  String get attrLensType => 'نوع العدسة';
+  @override
+  String get attrOpticalZoom => 'التقريب البصري';
+  @override
+  String get attrMegapixels => 'الميجابكسل';
+  @override
+  String get attrSportType => 'نوع الرياضة';
+  @override
+  String get attrSkillLevel => 'مستوى المهارة';
+  @override
+  String get attrSurfaceType => 'نوع السطح';
+  @override
+  String get attrWaterResistance => 'مقاومة الماء';
+  @override
+  String get attrLoadCapacity => 'سعة التحميل';
+  @override
+  String get attrAssemblyRequired => 'التجميع مطلوب';
+  @override
+  String get attrCareInstructions => 'تعليمات العناية';
+  @override
+  String get attrCountryOfOrigin => 'بلد المنشأ';
+  @override
+  String get attrCertifications => 'الشهادات';
+  @override
+  String get attrFeatures => 'الميزات الرئيسية';
+
+  // Units
+  @override
+  String get unitKg => 'كجم';
+  @override
+  String get unitG => 'جم';
+  @override
+  String get unitCm => 'سم';
+  @override
+  String get unitInches => 'بوصة';
+  @override
+  String get unitWatts => 'واط';
+  @override
+  String get unitLumens => 'لومن';
+  @override
+  String get unitKelvin => 'كلفن';
+  @override
+  String get unitHours => 'ساعات';
+  @override
+  String get unitMonths => 'أشهر';
+  @override
+  String get unitYears => 'سنوات';
+  @override
+  String get unitLiters => 'لتر';
+  @override
+  String get unitML => 'مل';
+  @override
+  String get unitOz => 'أونصة';
+
+  // Yes/No
+  @override
+  String get yes => 'نعم';
+  @override
+  String get no => 'لا';
+
+  // Validation Messages
+  @override
+  String get validateProductName => 'يجب أن يكون اسم المنتج بين 3 و 100 حرف';
+  @override
+  String get validatePrice => 'يجب أن يكون السعر أكبر من 0';
+  @override
+  String get validateStock => 'لا يمكن أن يكون المخزون سالباً';
+  @override
+  String get validateDescription => 'يجب أن يكون الوصف 10 أحرف على الأقل';
+  @override
+  String get validateBrand => 'اسم العلامة التجارية مطلوب';
+  @override
+  String get validateCategory => 'يرجى اختيار فئة';
+  @override
+  String get validateSubcategory => 'يرجى اختيار فئة فرعية';
+
+  // Success Messages
+  @override
+  String get productSavedSuccess => 'تم حفظ المنتج بنجاح!';
+  @override
+  String get productUpdatedSuccess => 'تم تحديث المنتج بنجاح!';
+  @override
+  String get imageAddedSuccess => 'تمت إضافة الصورة بنجاح';
+  @override
+  String get imageRemovedSuccess => 'تمت إزالة الصورة';
+
+  // Confirmation Dialogs
+  @override
+  String get confirmDiscardChanges => 'هل أنت متأكد أنك تريد تجاهل التغييرات؟';
+  @override
+  String get confirmDeleteImage => 'هل أنت متأكد أنك تريد حذف هذه الصورة؟';
+  @override
+  String get unsavedChangesTitle => 'تغييرات غير محفوظة';
+  @override
+  String get discardBtn => 'تجاهل';
+  @override
+  String get keepEditingBtn => 'متابعة التحرير';
+
+  // Placeholders
+  @override
+  String get selectOption => 'اختر خياراً';
+  @override
+  String get selectCategory => 'اختر الفئة';
+  @override
+  String get selectSubcategory => 'اختر الفئة الفرعية';
+
+  // Product Form
+  @override
+  String get addProduct => 'إضافة منتج';
+  @override
+  String get editProduct => 'تعديل المنتج';
+  @override
+  String get productFormTitle => 'عنوان المنتج';
+  @override
+  String get productFormTitleHint => 'أدخل عنوان المنتج';
+  @override
+  String get fieldPrice => 'السعر';
+  @override
+  String get fieldCurrency => 'العملة';
+  @override
+  String get fieldQuantity => 'الكمية';
+  @override
+  String get fieldCategory => 'الفئة';
+  @override
+  String get fieldSubcategory => 'الفئة الفرعية';
+  @override
+  String get fieldBrand => 'العلامة التجارية';
+  @override
+  String get attributeColor => 'اللون';
+  @override
+  String get saving => 'جارٍ الحفظ...';
+  @override
+  String get update => 'تحديث';
+  @override
+  String get create => 'إنشاء';
+  @override
+  String get syncPendingItems => 'مزامنة العناصر المعلقة';
+
+  // Validation Errors
+  @override
+  String get errorTitleRequired => 'عنوان المنتج مطلوب';
+  @override
+  String get errorRequired => 'هذا الحقل مطلوب';
+  @override
+  String get errorCategoryRequired => 'يرجى اختيار فئة';
+  @override
+  String get errorBrandRequired => 'يرجى اختيار أو إنشاء علامة تجارية';
+  @override
+  String get errorBrandNameRequired => 'اسم العلامة التجارية مطلوب';
+}

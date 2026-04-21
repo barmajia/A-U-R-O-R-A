@@ -20,6 +20,7 @@ dependencies:
   # Authentication & Security
   flutter_secure_storage: ^10.0.0
   local_auth: ^2.3.0
+  vibration: ^3.1.0
   encrypt: ^5.0.3
   crypto: ^3.0.3
 

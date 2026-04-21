@@ -2,8 +2,11 @@ import 'package:aurora/pages/singup/login.dart';
 import 'package:aurora/pages/seller/sellerprofile.dart';
 import 'package:aurora/services/secure_storage.dart';
 import 'package:aurora/services/supabase.dart';
+import 'package:aurora/services/vibration_service.dart';
 import 'package:aurora/theme/themeprovider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -45,6 +48,8 @@ class _SettingState extends State<Setting> {
 
   // Services
   final SecureStorageService _secureStorage = SecureStorageService();
+  final VibrationService _vibrationService = VibrationService();
+  final LocalAuthentication _localAuth = LocalAuthentication();
 
   @override
   void initState() {
@@ -66,10 +71,26 @@ class _SettingState extends State<Setting> {
 
   Future<void> _checkBiometricAvailability() async {
     try {
-      // Check if fingerprint is available
+      // Check if biometric authentication is available on the device
+      final bool canCheckBiometrics = await _localAuth.canCheckBiometrics;
+      final bool isDeviceSupported = await _localAuth.isDeviceSupported();
+      final List<BiometricType> availableBiometrics = 
+          await _localAuth.getAvailableBiometrics();
 
-      // Assume enrolled if device supports and can check biometrics
-      // (local_auth package doesn't have a direct method to check enrollment)
+      if (mounted) {
+        setState(() {
+          _isBiometricAvailable = canCheckBiometrics && isDeviceSupported;
+          _hasEnrolledBiometric = availableBiometrics.isNotEmpty;
+        });
+      }
+
+      // Check if fingerprint is already enabled
+      final isEnabled = await _secureStorage.isFingerprintEnabled();
+      if (mounted) {
+        setState(() {
+          _biometricEnabled = isEnabled;
+        });
+      }
     } catch (e) {
       debugPrint('Error checking biometric availability: $e');
       if (mounted) {
@@ -428,6 +449,192 @@ class _SettingState extends State<Setting> {
   // ============================================================================
   // Dialogs
   // ============================================================================
+
+  /// Toggle biometric authentication with fingerprint/face ID
+  Future<void> _toggleBiometricAuth() async {
+    if (_isBiometricLoading) return;
+
+    setState(() => _isBiometricLoading = true);
+
+    try {
+      if (_biometricEnabled) {
+        // Disable biometric auth
+        await _showDisableBiometricDialog();
+      } else {
+        // Enable biometric auth - authenticate first
+        final authenticated = await _authenticateWithBiometrics();
+        
+        if (authenticated && mounted) {
+          // Get user credentials from Supabase provider
+          final supabaseProvider = context.read<SupabaseProvider>();
+          final email = supabaseProvider.currentUser?.email ?? '';
+          
+          // Show password dialog to store credentials
+          final password = await _showPasswordDialogForBiometric();
+          
+          if (password != null && password.isNotEmpty && mounted) {
+            await _secureStorage.enableFingerprint(
+              email: email,
+              password: password,
+            );
+            
+            setState(() {
+              _biometricEnabled = true;
+            });
+            
+            _vibrationService.success();
+            
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Fingerprint authentication enabled'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error toggling biometric auth: $e');
+      _vibrationService.error();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isBiometricLoading = false);
+      }
+    }
+  }
+
+  /// Authenticate user with biometrics
+  Future<bool> _authenticateWithBiometrics() async {
+    try {
+      final bool authenticated = await _localAuth.authenticate(
+        localizedReason: 'Authenticate to enable fingerprint login',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: true,
+        ),
+      );
+      
+      if (authenticated) {
+        _vibrationService.success();
+      }
+      
+      return authenticated;
+    } catch (e) {
+      debugPrint('Biometric authentication error: $e');
+      _vibrationService.error();
+      return false;
+    }
+  }
+
+  /// Show dialog to disable biometric authentication
+  Future<void> _showDisableBiometricDialog() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.fingerprint_off, color: Colors.orange),
+            SizedBox(width: 12),
+            Text('Disable Fingerprint'),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to disable fingerprint authentication?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Disable'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await _secureStorage.disableFingerprint();
+      setState(() {
+        _biometricEnabled = false;
+      });
+      _vibrationService.tap();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Fingerprint authentication disabled'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Show password dialog for enabling biometric
+  Future<String?> _showPasswordDialogForBiometric() {
+    final passwordController = TextEditingController();
+    
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.lock_outline, color: Colors.blue),
+            SizedBox(width: 12),
+            Text('Enter Password'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Enter your account password to enable fingerprint login.',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.lock),
+              ),
+              obscureText: true,
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context, passwordController.text);
+            },
+            child: const Text('Enable'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _showBrowsingHistoryOptions() {
     showDialog(
@@ -882,7 +1089,9 @@ class _SettingState extends State<Setting> {
             Icons.chevron_right,
             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
           ),
-          onTap: () {},
+          onTap: _isBiometricAvailable && _hasEnrolledBiometric
+              ? () => _toggleBiometricAuth()
+              : null,
         ),
         _buildListTile(
           icon: Icons.history,

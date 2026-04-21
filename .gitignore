@@ -1,28 +1,25 @@
 ```
+# Build artifacts
+/build/
+/dist/
+
 # Dependencies
-.dart_tool/
-.build/
-dependencies/
+/.dart_tool/
+/pub/
+/pubspec.lock
 
-# Generated plugin files
-lib/generated_plugin_registrant.dart
-
-# Unit test coverage reports
-coverage/
-
-# Temporary files
-*.tmp
-*.temp
+# Logs and temp files
 *.log
+*.tmp
 
-# Environment variables
+# Environment
 .env
 .env.local
 *.env.*
 
-# IDE files
-.idea/
+# Editors
 .vscode/
+.idea/
 *.swp
 *.swo
 
@@ -30,8 +27,8 @@ coverage/
 .DS_Store
 Thumbs.db
 
-# Build artifacts
-build/
-dist/
-target/
+# Coverage
+/coverage/
+/htmlcov/
+.coverage
 ```

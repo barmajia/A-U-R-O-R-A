@@ -76,18 +76,14 @@ Future<void> main() async {
   final sellerDb = SellerDB();
   final productsDb = ProductsDB();
 
-  // Initialize theme provider and load saved theme
+  // Initialize services
   final themeProvider = ThemeProvider();
   await themeProvider.loadTheme();
 
-  // Initialize user preferences service
   final userPreferencesService = UserPreferencesService();
   await userPreferencesService.initialize();
 
-  // Initialize notification service
   final notificationService = NotificationService();
-
-  // Initialize presence service
   final presenceService = PresenceService();
 
   // Initialize modular providers
@@ -103,37 +99,27 @@ Future<void> main() async {
   );
   final productProvider = ProductProvider(Supabase.instance.client, productsDb);
 
-  // Wait a bit for DBs to initialize
+  // Wait for DBs to initialize
   await Future.delayed(const Duration(milliseconds: 300));
 
   runApp(
     MultiProvider(
       providers: [
-        // Supabase Provider (core authentication & backend operations)
+        // Core providers
         ChangeNotifierProvider.value(value: supabaseProvider),
-
-        // Auth & User Management
         ChangeNotifierProvider.value(value: authProvider),
-
-        // Product Management
         ChangeNotifierProvider.value(value: productProvider),
-
-        // Notifications
         ChangeNotifierProvider.value(value: notificationService),
-
-        // User Preferences
         ChangeNotifierProvider.value(value: userPreferencesService),
-
-        // Presence Tracking
         ChangeNotifierProvider.value(value: presenceService),
-
-        // Local Databases
-        ChangeNotifierProvider(create: (context) => sellerDb),
-        Provider(create: (context) => productsDb),
-
-        // Queue Service
-        Provider(create: (context) => authProvider.queue),
-
+        
+        // Local databases
+        ChangeNotifierProvider(create: (_) => sellerDb),
+        Provider(create: (_) => productsDb),
+        
+        // Queue service
+        Provider(create: (_) => authProvider.queue),
+        
         // Theme
         ChangeNotifierProvider.value(value: themeProvider),
       ],
@@ -147,97 +133,67 @@ class Aurora extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<AuthProvider, ThemeProvider, NotificationService>(
-      builder:
-          (context, authProvider, themeProvider, notificationService, child) {
-            // Show loading screen while checking session
-            if (authProvider.isCheckingSession) {
-              return MaterialApp(
-                debugShowCheckedModeBanner: false,
-                title: 'Aurora E-commerce',
-                theme: themeProvider.themeData,
-                localizationsDelegates: const [
-                  AppLocalizations.delegate,
-                  GlobalMaterialLocalizations.delegate,
-                  GlobalWidgetsLocalizations.delegate,
-                  GlobalCupertinoLocalizations.delegate,
-                ],
-                supportedLocales: const [
-                  Locale('en'), // English
-                  Locale('ar'), // Arabic
-                ],
-                locale: const Locale('en'), // Default locale
-                home: const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                ),
-              );
-            }
+    return Consumer3<AuthProvider, ThemeProvider, UserPreferencesService>(
+      builder: (context, authProvider, themeProvider, userPrefs, child) {
+        // Update theme with system brightness
+        final systemBrightness = MediaQuery.platformBrightnessOf(context);
+        themeProvider.updateSystemBrightness(systemBrightness);
 
-            // Get system brightness for auto theme switching
-            final systemBrightness = MediaQuery.platformBrightnessOf(context);
+        // Initialize services when logged in
+        if (authProvider.isLoggedIn && !authProvider.isCheckingSession) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            context.read<NotificationService>().initialize(authProvider.userId!);
+          });
+        }
 
-            // Update theme provider with system brightness
-            themeProvider.updateSystemBrightness(systemBrightness);
-
-            // Initialize notification service when user is logged in
-            if (authProvider.isLoggedIn) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                notificationService.initialize(authProvider.userId!);
-                // Presence service is initialized via ChangeNotifierProvider
-              });
-            }
-
-            // Get user's preferred language
-            final userPreferencesService = context
-                .watch<UserPreferencesService>();
-            final locale = userPreferencesService.locale;
-
-            if (authProvider.isLoggedIn) {
-              return MaterialApp(
-                debugShowCheckedModeBanner: false,
-                title: 'Aurora E-commerce',
-                theme: themeProvider.themeData,
-                localizationsDelegates: const [
-                  AppLocalizations.delegate,
-                  GlobalMaterialLocalizations.delegate,
-                  GlobalWidgetsLocalizations.delegate,
-                  GlobalCupertinoLocalizations.delegate,
-                ],
-                supportedLocales: const [
-                  Locale('en'), // English
-                  Locale('ar'), // Arabic
-                ],
-                locale: locale,
-                home: const Homepage(),
-                routes: {
-                  '/login': (context) => const Login(),
-                  '/home': (context) => const Homepage(),
-                },
-              );
-            } else {
-              return MaterialApp(
-                debugShowCheckedModeBanner: false,
-                title: 'Aurora E-commerce',
-                theme: themeProvider.themeData,
-                localizationsDelegates: const [
-                  AppLocalizations.delegate,
-                  GlobalMaterialLocalizations.delegate,
-                  GlobalWidgetsLocalizations.delegate,
-                  GlobalCupertinoLocalizations.delegate,
-                ],
-                supportedLocales: const [
-                  Locale('en'), // English
-                  Locale('ar'), // Arabic
-                ],
-                locale: locale,
-                home: const Login(),
-                routes: {
-                  '/login': (context) => const Login(),
-                  '/home': (context) => const Homepage(),
-                },
-              );
-            }
-          },
+        return _buildMaterialApp(
+          context,
+          authProvider,
+          themeProvider,
+          userPrefs.locale,
+        );
+      },
     );
+  }
+
+  Widget _buildMaterialApp(
+    BuildContext context,
+    AuthProvider authProvider,
+    ThemeProvider themeProvider,
+    Locale? locale,
+  ) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Aurora E-commerce',
+      theme: themeProvider.themeData,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'),
+        Locale('ar'),
+      ],
+      locale: locale,
+      home: _buildHomeWidget(context, authProvider),
+      routes: const {
+        '/login': Login.new,
+        '/home': Homepage.new,
+      },
+    );
+  }
+
+  Widget _buildHomeWidget(BuildContext context, AuthProvider authProvider) {
+    if (authProvider.isCheckingSession) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return authProvider.isLoggedIn 
+        ? const Homepage() 
+        : const Login();
   }
 }

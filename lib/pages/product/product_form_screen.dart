@@ -7,6 +7,7 @@ import 'package:aurora/theme/themeprovider.dart';
 import 'package:aurora/pages/product/brand_data.dart';
 import 'package:aurora/utils/connectivity_helper.dart';
 import 'package:aurora/services/offline_queue_service.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -114,19 +115,58 @@ class DescriptionGenerator {
   }
 }
 
-// Category Structure
+// Category Structure with enhanced details
 const Map<String, List<String>> categoryStructure = {
-  'Fashion & Apparel': ['T-Shirts', 'Jeans', 'Shoes', 'Jackets'],
-  'Electronics': ['Smartphones', 'Laptops', 'Headphones', 'Cameras'],
+  'Fashion & Apparel': [
+    'T-Shirts',
+    'Jeans',
+    'Shoes',
+    'Jackets',
+    'Dresses',
+    'Activewear',
+    'Accessories',
+  ],
+  'Electronics': [
+    'Smartphones',
+    'Laptops',
+    'Headphones',
+    'Cameras',
+    'Tablets',
+    'Smart Watches',
+    'Gaming Consoles',
+  ],
   'Lighting & Electrical': [
     'Light Bulbs',
     'Lamps',
     'Wires & Cables',
     'Switches',
+    'LED Strips',
+    'Outdoor Lighting',
   ],
-  'Home & Living': ['Furniture', 'Kitchenware', 'Bedding', 'Decor'],
-  'Beauty & Personal Care': ['Skincare', 'Makeup', 'Fragrance', 'Haircare'],
-  'Sports & Outdoors': ['Gym Equipment', 'Camping', 'Sports Balls'],
+  'Home & Living': [
+    'Furniture',
+    'Kitchenware',
+    'Bedding',
+    'Decor',
+    'Storage & Organization',
+    'Bathroom',
+  ],
+  'Beauty & Personal Care': [
+    'Skincare',
+    'Makeup',
+    'Fragrance',
+    'Haircare',
+    'Personal Care',
+    'Men's Grooming',
+  ],
+  'Sports & Outdoors': [
+    'Gym Equipment',
+    'Camping',
+    'Sports Balls',
+    'Cycling',
+    'Water Sports',
+    'Team Sports',
+  ],
 };
 
 // Define which attributes belong to which subcategory
@@ -314,6 +354,403 @@ List<Map<String, String>> getAttributesForSubcategory(String subcategory) {
           'options': 'None,15,30,50,50+',
         },
         {'key': 'ingredients', 'label': 'Key Ingredients', 'type': 'text'},
+      ];
+    case 'Jackets':
+      return [
+        {
+          'key': 'size',
+          'label': 'Size',
+          'type': 'dropdown',
+          'options': 'XS,S,M,L,XL,XXL',
+        },
+        {'key': 'material', 'label': 'Material', 'type': 'text'},
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Bomber,Denim,Leather,Windbreaker,Puffer',
+        },
+        {
+          'key': 'season',
+          'label': 'Season',
+          'type': 'dropdown',
+          'options': 'Spring,Summer,Fall,Winter,All-Season',
+        },
+      ];
+    case 'Dresses':
+      return [
+        {
+          'key': 'size',
+          'label': 'Size',
+          'type': 'dropdown',
+          'options': 'XS,S,M,L,XL,XXL',
+        },
+        {'key': 'material', 'label': 'Material', 'type': 'text'},
+        {
+          'key': 'length',
+          'label': 'Length',
+          'type': 'dropdown',
+          'options': 'Mini,Knee-Length,Midi,Maxi',
+        },
+        {
+          'key': 'occasion',
+          'label': 'Occasion',
+          'type': 'dropdown',
+          'options': 'Casual,Formal,Party,Wedding,Beach',
+        },
+      ];
+    case 'Activewear':
+      return [
+        {
+          'key': 'size',
+          'label': 'Size',
+          'type': 'dropdown',
+          'options': 'XS,S,M,L,XL,XXL',
+        },
+        {'key': 'material', 'label': 'Material', 'type': 'text'},
+        {
+          'key': 'activity',
+          'label': 'Activity',
+          'type': 'dropdown',
+          'options': 'Running,Yoga,Gym,Cycling,Swimming',
+        },
+      ];
+    case 'Accessories':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Belts,Hats,Scarves,Gloves,Sunglasses',
+        },
+        {'key': 'material', 'label': 'Material', 'type': 'text'},
+        {'key': 'color', 'label': 'Color', 'type': 'text'},
+      ];
+    case 'Tablets':
+      return [
+        {
+          'key': 'storage',
+          'label': 'Storage (GB)',
+          'type': 'dropdown',
+          'options': '32,64,128,256,512,1024',
+        },
+        {
+          'key': 'ram',
+          'label': 'RAM (GB)',
+          'type': 'dropdown',
+          'options': '3,4,6,8,12,16',
+        },
+        {
+          'key': 'screen_size',
+          'label': 'Screen Size',
+          'type': 'dropdown',
+          'options': '7,8,10,11,12.9',
+        },
+        {'key': 'connectivity', 'label': 'Connectivity', 'type': 'text'},
+      ];
+    case 'Smart Watches':
+      return [
+        {
+          'key': 'compatibility',
+          'label': 'Compatibility',
+          'type': 'dropdown',
+          'options': 'iOS,Android,Both',
+        },
+        {
+          'key': 'battery_life',
+          'label': 'Battery Life (days)',
+          'type': 'number',
+        },
+        {
+          'key': 'features',
+          'label': 'Features',
+          'type': 'dropdown',
+          'options': 'Heart Rate,GPS,Sleep Tracking,Water Resistant',
+        },
+      ];
+    case 'Gaming Consoles':
+      return [
+        {
+          'key': 'platform',
+          'label': 'Platform',
+          'type': 'dropdown',
+          'options': 'PlayStation,Xbox,Nintendo,PC',
+        },
+        {
+          'key': 'storage',
+          'label': 'Storage (GB)',
+          'type': 'dropdown',
+          'options': '500,1000,2000',
+        },
+        {'key': 'condition_details', 'label': 'Condition Details', 'type': 'text'},
+      ];
+    case 'Cameras':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'DSLR,Mirrorless,Point & Shoot,Action Cam',
+        },
+        {
+          'key': 'megapixels',
+          'label': 'Megapixels',
+          'type': 'dropdown',
+          'options': '12,16,20,24,30,45+',
+        },
+        {'key': 'video_resolution', 'label': 'Video Resolution', 'type': 'text'},
+      ];
+    case 'Lamps':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Table,Floor,Desk,Pendant,Wall',
+        },
+        {'key': 'wattage', 'label': 'Wattage', 'type': 'number'},
+        {
+          'key': 'material',
+          'label': 'Material',
+          'type': 'dropdown',
+          'options': 'Metal,Glass,Fabric,Wood,Plastic',
+        },
+      ];
+    case 'Wires & Cables':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Power Cable,Data Cable,Audio Cable,Coaxial,Fiber Optic',
+        },
+        {'key': 'length', 'label': 'Length (meters)', 'type': 'number'},
+        {'key': 'gauge', 'label': 'Wire Gauge (AWG)', 'type': 'text'},
+      ];
+    case 'Switches':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Toggle,Rocker,Dimmer,Smart,Push Button',
+        },
+        {'key': 'voltage', 'label': 'Voltage Rating', 'type': 'text'},
+        {'key': 'poles', 'label': 'Number of Poles', 'type': 'text'},
+      ];
+    case 'LED Strips':
+      return [
+        {
+          'key': 'length',
+          'label': 'Length (meters)',
+          'type': 'dropdown',
+          'options': '1,2,3,5,10',
+        },
+        {
+          'key': 'color_type',
+          'label': 'Color Type',
+          'type': 'dropdown',
+          'options': 'RGB,Single Color,White Only',
+        },
+        {'key': 'voltage', 'label': 'Voltage', 'type': 'text'},
+      ];
+    case 'Outdoor Lighting':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Floodlight,Path Light,Spotlight,Wall Pack',
+        },
+        {
+          'key': 'power_source',
+          'label': 'Power Source',
+          'type': 'dropdown',
+          'options': 'Solar,Hardwired,Battery',
+        },
+        {'key': 'waterproof_rating', 'label': 'Waterproof Rating', 'type': 'text'},
+      ];
+    case 'Kitchenware':
+      return [
+        {
+          'key': 'material',
+          'label': 'Material',
+          'type': 'dropdown',
+          'options': 'Stainless Steel,Cast Iron,Ceramic,Glass,Non-Stick',
+        },
+        {'key': 'pieces', 'label': 'Number of Pieces', 'type': 'number'},
+        {'key': 'dishwasher_safe', 'label': 'Dishwasher Safe', 'type': 'boolean'},
+      ];
+    case 'Bedding':
+      return [
+        {
+          'key': 'size',
+          'label': 'Size',
+          'type': 'dropdown',
+          'options': 'Twin,Full,Queen,King,California King',
+        },
+        {'key': 'material', 'label': 'Material', 'type': 'text'},
+        {
+          'key': 'thread_count',
+          'label': 'Thread Count',
+          'type': 'dropdown',
+          'options': '200,300,400,600,800,1000+',
+        },
+      ];
+    case 'Decor':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Vases,Wall Art,Candles,Mirrors,Rugs',
+        },
+        {'key': 'style', 'label': 'Style', 'type': 'text'},
+        {'key': 'dimensions', 'label': 'Dimensions', 'type': 'text'},
+      ];
+    case 'Storage & Organization':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Bins,Baskets,Shelves,Boxes,Hangers',
+        },
+        {'key': 'material', 'label': 'Material', 'type': 'text'},
+        {'key': 'dimensions', 'label': 'Dimensions', 'type': 'text'},
+      ];
+    case 'Bathroom':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Towels,Shower Curtain,Bath Mat,Soap Dispenser',
+        },
+        {'key': 'material', 'label': 'Material', 'type': 'text'},
+        {'key': 'color', 'label': 'Color', 'type': 'text'},
+      ];
+    case 'Makeup':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Foundation,Lipstick,Eyeshadow,Mascara,Blush',
+        },
+        {'key': 'shade', 'label': 'Shade', 'type': 'text'},
+        {'key': 'finish', 'label': 'Finish', 'type': 'text'},
+      ];
+    case 'Fragrance':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Perfume,Cologne,Body Spray,Essential Oil',
+        },
+        {'key': 'volume', 'label': 'Volume (ml)', 'type': 'number'},
+        {
+          'key': 'family',
+          'label': 'Fragrance Family',
+          'type': 'dropdown',
+          'options': 'Floral,Fruity,Woody,Fresh,Oriental',
+        },
+      ];
+    case 'Haircare':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Shampoo,Conditioner,Styling,Treatment,Oil',
+        },
+        {'key': 'hair_type', 'label': 'Hair Type', 'type': 'text'},
+        {'key': 'volume', 'label': 'Volume (ml)', 'type': 'number'},
+      ];
+    case 'Personal Care':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Oral Care,Bath & Body,First Aid,Vitamins',
+        },
+        {'key': 'description', 'label': 'Description', 'type': 'text'},
+      ];
+    case "Men's Grooming":
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Beard Care,Shaving,Skincare,Hair Styling',
+        },
+        {'key': 'product_form', 'label': 'Product Form', 'type': 'text'},
+      ];
+    case 'Gym Equipment':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Dumbbells,Barbells,Treadmill,Exercise Bike,Yoga Mat',
+        },
+        {'key': 'weight', 'label': 'Weight (lbs/kg)', 'type': 'text'},
+        {'key': 'material', 'label': 'Material', 'type': 'text'},
+      ];
+    case 'Camping':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Tent,Sleeping Bag,Backpack,Camping Stove,Lantern',
+        },
+        {'key': 'capacity', 'label': 'Capacity', 'type': 'text'},
+        {'key': 'season_rating', 'label': 'Season Rating', 'type': 'text'},
+      ];
+    case 'Sports Balls':
+      return [
+        {
+          'key': 'sport',
+          'label': 'Sport',
+          'type': 'dropdown',
+          'options': 'Soccer,Basketball,Football,Baseball,Volleyball,Tennis',
+        },
+        {'key': 'size', 'label': 'Size', 'type': 'text'},
+        {'key': 'material', 'label': 'Material', 'type': 'text'},
+      ];
+    case 'Cycling':
+      return [
+        {
+          'key': 'type',
+          'label': 'Type',
+          'type': 'dropdown',
+          'options': 'Bikes,Helmets,Accessories,Clothing',
+        },
+        {'key': 'size', 'label': 'Size', 'type': 'text'},
+        {'key': 'material', 'label': 'Material', 'type': 'text'},
+      ];
+    case 'Water Sports':
+      return [
+        {
+          'key': 'activity',
+          'label': 'Activity',
+          'type': 'dropdown',
+          'options': 'Swimming,Surfing,Diving,Kayaking,Paddle Board',
+        },
+        {'key': 'skill_level', 'label': 'Skill Level', 'type': 'text'},
+      ];
+    case 'Team Sports':
+      return [
+        {
+          'key': 'sport',
+          'label': 'Sport',
+          'type': 'dropdown',
+          'options': 'Soccer,Basketball,Baseball,Volleyball,Football',
+        },
+        {'key': 'equipment_type', 'label': 'Equipment Type', 'type': 'text'},
       ];
     default:
       return [
@@ -885,6 +1322,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isEditing = widget.product != null;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -894,7 +1332,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(isEditing ? 'Edit Product' : 'Add Product'),
+            Text(isEditing ? l10n.editProduct : l10n.addProduct),
             const SizedBox(width: 12),
             _buildSyncStatusIndicator(),
           ],
@@ -911,12 +1349,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                     )
                   : const Icon(Icons.sync),
               onPressed: _isSyncing ? null : _triggerSync,
-              tooltip: 'Sync pending items',
+              tooltip: l10n.syncPendingItems,
             ),
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: _isLoading ? null : _saveProduct,
-            tooltip: 'Save',
+            tooltip: l10n.save,
           ),
         ],
       ),
@@ -933,11 +1371,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   const SizedBox(height: 24),
                   _buildTextField(
                     controller: _titleController,
-                    label: 'Product Title',
-                    hint: 'Enter product title',
+                    label: l10n.productFormTitle,
+                    hint: l10n.productFormTitleHint,
                     maxLines: 2,
                     validator: (value) =>
-                        value?.isEmpty ?? true ? 'Title is required' : null,
+                        value?.isEmpty ?? true ? l10n.errorTitleRequired : null,
                   ),
                   const SizedBox(height: 16),
                   // Color dropdown - only for Fashion & Apparel
@@ -958,11 +1396,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                       Expanded(
                         child: _buildTextField(
                           controller: _priceController,
-                          label: 'Price',
+                          label: l10n.fieldPrice,
                           hint: '0.00',
                           keyboardType: TextInputType.number,
                           validator: (value) =>
-                              value?.isEmpty ?? true ? 'Required' : null,
+                              value?.isEmpty ?? true ? l10n.errorRequired : null,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -983,7 +1421,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Currency',
+                                l10n.fieldCurrency,
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: isDark
@@ -1011,11 +1449,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   const SizedBox(height: 16),
                   _buildTextField(
                     controller: _quantityController,
-                    label: 'Quantity',
+                    label: l10n.fieldQuantity,
                     hint: '0',
                     keyboardType: TextInputType.number,
                     validator: (value) =>
-                        value?.isEmpty ?? true ? 'Required' : null,
+                        value?.isEmpty ?? true ? l10n.errorRequired : null,
                   ),
                   const SizedBox(height: 24),
                   _buildStatusSelector(),
@@ -1028,8 +1466,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                       icon: const Icon(Icons.save),
                       label: Text(
                         _isLoading
-                            ? 'Saving...'
-                            : (isEditing ? 'Update' : 'Create'),
+                            ? l10n.saving
+                            : (isEditing ? l10n.update : l10n.create),
                       ),
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
@@ -1045,6 +1483,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   }
 
   Widget _buildColorDropdown() {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -1052,7 +1491,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       isExpanded: true,
       initialValue: _selectedColor,
       decoration: InputDecoration(
-        labelText: 'Color',
+        labelText: l10n.attributeColor,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
@@ -1105,6 +1544,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   }
 
   Widget _buildCategoryDropdown() {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -1112,7 +1552,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       isExpanded: true,
       initialValue: _selectedCategory,
       decoration: InputDecoration(
-        labelText: 'Category',
+        labelText: l10n.fieldCategory,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
@@ -1127,7 +1567,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         return DropdownMenuItem<String>(
           value: key,
           child: Text(
-            key,
+            _getCategoryTranslation(l10n, key),
             style: TextStyle(
               color: isDark ? Colors.grey[100] : Colors.black,
               fontWeight: FontWeight.w500,
@@ -1142,11 +1582,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           _productAttributes.clear();
         });
       },
-      validator: (value) => value == null ? 'Category is required' : null,
+      validator: (value) => value == null ? l10n.errorCategoryRequired : null,
     );
   }
 
   Widget _buildSubcategoryDropdown() {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     bool isEnabled = _selectedCategory != null;
@@ -1158,7 +1599,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       isExpanded: true,
       initialValue: _selectedSubcategory,
       decoration: InputDecoration(
-        labelText: 'Subcategory',
+        labelText: l10n.fieldSubcategory,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
@@ -1173,7 +1614,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         return DropdownMenuItem<String>(
           value: key,
           child: Text(
-            key,
+            _getSubcategoryTranslation(l10n, _selectedCategory!, key),
             style: TextStyle(
               color: isDark ? Colors.grey[100] : Colors.black,
               fontWeight: FontWeight.w500,
@@ -1605,6 +2046,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   }
 
   Widget _buildBrandDropdown() {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -1617,7 +2059,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               ? BrandOption.localBrand
               : _selectedBrand,
           decoration: InputDecoration(
-            labelText: 'Brand',
+            labelText: l10n.fieldBrand,
             prefixIcon: const Icon(Icons.store),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
@@ -1656,9 +2098,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             });
           },
           validator: (value) {
-            if (value == null) return 'Brand is required';
+            if (value == null) return l10n.errorBrandRequired;
             if (value.isLocal && (_customBrandName?.trim().isEmpty ?? true)) {
-              return 'Please enter your brand name';
+              return l10n.errorBrandNameRequired;
             }
             return null;
           },
