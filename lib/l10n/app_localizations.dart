@@ -2280,3 +2280,172 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
     'that was used.',
   );
 }
+
+  // Product Form Screen
+  String get productFormTitle;
+  String get productNameLabel;
+  String get productNameHint;
+  String get categoryLabel;
+  String get subcategoryLabel;
+  String get brandLabel;
+  String get priceLabel;
+  String get priceHint;
+  String get stockLabel;
+  String get stockHint;
+  String get descriptionLabel;
+  String get descriptionHint;
+  String get imagesLabel;
+  String get addImageBtn;
+  String get removeImageBtn;
+  String get saveBtn;
+  String get cancelBtn;
+  String get requiredFieldError;
+  String get invalidPriceError;
+  String get invalidStockError;
+  String get minOneImageError;
+
+  // Categories
+  String get categoryFashion;
+  String get categoryElectronics;
+  String get categoryLighting;
+  String get categoryHome;
+  String get categoryBeauty;
+  String get categorySports;
+
+  // Fashion Subcategories
+  String get subcatMenShirts;
+  String get subcatMenPants;
+  String get subcatWomenDresses;
+  String get subcatWomenTops;
+  String get subcatKidsClothing;
+  String get subcatShoes;
+  String get subcatAccessories;
+
+  // Electronics Subcategories
+  String get subcatSmartphones;
+  String get subcatLaptops;
+  String get subcatTablets;
+  String get subcatAudio;
+  String get subcatCameras;
+  String get subcatWearables;
+  String get subcatGaming;
+
+  // Lighting Subcategories
+  String get subcatBulbs;
+  String get subcatFixtures;
+  String get subcatSmartLights;
+  String get subcatOutdoorLights;
+  String get subcatCommercialLights;
+
+  // Home Subcategories
+  String get subcatFurniture;
+  String get subcatDecor;
+  String get subcatKitchen;
+  String get subcatBedding;
+  String get subcatStorage;
+  String get subcatBath;
+
+  // Beauty Subcategories
+  String get subcatSkincare;
+  String get subcatMakeup;
+  String get subcatHaircare;
+  String get subcatFragrance;
+  String get subcatPersonalCare;
+
+  // Sports Subcategories
+  String get subcatFitness;
+  String get subcatOutdoorSports;
+  String get subcatTeamSports;
+  String get subcatWaterSports;
+  String get subcatCycling;
+
+  // Product Attributes
+  String get attrColor;
+  String get attrSize;
+  String get attrMaterial;
+  String get attrWeight;
+  String get attrDimensions;
+  String get attrWarranty;
+  String get attrModel;
+  String get attrPowerConsumption;
+  String get attrBrightness;
+  String get attrColorTemperature;
+  String get attrDimmable;
+  String get attrEnergyRating;
+  String get attrRoomType;
+  String get attrStyle;
+  String get attrPattern;
+  String get attrSeason;
+  String get attrGender;
+  String get attrAgeGroup;
+  String get attrSkinType;
+  String get attrVolume;
+  String get attrSPF;
+  String get attrBatteryLife;
+  String get attrConnectivity;
+  String get attrScreenSize;
+  String get attrStorageCapacity;
+  String get attrProcessor;
+  String get attrRAM;
+  String get attrResolution;
+  String get attrFrameRate;
+  String get attrLensType;
+  String get attrOpticalZoom;
+  String get attrMegapixels;
+  String get attrSportType;
+  String get attrSkillLevel;
+  String get attrSurfaceType;
+  String get attrWaterResistance;
+  String get attrLoadCapacity;
+  String get attrAssemblyRequired;
+  String get attrCareInstructions;
+  String get attrCountryOfOrigin;
+  String get attrCertifications;
+  String get attrFeatures;
+
+  // Units
+  String get unitKg;
+  String get unitG;
+  String get unitCm;
+  String get unitInches;
+  String get unitWatts;
+  String get unitLumens;
+  String get unitKelvin;
+  String get unitHours;
+  String get unitMonths;
+  String get unitYears;
+  String get unitLiters;
+  String get unitML;
+  String get unitOz;
+
+  // Yes/No
+  String get yes;
+  String get no;
+
+  // Validation Messages
+  String get validateProductName;
+  String get validatePrice;
+  String get validateStock;
+  String get validateDescription;
+  String get validateBrand;
+  String get validateCategory;
+  String get validateSubcategory;
+
+  // Success Messages
+  String get productSavedSuccess;
+  String get productUpdatedSuccess;
+  String get imageAddedSuccess;
+  String get imageRemovedSuccess;
+
+  // Confirmation Dialogs
+  String get confirmDiscardChanges;
+  String get confirmDeleteImage;
+  String get unsavedChangesTitle;
+  String get discardBtn;
+  String get keepEditingBtn;
+
+  // Placeholders
+  String get selectOption;
+  String get selectCategory;
+  String get selectSubcategory;
+}

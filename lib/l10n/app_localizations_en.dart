@@ -1088,3 +1088,310 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get last_updated => 'Last updated';
 }
+
+  // Product Form Screen
+  @override
+  String get productFormTitle => 'Product Details';
+  @override
+  String get productNameLabel => 'Product Name';
+  @override
+  String get productNameHint => 'Enter product name';
+  @override
+  String get categoryLabel => 'Category';
+  @override
+  String get subcategoryLabel => 'Subcategory';
+  @override
+  String get brandLabel => 'Brand';
+  @override
+  String get priceLabel => 'Price';
+  @override
+  String get priceHint => '0.00';
+  @override
+  String get stockLabel => 'Stock Quantity';
+  @override
+  String get stockHint => '0';
+  @override
+  String get descriptionLabel => 'Description';
+  @override
+  String get descriptionHint => 'Enter product description';
+  @override
+  String get imagesLabel => 'Product Images';
+  @override
+  String get addImageBtn => 'Add Image';
+  @override
+  String get removeImageBtn => 'Remove';
+  @override
+  String get saveBtn => 'Save Product';
+  @override
+  String get cancelBtn => 'Cancel';
+  @override
+  String get requiredFieldError => 'This field is required';
+  @override
+  String get invalidPriceError => 'Please enter a valid price';
+  @override
+  String get invalidStockError => 'Please enter a valid stock quantity';
+  @override
+  String get minOneImageError => 'Please add at least one image';
+
+  // Categories
+  @override
+  String get categoryFashion => 'Fashion & Apparel';
+  @override
+  String get categoryElectronics => 'Electronics';
+  @override
+  String get categoryLighting => 'Lighting & Electrical';
+  @override
+  String get categoryHome => 'Home & Living';
+  @override
+  String get categoryBeauty => 'Beauty & Personal Care';
+  @override
+  String get categorySports => 'Sports & Outdoors';
+
+  // Fashion Subcategories
+  @override
+  String get subcatMenShirts => 'Men\'s Shirts';
+  @override
+  String get subcatMenPants => 'Men\'s Pants';
+  @override
+  String get subcatWomenDresses => 'Women\'s Dresses';
+  @override
+  String get subcatWomenTops => 'Women\'s Tops';
+  @override
+  String get subcatKidsClothing => 'Kids\' Clothing';
+  @override
+  String get subcatShoes => 'Shoes';
+  @override
+  String get subcatAccessories => 'Accessories';
+
+  // Electronics Subcategories
+  @override
+  String get subcatSmartphones => 'Smartphones';
+  @override
+  String get subcatLaptops => 'Laptops';
+  @override
+  String get subcatTablets => 'Tablets';
+  @override
+  String get subcatAudio => 'Audio Devices';
+  @override
+  String get subcatCameras => 'Cameras';
+  @override
+  String get subcatWearables => 'Wearables';
+  @override
+  String get subcatGaming => 'Gaming Consoles';
+
+  // Lighting Subcategories
+  @override
+  String get subcatBulbs => 'Bulbs & Tubes';
+  @override
+  String get subcatFixtures => 'Light Fixtures';
+  @override
+  String get subcatSmartLights => 'Smart Lighting';
+  @override
+  String get subcatOutdoorLights => 'Outdoor Lighting';
+  @override
+  String get subcatCommercialLights => 'Commercial Lighting';
+
+  // Home Subcategories
+  @override
+  String get subcatFurniture => 'Furniture';
+  @override
+  String get subcatDecor => 'Home Decor';
+  @override
+  String get subcatKitchen => 'Kitchen & Dining';
+  @override
+  String get subcatBedding => 'Bedding';
+  @override
+  String get subcatStorage => 'Storage & Organization';
+  @override
+  String get subcatBath => 'Bathroom Accessories';
+
+  // Beauty Subcategories
+  @override
+  String get subcatSkincare => 'Skincare';
+  @override
+  String get subcatMakeup => 'Makeup';
+  @override
+  String get subcatHaircare => 'Haircare';
+  @override
+  String get subcatFragrance => 'Fragrances';
+  @override
+  String get subcatPersonalCare => 'Personal Care Tools';
+
+  // Sports Subcategories
+  @override
+  String get subcatFitness => 'Fitness Equipment';
+  @override
+  String get subcatOutdoorSports => 'Outdoor Sports';
+  @override
+  String get subcatTeamSports => 'Team Sports';
+  @override
+  String get subcatWaterSports => 'Water Sports';
+  @override
+  String get subcatCycling => 'Cycling Gear';
+
+  // Product Attributes
+  @override
+  String get attrColor => 'Color';
+  @override
+  String get attrSize => 'Size';
+  @override
+  String get attrMaterial => 'Material';
+  @override
+  String get attrWeight => 'Weight';
+  @override
+  String get attrDimensions => 'Dimensions';
+  @override
+  String get attrWarranty => 'Warranty Period';
+  @override
+  String get attrModel => 'Model Number';
+  @override
+  String get attrPowerConsumption => 'Power Consumption';
+  @override
+  String get attrBrightness => 'Brightness Level';
+  @override
+  String get attrColorTemperature => 'Color Temperature';
+  @override
+  String get attrDimmable => 'Dimmable';
+  @override
+  String get attrEnergyRating => 'Energy Rating';
+  @override
+  String get attrRoomType => 'Recommended Room';
+  @override
+  String get attrStyle => 'Style';
+  @override
+  String get attrPattern => 'Pattern';
+  @override
+  String get attrSeason => 'Season';
+  @override
+  String get attrGender => 'Gender';
+  @override
+  String get attrAgeGroup => 'Age Group';
+  @override
+  String get attrSkinType => 'Skin Type';
+  @override
+  String get attrVolume => 'Volume';
+  @override
+  String get attrSPF => 'SPF Level';
+  @override
+  String get attrBatteryLife => 'Battery Life';
+  @override
+  String get attrConnectivity => 'Connectivity';
+  @override
+  String get attrScreenSize => 'Screen Size';
+  @override
+  String get attrStorageCapacity => 'Storage Capacity';
+  @override
+  String get attrProcessor => 'Processor';
+  @override
+  String get attrRAM => 'RAM';
+  @override
+  String get attrResolution => 'Resolution';
+  @override
+  String get attrFrameRate => 'Frame Rate';
+  @override
+  String get attrLensType => 'Lens Type';
+  @override
+  String get attrOpticalZoom => 'Optical Zoom';
+  @override
+  String get attrMegapixels => 'Megapixels';
+  @override
+  String get attrSportType => 'Sport Type';
+  @override
+  String get attrSkillLevel => 'Skill Level';
+  @override
+  String get attrSurfaceType => 'Surface Type';
+  @override
+  String get attrWaterResistance => 'Water Resistance';
+  @override
+  String get attrLoadCapacity => 'Load Capacity';
+  @override
+  String get attrAssemblyRequired => 'Assembly Required';
+  @override
+  String get attrCareInstructions => 'Care Instructions';
+  @override
+  String get attrCountryOfOrigin => 'Country of Origin';
+  @override
+  String get attrCertifications => 'Certifications';
+  @override
+  String get attrFeatures => 'Key Features';
+
+  // Units
+  @override
+  String get unitKg => 'kg';
+  @override
+  String get unitG => 'g';
+  @override
+  String get unitCm => 'cm';
+  @override
+  String get unitInches => 'inches';
+  @override
+  String get unitWatts => 'W';
+  @override
+  String get unitLumens => 'lumens';
+  @override
+  String get unitKelvin => 'K';
+  @override
+  String get unitHours => 'hours';
+  @override
+  String get unitMonths => 'months';
+  @override
+  String get unitYears => 'years';
+  @override
+  String get unitLiters => 'L';
+  @override
+  String get unitML => 'ml';
+  @override
+  String get unitOz => 'oz';
+
+  // Yes/No
+  @override
+  String get yes => 'Yes';
+  @override
+  String get no => 'No';
+
+  // Validation Messages
+  @override
+  String get validateProductName => 'Product name must be between 3 and 100 characters';
+  @override
+  String get validatePrice => 'Price must be greater than 0';
+  @override
+  String get validateStock => 'Stock cannot be negative';
+  @override
+  String get validateDescription => 'Description should be at least 10 characters';
+  @override
+  String get validateBrand => 'Brand name is required';
+  @override
+  String get validateCategory => 'Please select a category';
+  @override
+  String get validateSubcategory => 'Please select a subcategory';
+
+  // Success Messages
+  @override
+  String get productSavedSuccess => 'Product saved successfully!';
+  @override
+  String get productUpdatedSuccess => 'Product updated successfully!';
+  @override
+  String get imageAddedSuccess => 'Image added successfully';
+  @override
+  String get imageRemovedSuccess => 'Image removed';
+
+  // Confirmation Dialogs
+  @override
+  String get confirmDiscardChanges => 'Are you sure you want to discard changes?';
+  @override
+  String get confirmDeleteImage => 'Are you sure you want to delete this image?';
+  @override
+  String get unsavedChangesTitle => 'Unsaved Changes';
+  @override
+  String get discardBtn => 'Discard';
+  @override
+  String get keepEditingBtn => 'Keep Editing';
+
+  // Placeholders
+  @override
+  String get selectOption => 'Select an option';
+  @override
+  String get selectCategory => 'Select Category';
+  @override
+  String get selectSubcategory => 'Select Subcategory';
+}
