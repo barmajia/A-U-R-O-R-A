@@ -23,10 +23,12 @@ class _FactorySignupState extends State<FactorySignup> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
   final TextEditingController locationController = TextEditingController();
   final TextEditingController factoryNameController = TextEditingController();
-  final TextEditingController specializationController = TextEditingController();
+  final TextEditingController specializationController =
+      TextEditingController();
   final TextEditingController licenseUrlController = TextEditingController();
 
   final FocusNode _firstNameFocus = FocusNode();
@@ -128,18 +130,22 @@ class _FactorySignupState extends State<FactorySignup> {
 
         if (placemarks.isNotEmpty) {
           Placemark place = placemarks[0];
-          address = '${place.street ?? ''}, ${place.subLocality ?? ''}, ${place.locality ?? ''}'
-              .trim()
-              .replaceAll(RegExp(r',\s*,+'), ',');
+          address =
+              '${place.street ?? ''}, ${place.subLocality ?? ''}, ${place.locality ?? ''}'
+                  .trim()
+                  .replaceAll(RegExp(r',\s*,+'), ',');
           if (address.startsWith(',')) address = address.substring(1);
           if (address.isEmpty || address == ',') {
-            address = '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+            address =
+                '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
           }
         } else {
-          address = '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+          address =
+              '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
         }
       } catch (e) {
-        address = '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+        address =
+            '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
       }
 
       setState(() {
@@ -154,9 +160,9 @@ class _FactorySignupState extends State<FactorySignup> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to get location: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to get location: $e')));
       }
     }
   }
@@ -177,7 +183,9 @@ class _FactorySignupState extends State<FactorySignup> {
           hintText: 'Start typing to search',
           prefixIcon: const Icon(Icons.search),
           border: OutlineInputBorder(
-            borderSide: BorderSide(color: const Color(0xFF8C98A8).withValues(alpha: 0.2)),
+            borderSide: BorderSide(
+              color: const Color(0xFF8C98A8).withValues(alpha: 0.2),
+            ),
           ),
         ),
       ),
@@ -198,10 +206,26 @@ class _FactorySignupState extends State<FactorySignup> {
 
   String _getCurrencyByCountry(String countryCode) {
     const currencyMap = {
-      'US': 'USD', 'CA': 'CAD', 'MX': 'MXN',
-      'GB': 'GBP', 'IE': 'EUR', 'DE': 'EUR', 'FR': 'EUR', 'IT': 'EUR', 'ES': 'EUR',
-      'SA': 'SAR', 'AE': 'AED', 'QA': 'QAR', 'KW': 'KWD', 'BH': 'BHD', 'OM': 'OMR',
-      'EG': 'EGP', 'JO': 'JOD', 'IN': 'INR', 'CN': 'CNY', 'AU': 'AUD',
+      'US': 'USD',
+      'CA': 'CAD',
+      'MX': 'MXN',
+      'GB': 'GBP',
+      'IE': 'EUR',
+      'DE': 'EUR',
+      'FR': 'EUR',
+      'IT': 'EUR',
+      'ES': 'EUR',
+      'SA': 'SAR',
+      'AE': 'AED',
+      'QA': 'QAR',
+      'KW': 'KWD',
+      'BH': 'BHD',
+      'OM': 'OMR',
+      'EG': 'EGP',
+      'JO': 'JOD',
+      'IN': 'INR',
+      'CN': 'CNY',
+      'AU': 'AUD',
     };
     return currencyMap[countryCode.toUpperCase()] ?? 'EGP';
   }
@@ -234,7 +258,10 @@ class _FactorySignupState extends State<FactorySignup> {
         fourthnameController.text.trim(),
       ].where((name) => name.isNotEmpty).join(' ');
 
-      final phoneNumber = phoneController.text.trim().replaceAll(RegExp(r'[^\d]'), '');
+      final phoneNumber = phoneController.text.trim().replaceAll(
+        RegExp(r'[^\d]'),
+        '',
+      );
       final fullPhoneNumber = '+${_selectedCountry.phoneCode}$phoneNumber';
       final currency = _getCurrencyByCountry(_selectedCountry.countryCode);
       final latitude = _currentPosition?.latitude;
@@ -247,8 +274,11 @@ class _FactorySignupState extends State<FactorySignup> {
         fullName: fullName,
         accountType: accountType,
         phone: fullPhoneNumber,
-        location: _currentPosition != null ? locationController.text : 'Not provided',
+        location: _currentPosition != null
+            ? locationController.text
+            : 'Not provided',
         currency: currency,
+
         email: emailController.text.trim(),
         password: passwordController.text,
         latitude: latitude,
@@ -276,7 +306,10 @@ class _FactorySignupState extends State<FactorySignup> {
             _errorMessage = result.message;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result.message), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(result.message),
+              backgroundColor: Colors.red,
+            ),
           );
         }
         setState(() {
@@ -288,9 +321,9 @@ class _FactorySignupState extends State<FactorySignup> {
         setState(() {
           _errorMessage = e.toString();
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Signup failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Signup failed: $e')));
         setState(() {
           _isLoading = false;
         });
@@ -331,11 +364,14 @@ class _FactorySignupState extends State<FactorySignup> {
                   controller: factoryNameController,
                   decoration: InputDecoration(
                     labelText: 'Factory Name',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     prefixIcon: const Icon(Icons.business),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Factory name is required';
+                    if (value == null || value.isEmpty)
+                      return 'Factory name is required';
                     return null;
                   },
                 ),
@@ -346,11 +382,14 @@ class _FactorySignupState extends State<FactorySignup> {
                   controller: specializationController,
                   decoration: InputDecoration(
                     labelText: 'Specialization (e.g., Textiles, Electronics)',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     prefixIcon: const Icon(Icons.category),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Specialization is required';
+                    if (value == null || value.isEmpty)
+                      return 'Specialization is required';
                     return null;
                   },
                 ),
@@ -361,7 +400,9 @@ class _FactorySignupState extends State<FactorySignup> {
                   controller: licenseUrlController,
                   decoration: InputDecoration(
                     labelText: 'Factory License URL (optional)',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     prefixIcon: const Icon(Icons.description),
                   ),
                 ),
@@ -378,7 +419,10 @@ class _FactorySignupState extends State<FactorySignup> {
                 const SizedBox(height: 16),
 
                 // Full Name Fields
-                const Text('Full Name', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                const Text(
+                  'Full Name',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -388,12 +432,17 @@ class _FactorySignupState extends State<FactorySignup> {
                         controller: firstnameController,
                         focusNode: _firstNameFocus,
                         textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_secondNameFocus),
+                        onFieldSubmitted: (_) => FocusScope.of(
+                          context,
+                        ).requestFocus(_secondNameFocus),
                         decoration: InputDecoration(
                           labelText: 'First Name',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                        validator: (value) =>
+                            value == null || value.isEmpty ? 'Required' : null,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -402,10 +451,14 @@ class _FactorySignupState extends State<FactorySignup> {
                         controller: secondnameController,
                         focusNode: _secondNameFocus,
                         textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_thirdNameFocus),
+                        onFieldSubmitted: (_) => FocusScope.of(
+                          context,
+                        ).requestFocus(_thirdNameFocus),
                         decoration: InputDecoration(
                           labelText: 'Second',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -419,10 +472,14 @@ class _FactorySignupState extends State<FactorySignup> {
                         controller: thirdnameController,
                         focusNode: _thirdNameFocus,
                         textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_fourthNameFocus),
+                        onFieldSubmitted: (_) => FocusScope.of(
+                          context,
+                        ).requestFocus(_fourthNameFocus),
                         decoration: InputDecoration(
                           labelText: 'Third',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -432,10 +489,13 @@ class _FactorySignupState extends State<FactorySignup> {
                         controller: fourthnameController,
                         focusNode: _fourthNameFocus,
                         textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_phoneFocus),
+                        onFieldSubmitted: (_) =>
+                            FocusScope.of(context).requestFocus(_phoneFocus),
                         decoration: InputDecoration(
                           labelText: 'Fourth',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -444,7 +504,10 @@ class _FactorySignupState extends State<FactorySignup> {
                 const SizedBox(height: 16),
 
                 // Phone Number with Country Picker
-                const Text('Phone Number', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                const Text(
+                  'Phone Number',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -454,8 +517,13 @@ class _FactorySignupState extends State<FactorySignup> {
                         onTap: _showCountryPicker,
                         child: InputDecorator(
                           decoration: InputDecoration(
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 16,
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -479,10 +547,13 @@ class _FactorySignupState extends State<FactorySignup> {
                         focusNode: _phoneFocus,
                         keyboardType: TextInputType.phone,
                         textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_emailFocus),
+                        onFieldSubmitted: (_) =>
+                            FocusScope.of(context).requestFocus(_emailFocus),
                         decoration: InputDecoration(
                           labelText: 'Phone Number',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         validator: _validatePhone,
                       ),
@@ -497,15 +568,20 @@ class _FactorySignupState extends State<FactorySignup> {
                   focusNode: _emailFocus,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_passwordFocus),
+                  onFieldSubmitted: (_) =>
+                      FocusScope.of(context).requestFocus(_passwordFocus),
                   decoration: InputDecoration(
                     labelText: 'Email',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     prefixIcon: const Icon(Icons.email),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Email is required';
-                    if (!value.contains('@')) return 'Please enter a valid email';
+                    if (value == null || value.isEmpty)
+                      return 'Email is required';
+                    if (!value.contains('@'))
+                      return 'Please enter a valid email';
                     return null;
                   },
                 ),
@@ -517,19 +593,30 @@ class _FactorySignupState extends State<FactorySignup> {
                   focusNode: _passwordFocus,
                   obscureText: _obscurePassword,
                   textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_confirmPasswordFocus),
+                  onFieldSubmitted: (_) => FocusScope.of(
+                    context,
+                  ).requestFocus(_confirmPasswordFocus),
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Password is required';
-                    if (value.length < 6) return 'Password must be at least 6 characters';
+                    if (value == null || value.isEmpty)
+                      return 'Password is required';
+                    if (value.length < 6)
+                      return 'Password must be at least 6 characters';
                     return null;
                   },
                 ),
@@ -543,15 +630,25 @@ class _FactorySignupState extends State<FactorySignup> {
                   textInputAction: TextInputAction.done,
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
-                      onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () => setState(
+                        () =>
+                            _obscureConfirmPassword = !_obscureConfirmPassword,
+                      ),
                     ),
                   ),
                   validator: (value) {
-                    if (value != passwordController.text) return 'Passwords do not match';
+                    if (value != passwordController.text)
+                      return 'Passwords do not match';
                     return null;
                   },
                 ),
@@ -563,14 +660,18 @@ class _FactorySignupState extends State<FactorySignup> {
                   readOnly: true,
                   decoration: InputDecoration(
                     labelText: 'Location',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     prefixIcon: const Icon(Icons.location_on),
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.my_location),
                       onPressed: _getCurrentLocation,
                     ),
                   ),
-                  validator: (value) => value == null || value.isEmpty ? 'Location is required' : null,
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Location is required'
+                      : null,
                 ),
                 const SizedBox(height: 24),
 
@@ -587,7 +688,12 @@ class _FactorySignupState extends State<FactorySignup> {
                       children: [
                         Icon(Icons.error_outline, color: Colors.red.shade700),
                         const SizedBox(width: 8),
-                        Expanded(child: Text(_errorMessage!, style: TextStyle(color: Colors.red.shade700))),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(color: Colors.red.shade700),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -599,7 +705,9 @@ class _FactorySignupState extends State<FactorySignup> {
                   onPressed: _isLoading ? null : _handleSignup,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: _isLoading
                       ? const SizedBox(
@@ -607,7 +715,10 @@ class _FactorySignupState extends State<FactorySignup> {
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Create Factory Account', style: TextStyle(fontSize: 16)),
+                      : const Text(
+                          'Create Factory Account',
+                          style: TextStyle(fontSize: 16),
+                        ),
                 ),
                 const SizedBox(height: 16),
 
