@@ -3,23 +3,12 @@
 .dart_tool/
 .packages
 pubspec.lock
-build/
 *.g.dart
 *.freezed.dart
 
-# Dependencies
-vendor/
-node_modules/
-
-# Logs
-*.log
-**/logs
-
-# Environment variables
-.env
-.env.local
-.env.*
-!.env.example
+# Build artifacts
+build/
+**/ios/Flutter/.last_build_id
 
 # IDE files
 .vscode/
@@ -27,20 +16,19 @@ node_modules/
 *.swp
 *.swo
 
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Dependencies
+vendor/
+.externalNativeBuild/
+
 # OS generated files
 .DS_Store
 Thumbs.db
-
-# Build outputs
-dist/
-target/
-
-# Python related (if any mixed projects)
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-venv/
-.venv/
 ```
