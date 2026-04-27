@@ -18,6 +18,7 @@ import 'package:aurora/services/error_handler.dart';
 /// Supports offline-first architecture with Supabase sync
 class FactoryDB extends ChangeNotifier {
   Database? _db;
+  bool _isInitialized = false;
   static const String _tableName = 'factories';
   static const String _dbFile = 'aurora_factories.db';
   final ErrorHandler _errorHandler = ErrorHandler();

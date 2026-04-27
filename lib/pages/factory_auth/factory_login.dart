@@ -41,7 +41,7 @@ class _FactoryLoginState extends State<FactoryLogin> {
     try {
       final supabaseProvider = context.read<SupabaseProvider>();
 
-      final result = await supabaseProvider.signIn(
+      final result = await supabaseProvider.login(
         email: emailController.text.trim(),
         password: passwordController.text,
       );

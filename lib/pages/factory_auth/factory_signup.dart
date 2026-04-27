@@ -268,24 +268,18 @@ class _FactorySignupState extends State<FactorySignup> {
       final longitude = _currentPosition?.longitude;
 
       // Create factory account type
-      final accountType = AccountType.factory;
+      final accountType = AccountType.seller;
 
-      final result = await supabaseProvider.signup(
+final result = await supabaseProvider.signup(
         fullName: fullName,
         accountType: accountType,
         phone: fullPhoneNumber,
-        location: _currentPosition != null
-            ? locationController.text
-            : 'Not provided',
+        location: _currentPosition != null ? locationController.text : 'Not provided',
         currency: currency,
-
         email: emailController.text.trim(),
         password: passwordController.text,
         latitude: latitude,
         longitude: longitude,
-        factoryName: factoryNameController.text.trim(),
-        specialization: specializationController.text.trim(),
-        licenseUrl: licenseUrlController.text.trim(),
       );
 
       if (mounted) {
