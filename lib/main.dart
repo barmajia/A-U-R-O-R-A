@@ -30,6 +30,8 @@ import 'package:aurora/backend/products_db.dart';
 import 'package:aurora/config/supabase_config.dart';
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/login.dart';
+import 'package:aurora/pages/welcome_page.dart';
+import 'package:aurora/pages/factory_dashboard_page.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/services/auth_provider.dart';
 import 'package:aurora/services/product_provider.dart';
@@ -173,7 +175,12 @@ class Aurora extends StatelessWidget {
       supportedLocales: const [Locale('en'), Locale('ar')],
       locale: locale,
       home: _buildHomeWidget(context, authProvider),
-      routes: {'/login': (context) => const Login(), '/home': (context) => const Homepage()},
+      routes: {
+        '/login': (context) => const Login(), 
+        '/home': (context) => const Homepage(),
+        '/welcome': (context) => const WelcomePage(),
+        '/factory-dashboard': (context) => const FactoryDashboardPage(),
+      },
     );
   }
 
@@ -182,6 +189,12 @@ class Aurora extends StatelessWidget {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return authProvider.isLoggedIn ? const Homepage() : const Login();
+    // For now, show welcome page for new users or if not logged in
+    // This will be enhanced later with proper first-time user detection
+    if (!authProvider.isLoggedIn) {
+      return const WelcomePage();
+    }
+    
+    return const Homepage();
   }
 }
