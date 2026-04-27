@@ -167,7 +167,7 @@ class ProductsDB extends ChangeNotifier {
 
       final values = _productToValues(product);
       stmt.execute(values);
-      stmt.dispose();
+      stmt.close();
 
       notifyListeners();
       debugPrint('[ProductsDB] Added product: ${product.asin}');
@@ -226,7 +226,7 @@ class ProductsDB extends ChangeNotifier {
         product.asin!, // WHERE clause
       ];
       stmt.execute(values);
-      stmt.dispose();
+      stmt.close();
 
       notifyListeners();
       debugPrint('[ProductsDB] Updated product: ${product.asin}');

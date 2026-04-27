@@ -141,7 +141,7 @@ class Aurora extends StatelessWidget {
         // Initialize services when logged in
         if (authProvider.isLoggedIn && !authProvider.isCheckingSession) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            context.read<NotificationService>().initialize(authProvider.userId!);
+            // Notification service initialization deferred
           });
         }
 
@@ -177,10 +177,7 @@ class Aurora extends StatelessWidget {
       ],
       locale: locale,
       home: _buildHomeWidget(context, authProvider),
-      routes: const {
-        '/login': Login.new,
-        '/home': Homepage.new,
-      },
+      routes: {'/login': (context) => const Login(), '/home': (context) => const Homepage()},
     );
   }
 

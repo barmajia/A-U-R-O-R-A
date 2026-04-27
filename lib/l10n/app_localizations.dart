@@ -2245,6 +2245,936 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last updated'**
   String get last_updated;
+
+  /// No description provided for @productNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Product Name'**
+  String get productNameLabel;
+
+  /// No description provided for @productNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter product name'**
+  String get productNameHint;
+
+  /// No description provided for @categoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get categoryLabel;
+
+  /// No description provided for @subcategoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Subcategory'**
+  String get subcategoryLabel;
+
+  /// No description provided for @brandLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Brand'**
+  String get brandLabel;
+
+  /// No description provided for @priceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get priceLabel;
+
+  /// No description provided for @priceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'0.00'**
+  String get priceHint;
+
+  /// No description provided for @stockLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock Quantity'**
+  String get stockLabel;
+
+  /// No description provided for @stockHint.
+  ///
+  /// In en, this message translates to:
+  /// **'0'**
+  String get stockHint;
+
+  /// No description provided for @descriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get descriptionLabel;
+
+  /// No description provided for @descriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter product description'**
+  String get descriptionHint;
+
+  /// No description provided for @imagesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Product Images'**
+  String get imagesLabel;
+
+  /// No description provided for @addImageBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Image'**
+  String get addImageBtn;
+
+  /// No description provided for @removeImageBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get removeImageBtn;
+
+  /// No description provided for @saveBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Product'**
+  String get saveBtn;
+
+  /// No description provided for @cancelBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelBtn;
+
+  /// No description provided for @requiredFieldError.
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get requiredFieldError;
+
+  /// No description provided for @invalidPriceError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid price'**
+  String get invalidPriceError;
+
+  /// No description provided for @invalidStockError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid stock quantity'**
+  String get invalidStockError;
+
+  /// No description provided for @minOneImageError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please add at least one image'**
+  String get minOneImageError;
+
+  /// No description provided for @categoryFashion.
+  ///
+  /// In en, this message translates to:
+  /// **'Fashion & Apparel'**
+  String get categoryFashion;
+
+  /// No description provided for @categoryElectronics.
+  ///
+  /// In en, this message translates to:
+  /// **'Electronics'**
+  String get categoryElectronics;
+
+  /// No description provided for @categoryLighting.
+  ///
+  /// In en, this message translates to:
+  /// **'Lighting & Electrical'**
+  String get categoryLighting;
+
+  /// No description provided for @categoryHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home & Living'**
+  String get categoryHome;
+
+  /// No description provided for @categoryBeauty.
+  ///
+  /// In en, this message translates to:
+  /// **'Beauty & Personal Care'**
+  String get categoryBeauty;
+
+  /// No description provided for @categorySports.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports & Outdoors'**
+  String get categorySports;
+
+  /// No description provided for @subcatMenShirts.
+  ///
+  /// In en, this message translates to:
+  /// **'Men\'s Shirts'**
+  String get subcatMenShirts;
+
+  /// No description provided for @subcatMenPants.
+  ///
+  /// In en, this message translates to:
+  /// **'Men\'s Pants'**
+  String get subcatMenPants;
+
+  /// No description provided for @subcatWomenDresses.
+  ///
+  /// In en, this message translates to:
+  /// **'Women\'s Dresses'**
+  String get subcatWomenDresses;
+
+  /// No description provided for @subcatWomenTops.
+  ///
+  /// In en, this message translates to:
+  /// **'Women\'s Tops'**
+  String get subcatWomenTops;
+
+  /// No description provided for @subcatKidsClothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Kids\' Clothing'**
+  String get subcatKidsClothing;
+
+  /// No description provided for @subcatShoes.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoes'**
+  String get subcatShoes;
+
+  /// No description provided for @subcatAccessories.
+  ///
+  /// In en, this message translates to:
+  /// **'Accessories'**
+  String get subcatAccessories;
+
+  /// No description provided for @subcatSmartphones.
+  ///
+  /// In en, this message translates to:
+  /// **'Smartphones'**
+  String get subcatSmartphones;
+
+  /// No description provided for @subcatLaptops.
+  ///
+  /// In en, this message translates to:
+  /// **'Laptops'**
+  String get subcatLaptops;
+
+  /// No description provided for @subcatTablets.
+  ///
+  /// In en, this message translates to:
+  /// **'Tablets'**
+  String get subcatTablets;
+
+  /// No description provided for @subcatAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio Devices'**
+  String get subcatAudio;
+
+  /// No description provided for @subcatCameras.
+  ///
+  /// In en, this message translates to:
+  /// **'Cameras'**
+  String get subcatCameras;
+
+  /// No description provided for @subcatWearables.
+  ///
+  /// In en, this message translates to:
+  /// **'Wearables'**
+  String get subcatWearables;
+
+  /// No description provided for @subcatGaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Gaming Consoles'**
+  String get subcatGaming;
+
+  /// No description provided for @subcatBulbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulbs & Tubes'**
+  String get subcatBulbs;
+
+  /// No description provided for @subcatFixtures.
+  ///
+  /// In en, this message translates to:
+  /// **'Light Fixtures'**
+  String get subcatFixtures;
+
+  /// No description provided for @subcatSmartLights.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Lighting'**
+  String get subcatSmartLights;
+
+  /// No description provided for @subcatOutdoorLights.
+  ///
+  /// In en, this message translates to:
+  /// **'Outdoor Lighting'**
+  String get subcatOutdoorLights;
+
+  /// No description provided for @subcatCommercialLights.
+  ///
+  /// In en, this message translates to:
+  /// **'Commercial Lighting'**
+  String get subcatCommercialLights;
+
+  /// No description provided for @subcatFurniture.
+  ///
+  /// In en, this message translates to:
+  /// **'Furniture'**
+  String get subcatFurniture;
+
+  /// No description provided for @subcatDecor.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Decor'**
+  String get subcatDecor;
+
+  /// No description provided for @subcatKitchen.
+  ///
+  /// In en, this message translates to:
+  /// **'Kitchen & Dining'**
+  String get subcatKitchen;
+
+  /// No description provided for @subcatBedding.
+  ///
+  /// In en, this message translates to:
+  /// **'Bedding'**
+  String get subcatBedding;
+
+  /// No description provided for @subcatStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage & Organization'**
+  String get subcatStorage;
+
+  /// No description provided for @subcatBath.
+  ///
+  /// In en, this message translates to:
+  /// **'Bathroom Accessories'**
+  String get subcatBath;
+
+  /// No description provided for @subcatSkincare.
+  ///
+  /// In en, this message translates to:
+  /// **'Skincare'**
+  String get subcatSkincare;
+
+  /// No description provided for @subcatMakeup.
+  ///
+  /// In en, this message translates to:
+  /// **'Makeup'**
+  String get subcatMakeup;
+
+  /// No description provided for @subcatHaircare.
+  ///
+  /// In en, this message translates to:
+  /// **'Haircare'**
+  String get subcatHaircare;
+
+  /// No description provided for @subcatFragrance.
+  ///
+  /// In en, this message translates to:
+  /// **'Fragrances'**
+  String get subcatFragrance;
+
+  /// No description provided for @subcatPersonalCare.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Care Tools'**
+  String get subcatPersonalCare;
+
+  /// No description provided for @subcatFitness.
+  ///
+  /// In en, this message translates to:
+  /// **'Fitness Equipment'**
+  String get subcatFitness;
+
+  /// No description provided for @subcatOutdoorSports.
+  ///
+  /// In en, this message translates to:
+  /// **'Outdoor Sports'**
+  String get subcatOutdoorSports;
+
+  /// No description provided for @subcatTeamSports.
+  ///
+  /// In en, this message translates to:
+  /// **'Team Sports'**
+  String get subcatTeamSports;
+
+  /// No description provided for @subcatWaterSports.
+  ///
+  /// In en, this message translates to:
+  /// **'Water Sports'**
+  String get subcatWaterSports;
+
+  /// No description provided for @subcatCycling.
+  ///
+  /// In en, this message translates to:
+  /// **'Cycling Gear'**
+  String get subcatCycling;
+
+  /// No description provided for @attrColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get attrColor;
+
+  /// No description provided for @attrSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get attrSize;
+
+  /// No description provided for @attrMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material'**
+  String get attrMaterial;
+
+  /// No description provided for @attrWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get attrWeight;
+
+  /// No description provided for @attrDimensions.
+  ///
+  /// In en, this message translates to:
+  /// **'Dimensions'**
+  String get attrDimensions;
+
+  /// No description provided for @attrWarranty.
+  ///
+  /// In en, this message translates to:
+  /// **'Warranty Period'**
+  String get attrWarranty;
+
+  /// No description provided for @attrModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model Number'**
+  String get attrModel;
+
+  /// No description provided for @attrPowerConsumption.
+  ///
+  /// In en, this message translates to:
+  /// **'Power Consumption'**
+  String get attrPowerConsumption;
+
+  /// No description provided for @attrBrightness.
+  ///
+  /// In en, this message translates to:
+  /// **'Brightness Level'**
+  String get attrBrightness;
+
+  /// No description provided for @attrColorTemperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Color Temperature'**
+  String get attrColorTemperature;
+
+  /// No description provided for @attrDimmable.
+  ///
+  /// In en, this message translates to:
+  /// **'Dimmable'**
+  String get attrDimmable;
+
+  /// No description provided for @attrEnergyRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy Rating'**
+  String get attrEnergyRating;
+
+  /// No description provided for @attrRoomType.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended Room'**
+  String get attrRoomType;
+
+  /// No description provided for @attrStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Style'**
+  String get attrStyle;
+
+  /// No description provided for @attrPattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Pattern'**
+  String get attrPattern;
+
+  /// No description provided for @attrSeason.
+  ///
+  /// In en, this message translates to:
+  /// **'Season'**
+  String get attrSeason;
+
+  /// No description provided for @attrGender.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get attrGender;
+
+  /// No description provided for @attrAgeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Age Group'**
+  String get attrAgeGroup;
+
+  /// No description provided for @attrSkinType.
+  ///
+  /// In en, this message translates to:
+  /// **'Skin Type'**
+  String get attrSkinType;
+
+  /// No description provided for @attrVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume'**
+  String get attrVolume;
+
+  /// No description provided for @attrSPF.
+  ///
+  /// In en, this message translates to:
+  /// **'SPF Level'**
+  String get attrSPF;
+
+  /// No description provided for @attrBatteryLife.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery Life'**
+  String get attrBatteryLife;
+
+  /// No description provided for @attrConnectivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Connectivity'**
+  String get attrConnectivity;
+
+  /// No description provided for @attrScreenSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen Size'**
+  String get attrScreenSize;
+
+  /// No description provided for @attrStorageCapacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage Capacity'**
+  String get attrStorageCapacity;
+
+  /// No description provided for @attrProcessor.
+  ///
+  /// In en, this message translates to:
+  /// **'Processor'**
+  String get attrProcessor;
+
+  /// No description provided for @attrRAM.
+  ///
+  /// In en, this message translates to:
+  /// **'RAM'**
+  String get attrRAM;
+
+  /// No description provided for @attrResolution.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolution'**
+  String get attrResolution;
+
+  /// No description provided for @attrFrameRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Frame Rate'**
+  String get attrFrameRate;
+
+  /// No description provided for @attrLensType.
+  ///
+  /// In en, this message translates to:
+  /// **'Lens Type'**
+  String get attrLensType;
+
+  /// No description provided for @attrOpticalZoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Optical Zoom'**
+  String get attrOpticalZoom;
+
+  /// No description provided for @attrMegapixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Megapixels'**
+  String get attrMegapixels;
+
+  /// No description provided for @attrSportType.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport Type'**
+  String get attrSportType;
+
+  /// No description provided for @attrSkillLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill Level'**
+  String get attrSkillLevel;
+
+  /// No description provided for @attrSurfaceType.
+  ///
+  /// In en, this message translates to:
+  /// **'Surface Type'**
+  String get attrSurfaceType;
+
+  /// No description provided for @attrWaterResistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Water Resistance'**
+  String get attrWaterResistance;
+
+  /// No description provided for @attrLoadCapacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Load Capacity'**
+  String get attrLoadCapacity;
+
+  /// No description provided for @attrAssemblyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Assembly Required'**
+  String get attrAssemblyRequired;
+
+  /// No description provided for @attrCareInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Care Instructions'**
+  String get attrCareInstructions;
+
+  /// No description provided for @attrCountryOfOrigin.
+  ///
+  /// In en, this message translates to:
+  /// **'Country of Origin'**
+  String get attrCountryOfOrigin;
+
+  /// No description provided for @attrCertifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Certifications'**
+  String get attrCertifications;
+
+  /// No description provided for @attrFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Key Features'**
+  String get attrFeatures;
+
+  /// No description provided for @unitKg.
+  ///
+  /// In en, this message translates to:
+  /// **'kg'**
+  String get unitKg;
+
+  /// No description provided for @unitG.
+  ///
+  /// In en, this message translates to:
+  /// **'g'**
+  String get unitG;
+
+  /// No description provided for @unitCm.
+  ///
+  /// In en, this message translates to:
+  /// **'cm'**
+  String get unitCm;
+
+  /// No description provided for @unitInches.
+  ///
+  /// In en, this message translates to:
+  /// **'inches'**
+  String get unitInches;
+
+  /// No description provided for @unitWatts.
+  ///
+  /// In en, this message translates to:
+  /// **'W'**
+  String get unitWatts;
+
+  /// No description provided for @unitLumens.
+  ///
+  /// In en, this message translates to:
+  /// **'lumens'**
+  String get unitLumens;
+
+  /// No description provided for @unitKelvin.
+  ///
+  /// In en, this message translates to:
+  /// **'K'**
+  String get unitKelvin;
+
+  /// No description provided for @unitHours.
+  ///
+  /// In en, this message translates to:
+  /// **'hours'**
+  String get unitHours;
+
+  /// No description provided for @unitMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'months'**
+  String get unitMonths;
+
+  /// No description provided for @unitYears.
+  ///
+  /// In en, this message translates to:
+  /// **'years'**
+  String get unitYears;
+
+  /// No description provided for @unitLiters.
+  ///
+  /// In en, this message translates to:
+  /// **'L'**
+  String get unitLiters;
+
+  /// No description provided for @unitML.
+  ///
+  /// In en, this message translates to:
+  /// **'ml'**
+  String get unitML;
+
+  /// No description provided for @unitOz.
+  ///
+  /// In en, this message translates to:
+  /// **'oz'**
+  String get unitOz;
+
+  /// No description provided for @validateProductName.
+  ///
+  /// In en, this message translates to:
+  /// **'Product name must be between 3 and 100 characters'**
+  String get validateProductName;
+
+  /// No description provided for @validatePrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Price must be greater than 0'**
+  String get validatePrice;
+
+  /// No description provided for @validateStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock cannot be negative'**
+  String get validateStock;
+
+  /// No description provided for @validateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description should be at least 10 characters'**
+  String get validateDescription;
+
+  /// No description provided for @validateBrand.
+  ///
+  /// In en, this message translates to:
+  /// **'Brand name is required'**
+  String get validateBrand;
+
+  /// No description provided for @validateCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a category'**
+  String get validateCategory;
+
+  /// No description provided for @validateSubcategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a subcategory'**
+  String get validateSubcategory;
+
+  /// No description provided for @productSavedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Product saved successfully!'**
+  String get productSavedSuccess;
+
+  /// No description provided for @productUpdatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Product updated successfully!'**
+  String get productUpdatedSuccess;
+
+  /// No description provided for @imageAddedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Image added successfully'**
+  String get imageAddedSuccess;
+
+  /// No description provided for @imageRemovedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Image removed'**
+  String get imageRemovedSuccess;
+
+  /// No description provided for @confirmDiscardChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to discard changes?'**
+  String get confirmDiscardChanges;
+
+  /// No description provided for @confirmDeleteImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this image?'**
+  String get confirmDeleteImage;
+
+  /// No description provided for @unsavedChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsaved Changes'**
+  String get unsavedChangesTitle;
+
+  /// No description provided for @discardBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get discardBtn;
+
+  /// No description provided for @keepEditingBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Editing'**
+  String get keepEditingBtn;
+
+  /// No description provided for @selectOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an option'**
+  String get selectOption;
+
+  /// No description provided for @selectCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Category'**
+  String get selectCategory;
+
+  /// No description provided for @selectSubcategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Subcategory'**
+  String get selectSubcategory;
+
+  /// No description provided for @addProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Product'**
+  String get addProduct;
+
+  /// No description provided for @editProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Product'**
+  String get editProduct;
+
+  /// No description provided for @productFormTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Product Title'**
+  String get productFormTitle;
+
+  /// No description provided for @productFormTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter product title'**
+  String get productFormTitleHint;
+
+  /// No description provided for @fieldPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get fieldPrice;
+
+  /// No description provided for @fieldCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get fieldCurrency;
+
+  /// No description provided for @fieldQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get fieldQuantity;
+
+  /// No description provided for @fieldCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get fieldCategory;
+
+  /// No description provided for @fieldSubcategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Subcategory'**
+  String get fieldSubcategory;
+
+  /// No description provided for @fieldBrand.
+  ///
+  /// In en, this message translates to:
+  /// **'Brand'**
+  String get fieldBrand;
+
+  /// No description provided for @attributeColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get attributeColor;
+
+  /// No description provided for @saving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get saving;
+
+  /// No description provided for @update.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get update;
+
+  /// No description provided for @create.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get create;
+
+  /// No description provided for @syncPendingItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync pending items'**
+  String get syncPendingItems;
+
+  /// No description provided for @errorTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Product title is required'**
+  String get errorTitleRequired;
+
+  /// No description provided for @errorRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get errorRequired;
+
+  /// No description provided for @errorCategoryRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a category'**
+  String get errorCategoryRequired;
+
+  /// No description provided for @errorBrandRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select or create a brand'**
+  String get errorBrandRequired;
+
+  /// No description provided for @errorBrandNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Brand name is required'**
+  String get errorBrandNameRequired;
 }
 
 class _AppLocalizationsDelegate
@@ -2279,197 +3209,4 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
     'that was used.',
   );
-}
-
-  // Product Form Screen
-  String get productFormTitle;
-  String get productNameLabel;
-  String get productNameHint;
-  String get categoryLabel;
-  String get subcategoryLabel;
-  String get brandLabel;
-  String get priceLabel;
-  String get priceHint;
-  String get stockLabel;
-  String get stockHint;
-  String get descriptionLabel;
-  String get descriptionHint;
-  String get imagesLabel;
-  String get addImageBtn;
-  String get removeImageBtn;
-  String get saveBtn;
-  String get cancelBtn;
-  String get requiredFieldError;
-  String get invalidPriceError;
-  String get invalidStockError;
-  String get minOneImageError;
-
-  // Categories
-  String get categoryFashion;
-  String get categoryElectronics;
-  String get categoryLighting;
-  String get categoryHome;
-  String get categoryBeauty;
-  String get categorySports;
-
-  // Fashion Subcategories
-  String get subcatMenShirts;
-  String get subcatMenPants;
-  String get subcatWomenDresses;
-  String get subcatWomenTops;
-  String get subcatKidsClothing;
-  String get subcatShoes;
-  String get subcatAccessories;
-
-  // Electronics Subcategories
-  String get subcatSmartphones;
-  String get subcatLaptops;
-  String get subcatTablets;
-  String get subcatAudio;
-  String get subcatCameras;
-  String get subcatWearables;
-  String get subcatGaming;
-
-  // Lighting Subcategories
-  String get subcatBulbs;
-  String get subcatFixtures;
-  String get subcatSmartLights;
-  String get subcatOutdoorLights;
-  String get subcatCommercialLights;
-
-  // Home Subcategories
-  String get subcatFurniture;
-  String get subcatDecor;
-  String get subcatKitchen;
-  String get subcatBedding;
-  String get subcatStorage;
-  String get subcatBath;
-
-  // Beauty Subcategories
-  String get subcatSkincare;
-  String get subcatMakeup;
-  String get subcatHaircare;
-  String get subcatFragrance;
-  String get subcatPersonalCare;
-
-  // Sports Subcategories
-  String get subcatFitness;
-  String get subcatOutdoorSports;
-  String get subcatTeamSports;
-  String get subcatWaterSports;
-  String get subcatCycling;
-
-  // Product Attributes
-  String get attrColor;
-  String get attrSize;
-  String get attrMaterial;
-  String get attrWeight;
-  String get attrDimensions;
-  String get attrWarranty;
-  String get attrModel;
-  String get attrPowerConsumption;
-  String get attrBrightness;
-  String get attrColorTemperature;
-  String get attrDimmable;
-  String get attrEnergyRating;
-  String get attrRoomType;
-  String get attrStyle;
-  String get attrPattern;
-  String get attrSeason;
-  String get attrGender;
-  String get attrAgeGroup;
-  String get attrSkinType;
-  String get attrVolume;
-  String get attrSPF;
-  String get attrBatteryLife;
-  String get attrConnectivity;
-  String get attrScreenSize;
-  String get attrStorageCapacity;
-  String get attrProcessor;
-  String get attrRAM;
-  String get attrResolution;
-  String get attrFrameRate;
-  String get attrLensType;
-  String get attrOpticalZoom;
-  String get attrMegapixels;
-  String get attrSportType;
-  String get attrSkillLevel;
-  String get attrSurfaceType;
-  String get attrWaterResistance;
-  String get attrLoadCapacity;
-  String get attrAssemblyRequired;
-  String get attrCareInstructions;
-  String get attrCountryOfOrigin;
-  String get attrCertifications;
-  String get attrFeatures;
-
-  // Units
-  String get unitKg;
-  String get unitG;
-  String get unitCm;
-  String get unitInches;
-  String get unitWatts;
-  String get unitLumens;
-  String get unitKelvin;
-  String get unitHours;
-  String get unitMonths;
-  String get unitYears;
-  String get unitLiters;
-  String get unitML;
-  String get unitOz;
-
-  // Yes/No
-  String get yes;
-  String get no;
-
-  // Validation Messages
-  String get validateProductName;
-  String get validatePrice;
-  String get validateStock;
-  String get validateDescription;
-  String get validateBrand;
-  String get validateCategory;
-  String get validateSubcategory;
-
-  // Success Messages
-  String get productSavedSuccess;
-  String get productUpdatedSuccess;
-  String get imageAddedSuccess;
-  String get imageRemovedSuccess;
-
-  // Confirmation Dialogs
-  String get confirmDiscardChanges;
-  String get confirmDeleteImage;
-  String get unsavedChangesTitle;
-  String get discardBtn;
-  String get keepEditingBtn;
-
-  // Placeholders
-  String get selectOption;
-  String get selectCategory;
-  String get selectSubcategory;
-
-  // Product Form
-  String get addProduct;
-  String get editProduct;
-  String get productFormTitle;
-  String get productFormTitleHint;
-  String get fieldPrice;
-  String get fieldCurrency;
-  String get fieldQuantity;
-  String get fieldCategory;
-  String get fieldSubcategory;
-  String get fieldBrand;
-  String get attributeColor;
-  String get saving;
-  String get update;
-  String get create;
-  String get syncPendingItems;
-
-  // Validation Errors
-  String get errorTitleRequired;
-  String get errorRequired;
-  String get errorCategoryRequired;
-  String get errorBrandRequired;
-  String get errorBrandNameRequired;
 }

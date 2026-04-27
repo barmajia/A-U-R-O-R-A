@@ -193,7 +193,7 @@ class OfflineQueueService {
         '[OfflineQueue] Enqueued operation: ${operation.operationType} (ID: $id)',
       );
 
-      stmt.dispose();
+      stmt.close();
 
       // Try to sync immediately if online
       await trySync();
@@ -252,7 +252,7 @@ class OfflineQueueService {
       ''');
 
       stmt.execute([DateTime.now().toIso8601String(), operationId]);
-      stmt.dispose();
+      stmt.close();
 
       debugPrint('[OfflineQueue] Marked operation $operationId as synced');
     } catch (e) {
@@ -284,7 +284,7 @@ class OfflineQueueService {
         isFailed ? 1 : 0,
         operationId,
       ]);
-      stmt.dispose();
+      stmt.close();
 
       if (isFailed) {
         debugPrint(
@@ -325,7 +325,7 @@ class OfflineQueueService {
 
       final stmt = db.prepare('DELETE FROM $_tableName WHERE id = ?');
       stmt.execute([operationId]);
-      stmt.dispose();
+      stmt.close();
 
       debugPrint('[OfflineQueue] Deleted operation $operationId');
     } catch (e) {

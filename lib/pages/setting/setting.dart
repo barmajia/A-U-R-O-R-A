@@ -541,9 +541,9 @@ class _SettingState extends State<Setting> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.fingerprint_off, color: Colors.orange),
+            Icon(Icons.lock_open, color: Colors.orange),
             SizedBox(width: 12),
             Text('Disable Fingerprint'),
           ],

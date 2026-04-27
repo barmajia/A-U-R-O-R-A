@@ -391,8 +391,8 @@ class _HomepageState extends State<Homepage> {
                 child: _buildStatCard(
                   title: 'Orders',
                   value: _totalOrders.toString(),
-                  subtitle: 0 > 0
-                      ? '$0 pending'
+                  subtitle: _totalOrders > 0
+                      ? '$_totalOrders pending'
                       : 'transactions',
                   icon: Icons.shopping_bag,
                   gradientColors: [Colors.blue.shade400, Colors.blue.shade700],

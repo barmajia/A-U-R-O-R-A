@@ -146,7 +146,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
             }),
             child: const Text('Add Sample'),
           ),
-          const TextButton(onPressed: Navigator.pop, child: Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
         ],
       ),
     );

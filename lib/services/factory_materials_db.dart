@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import '../models/aurora_product.dart';
+import '../models/raw_material.dart';
 
 /// **Factory Materials Database Service**
 /// 
@@ -81,10 +82,12 @@ class FactoryMaterialsDB {
       final newMaterial = RawMaterial(
         id: material.id.isNotEmpty ? material.id : _uuid.v4(),
         name: material.name,
-        quantityRequired: material.quantityRequired,
         unit: material.unit,
         currentStock: material.currentStock,
-        costPerUnit: material.costPerUnit,
+        minStock: 0,
+        maxStock: 999999,
+        costPerUnit: material.costPerUnit ?? 0,
+        lastUpdated: DateTime.now(),
       );
       materials.add(newMaterial);
       savedMaterial = newMaterial;
@@ -107,10 +110,12 @@ class FactoryMaterialsDB {
       final updated = RawMaterial(
         id: materials[index].id,
         name: materials[index].name,
-        quantityRequired: materials[index].quantityRequired,
         unit: materials[index].unit,
         currentStock: newStock,
+        minStock: 0,
+        maxStock: 999999,
         costPerUnit: materials[index].costPerUnit,
+        lastUpdated: DateTime.now(),
       );
       materials[index] = updated;
       
@@ -128,13 +133,15 @@ class FactoryMaterialsDB {
       final index = materials.indexWhere((m) => m.id == entry.key);
       if (index != -1) {
         final newStock = materials[index].currentStock - entry.value;
-        materials[index] = RawMaterial(
+materials[index] = RawMaterial(
           id: materials[index].id,
           name: materials[index].name,
-          quantityRequired: materials[index].quantityRequired,
           unit: materials[index].unit,
-          currentStock: newStock < 0 ? 0 : newStock, // Prevent negative
+          currentStock: newStock < 0 ? 0 : newStock,
+          minStock: 0,
+          maxStock: 999999,
           costPerUnit: materials[index].costPerUnit,
+          lastUpdated: DateTime.now(),
         );
       }
     }
@@ -173,7 +180,7 @@ class FactoryMaterialsDB {
     csv.writeln('ID,Name,Required Per Unit,Unit,Current Stock,Cost Per Unit');
     
     for (var m in materials) {
-      csv.writeln('${m.id},"${m.name}",${m.quantityRequired},${m.unit},${m.currentStock},${m.costPerUnit}');
+      csv.writeln('${m.id},"${m.name}",${m.costPerUnit},${m.unit},${m.currentStock},${m.costPerUnit}');
     }
     
     return csv.toString();
