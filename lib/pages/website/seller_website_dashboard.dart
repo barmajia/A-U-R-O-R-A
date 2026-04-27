@@ -28,21 +28,16 @@ class _SellerWebsiteDashboardState extends State<SellerWebsiteDashboard> {
       if (userId == null) throw Exception('User not authenticated');
 
       // Fetch site settings & catalog summary
-      final results = await Future.wait([
-        Supabase.instance.client
-            .from('website_settings')
-            .select('*')
-            .eq('user_id', userId)
-            .maybeSingle(),
-        Supabase.instance.client
-            .from('site_catalog')
-            .select('id, display_price, is_active')
-            .eq('user_id', userId)
-            .eq('is_active', true),
-      ]);
-
-      final settingsRes = results[0];
-      final catalogRes = results[1] as List;
+      final settingsRes = await Supabase.instance.client
+          .from('website_settings')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
+      final catalogRes = await Supabase.instance.client
+          .from('site_catalog')
+          .select('id, display_price, is_active')
+          .eq('user_id', userId)
+          .eq('is_active', true);
 
       final catalogTotal = catalogRes.fold(
         0.0,
@@ -51,7 +46,7 @@ class _SellerWebsiteDashboardState extends State<SellerWebsiteDashboard> {
 
       setState(() {
         siteData = {
-          ...settingsRes ?? {},
+          ...?settingsRes,
           'catalog_count': catalogRes.length,
           'catalog_value': catalogTotal,
           'is_published': settingsRes?['status'] == 'active',
@@ -190,7 +185,7 @@ class WebsiteControlTab extends StatelessWidget {
               trailing: Switch(
                 value: siteData['is_published'] ?? false,
                 onChanged: (v) {
-                  _togglePublishStatus(v);
+                  _togglePublishStatus(v, context);
                 },
                 activeColor: Colors.green,
               ),
@@ -275,7 +270,7 @@ class WebsiteControlTab extends StatelessWidget {
     );
   }
 
-  Future<void> _togglePublishStatus(bool isActive) async {
+  Future<void> _togglePublishStatus(bool isActive, BuildContext ctx) async {
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) return;
@@ -289,8 +284,8 @@ class WebsiteControlTab extends StatelessWidget {
           .eq('user_id', userId);
 
       // Show success snackbar
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+      if (ctx.mounted) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
           SnackBar(
             content: Text(isActive ? 'Website published!' : 'Website unpublished'),
             backgroundColor: isActive ? Colors.green : Colors.orange,
@@ -298,8 +293,8 @@ class WebsiteControlTab extends StatelessWidget {
         );
       }
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+      if (ctx.mounted) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
           SnackBar(
             content: Text('Failed to update status: $e'),
             backgroundColor: Colors.red,

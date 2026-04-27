@@ -157,7 +157,7 @@ const Map<String, List<String>> categoryStructure = {
     'Fragrance',
     'Haircare',
     'Personal Care',
-    'Men's Grooming',
+    "Men's Grooming",
   ],
   'Sports & Outdoors': [
     'Gym Equipment',
@@ -1567,7 +1567,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         return DropdownMenuItem<String>(
           value: key,
           child: Text(
-            _getCategoryTranslation(l10n, key),
+            key,
             style: TextStyle(
               color: isDark ? Colors.grey[100] : Colors.black,
               fontWeight: FontWeight.w500,
@@ -1614,7 +1614,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         return DropdownMenuItem<String>(
           value: key,
           child: Text(
-            _getSubcategoryTranslation(l10n, _selectedCategory!, key),
+            key,
             style: TextStyle(
               color: isDark ? Colors.grey[100] : Colors.black,
               fontWeight: FontWeight.w500,

@@ -112,14 +112,14 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: notificationService),
         ChangeNotifierProvider.value(value: userPreferencesService),
         ChangeNotifierProvider.value(value: presenceService),
-        
+
         // Local databases
         ChangeNotifierProvider(create: (_) => sellerDb),
         Provider(create: (_) => productsDb),
-        
+
         // Queue service
         Provider(create: (_) => authProvider.queue),
-        
+
         // Theme
         ChangeNotifierProvider.value(value: themeProvider),
       ],
@@ -142,7 +142,9 @@ class Aurora extends StatelessWidget {
         // Initialize services when logged in
         if (authProvider.isLoggedIn && !authProvider.isCheckingSession) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            context.read<NotificationService>().initialize(authProvider.userId!);
+            context.read<NotificationService>().initialize(
+              authProvider.userId!,
+            );
           });
         }
 
@@ -172,28 +174,18 @@ class Aurora extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('en'),
-        Locale('ar'),
-      ],
+      supportedLocales: const [Locale('en'), Locale('ar')],
       locale: locale,
       home: _buildHomeWidget(context, authProvider),
-      routes: const {
-        '/login': Login.new,
-        '/home': Homepage.new,
-      },
+      routes: {'/login': (context) => const Login(), '/home': (context) => const Homepage()},
     );
   }
 
   Widget _buildHomeWidget(BuildContext context, AuthProvider authProvider) {
     if (authProvider.isCheckingSession) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return authProvider.isLoggedIn 
-        ? const Homepage() 
-        : const Login();
+    return authProvider.isLoggedIn ? const Homepage() : const Login();
   }
 }
