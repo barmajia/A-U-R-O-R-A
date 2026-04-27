@@ -5,9 +5,6 @@ import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:aurora/backend/sellerdb.dart';
 import 'package:aurora/backend/products_db.dart';
 import 'package:aurora/models/aurora_product.dart';
-import 'package:aurora/models/customer_sale.dart';
-// import 'package:aurora/models/customer.dart'; // Models moved to aurora_customer
-// import 'package:aurora/models/sale.dart'; // To be implemented
 import 'package:aurora/services/queue_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

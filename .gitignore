@@ -1,23 +1,11 @@
 ```
 # Flutter/Dart specific
 .dart_tool/
-.packages
-pubspec.lock
-*.g.dart
-*.freezed.dart
-
-# Build artifacts
-build/
-**/ios/Flutter/.last_build_id
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Logs
+.build/
+packages/
+*.iws
 *.log
+*.lock
 
 # Environment
 .env
@@ -26,9 +14,20 @@ build/
 
 # Dependencies
 vendor/
-.externalNativeBuild/
+
+# Logs
+*.log
 
 # OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+
+# Temporary folders
+tmp/
+temp/
 ```

@@ -1,10 +1,7 @@
 import 'package:aurora/pages/product/product.dart';
-import 'package:aurora/pages/customer/customers_page.dart';
-import 'package:aurora/pages/customer/analysis_page.dart';
 import 'package:aurora/pages/factory/factories_page.dart';
 import 'package:aurora/models/aurora_product.dart';
 import 'package:aurora/services/supabase.dart';
-import 'package:aurora/services/customers_db.dart';
 import 'package:aurora/services/factories_db.dart';
 import 'package:aurora/widgets/drawer.dart';
 import 'package:flutter/material.dart';
@@ -56,9 +53,6 @@ class _HomepageState extends State<Homepage> {
       final sellerDb = supabaseProvider.sellerDb;
       debugPrint('Loading seller data for user: $userId');
 
-      // Initialize CustomersDB with seller UUID
-      CustomersDB().initialize(userId);
-      
       // Initialize FactoriesDB with seller UUID
       FactoriesDB().initialize(userId);
 
@@ -538,19 +532,6 @@ class _HomepageState extends State<Homepage> {
                 },
               ),
               _buildQuickActionCard(
-                title: 'New Customer',
-                icon: Icons.person_add,
-                color: Colors.green,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CustomersPage(),
-                    ),
-                  ).then((_) => _loadData());
-                },
-              ),
-              _buildQuickActionCard(
                 title: 'Factories',
                 icon: Icons.factory,
                 color: Colors.orange,
@@ -561,19 +542,6 @@ class _HomepageState extends State<Homepage> {
                       builder: (context) => const FactoriesPage(),
                     ),
                   ).then((_) => _loadData());
-                },
-              ),
-              _buildQuickActionCard(
-                title: 'Analytics',
-                icon: Icons.analytics,
-                color: Colors.purple,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AnalysisPage(),
-                    ),
-                  );
                 },
               ),
             ],
