@@ -1,11 +1,11 @@
-import 'package:aurora/models/sale.dart';
-import 'package:aurora/pages/analytics/analytics_page.dart';
-import 'package:aurora/pages/customers/customers_page.dart';
 import 'package:aurora/pages/product/product.dart';
-import 'package:aurora/pages/sales/record_sale_screen.dart';
-import 'package:aurora/pages/sales/sales_page.dart';
+import 'package:aurora/pages/customer/customers_page.dart';
+import 'package:aurora/pages/customer/analysis_page.dart';
+import 'package:aurora/pages/factory/factories_page.dart';
 import 'package:aurora/models/aurora_product.dart';
 import 'package:aurora/services/supabase.dart';
+import 'package:aurora/services/customers_db.dart';
+import 'package:aurora/services/factories_db.dart';
 import 'package:aurora/widgets/drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -29,13 +29,16 @@ class _HomepageState extends State<Homepage> {
   // Stats data from database
   double _totalRevenue = 0;
   int _totalOrders = 0;
-  int _totalCustomers = 0;
-  double _todayRevenue = 0;
-  int _pendingOrdersCount = 0;
+  int _totalProducts = 0;
+  int _totalInventory = 0;
   Map<String, dynamic> _kpis = {};
 
   // Recent activity
   List<ActivityItem> _recentActivities = [];
+
+  int _getTotalInventory() {
+    return _totalInventory;
+  }
 
   @override
   void initState() {
@@ -53,33 +56,30 @@ class _HomepageState extends State<Homepage> {
       final sellerDb = supabaseProvider.sellerDb;
       debugPrint('Loading seller data for user: $userId');
 
+      // Initialize CustomersDB with seller UUID
+      CustomersDB().initialize(userId);
+      
+      // Initialize FactoriesDB with seller UUID
+      FactoriesDB().initialize(userId);
+
       // Kick off all data fetches in parallel to reduce dashboard load time
       final sellerFuture =
           sellerDb != null ? sellerDb.getSellerByUserId(userId) : Future.value();
       final kpisFuture = supabaseProvider.getSellerKPIs(period: '30d');
       final ordersFuture = _getSellerOrders(supabaseProvider);
-      final recentSalesFuture = supabaseProvider.getSales(
-        startDate: DateTime.now().subtract(const Duration(days: 7)),
-        limit: 10,
-      );
-      final customersFuture = supabaseProvider.getCustomers();
       final productsFuture = supabaseProvider.getAllProducts();
 
       final results = await Future.wait([
         sellerFuture,
         kpisFuture,
         ordersFuture,
-        recentSalesFuture,
-        customersFuture,
         productsFuture,
       ]);
 
       final localSeller = results[0] as Map<String, dynamic>?;
       final kpis = results[1] as Map<String, dynamic>;
       final ordersData = results[2] as Map<String, int>;
-      final recentSales = results[3] as List<Sale>;
-      final customers = results[4] as List;
-      final products = results[5] as List<AuroraProduct>;
+      final products = results[3] as List<AuroraProduct>;
 
       // Resolve display name
       if (localSeller != null) {
@@ -94,23 +94,20 @@ class _HomepageState extends State<Homepage> {
       }
       debugPrint('Final display name: "$_sellerFirstName"');
 
-      // Build enhanced activity list using already-fetched data
-      final activities = _buildEnhancedActivity(
-        recentSales: recentSales,
-        products: products,
-      );
+      // Build activity list from products
+      final activities = _buildActivityFromProducts(products);
+
+      // Calculate total inventory from products
+      int totalInventory = products.fold(0, (sum, p) => sum + (p.quantity ?? 0));
 
       if (!mounted) return;
       setState(() {
         _kpis = kpis;
         _totalRevenue = kpis['total_revenue'] ?? 0;
         _totalOrders = ordersData['total_orders'] ?? 0;
-        _pendingOrdersCount = ordersData['pending_orders'] ?? 0;
-        _totalCustomers = customers.length;
-        _todayRevenue = _calculateTodayRevenue(recentSales);
-        _recentActivities = activities.isNotEmpty
-            ? activities
-            : _buildActivityFromSales(recentSales);
+        _totalProducts = products.length;
+        _totalInventory = totalInventory;
+        _recentActivities = activities;
 
         _isLoading = false;
       });
@@ -149,58 +146,14 @@ class _HomepageState extends State<Homepage> {
     }
   }
 
-  double _calculateTodayRevenue(List<Sale> sales) {
-    final now = DateTime.now();
-    return sales
-        .where(
-          (sale) =>
-              sale.saleDate.year == now.year &&
-              sale.saleDate.month == now.month &&
-              sale.saleDate.day == now.day,
-        )
-        .fold(0.0, (sum, sale) => sum + sale.netTotal);
-  }
-
-  List<ActivityItem> _buildActivityFromSales(List<Sale> sales) {
-    return sales.take(5).map((sale) {
-      return ActivityItem(
-        id: sale.id ?? '',
-        title: 'Sale Completed',
-        subtitle:
-            '${sale.customer?.name ?? 'Customer'} - ${NumberFormat.currency(symbol: '\$').format(sale.netTotal)}',
-        icon: Icons.check_circle,
-        time: sale.relativeTime,
-        color: Colors.green,
-      );
-    }).toList();
-  }
-
-  /// Build enhanced activity list from already-fetched data
-  List<ActivityItem> _buildEnhancedActivity({
-    required List<Sale> recentSales,
-    required List<AuroraProduct> products,
-  }) {
+  /// Build activity list from products
+  List<ActivityItem> _buildActivityFromProducts(List<AuroraProduct> products) {
     final activities = <ActivityItem>[];
-
-    // Add recent sales
-    for (final sale in recentSales.take(3)) {
-      activities.add(
-        ActivityItem(
-          id: 'sale_${sale.id}',
-          title: 'Sale Completed',
-          subtitle:
-              '${sale.customer?.name ?? 'Customer'} - ${NumberFormat.currency(symbol: '\$').format(sale.netTotal)}',
-          icon: Icons.check_circle,
-          time: sale.relativeTime,
-          color: Colors.green,
-        ),
-      );
-    }
 
     // Flag low stock items
     final lowStockProducts = products
         .where((p) => p.quantity != null && p.quantity! < 5)
-        .take(2);
+        .take(5);
 
     for (final product in lowStockProducts) {
       activities.add(
@@ -213,6 +166,23 @@ class _HomepageState extends State<Homepage> {
           color: Colors.red,
         ),
       );
+    }
+
+    // Add recently created products
+    final recentProducts = products.take(3);
+    for (final product in recentProducts) {
+      if (!activities.any((a) => a.id.startsWith('product_${product.asin}'))) {
+        activities.add(
+          ActivityItem(
+            id: 'product_${product.asin}',
+            title: 'New Product Added',
+            subtitle: '${product.title}',
+            icon: Icons.add_circle,
+            time: 'Recently',
+            color: Colors.blue,
+          ),
+        );
+      }
     }
 
     return activities.take(5).toList();
@@ -397,26 +367,9 @@ class _HomepageState extends State<Homepage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Quick Stats',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AnalyticsPage(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.trending_up, size: 18),
-                label: Text('Last $days days'),
-              ),
-            ],
+          const Text(
+            'Quick Stats',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Row(
@@ -438,8 +391,8 @@ class _HomepageState extends State<Homepage> {
                 child: _buildStatCard(
                   title: 'Orders',
                   value: _totalOrders.toString(),
-                  subtitle: _pendingOrdersCount > 0
-                      ? '$_pendingOrdersCount pending'
+                  subtitle: 0 > 0
+                      ? '$0 pending'
                       : 'transactions',
                   icon: Icons.shopping_bag,
                   gradientColors: [Colors.blue.shade400, Colors.blue.shade700],
@@ -452,11 +405,10 @@ class _HomepageState extends State<Homepage> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  title: 'Customers',
-                  value: _totalCustomers.toString(),
-                  subtitle:
-                      '${_kpis['unique_customers_in_period'] ?? 0} active',
-                  icon: Icons.people,
+                  title: 'Products',
+                  value: _totalProducts.toString(),
+                  subtitle: 'Total items',
+                  icon: Icons.inventory,
                   gradientColors: [
                     Colors.orange.shade400,
                     Colors.orange.shade700,
@@ -466,10 +418,10 @@ class _HomepageState extends State<Homepage> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  title: 'Today',
-                  value: currencyFormat.format(_todayRevenue),
-                  subtitle: 'Daily revenue',
-                  icon: Icons.today,
+                  title: 'Inventory',
+                  value: _getTotalInventory().toString(),
+                  subtitle: 'Units in stock',
+                  icon: Icons.storefront,
                   gradientColors: [
                     Colors.purple.shade400,
                     Colors.purple.shade700,
@@ -586,39 +538,41 @@ class _HomepageState extends State<Homepage> {
                 },
               ),
               _buildQuickActionCard(
-                title: 'Record Sale',
-                icon: Icons.point_of_sale,
+                title: 'New Customer',
+                icon: Icons.person_add,
                 color: Colors.green,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const RecordSaleScreen(),
-                    ),
-                  );
-                },
-              ),
-              _buildQuickActionCard(
-                title: 'View Customers',
-                icon: Icons.people,
-                color: Colors.orange,
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const CustomersPage(),
                     ),
-                  );
+                  ).then((_) => _loadData());
                 },
               ),
               _buildQuickActionCard(
-                title: 'Sales Report',
+                title: 'Factories',
+                icon: Icons.factory,
+                color: Colors.orange,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FactoriesPage(),
+                    ),
+                  ).then((_) => _loadData());
+                },
+              ),
+              _buildQuickActionCard(
+                title: 'Analytics',
                 icon: Icons.analytics,
                 color: Colors.purple,
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const SalesPage()),
+                    MaterialPageRoute(
+                      builder: (context) => const AnalysisPage(),
+                    ),
                   );
                 },
               ),
@@ -683,23 +637,9 @@ class _HomepageState extends State<Homepage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Recent Activity',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SalesPage()),
-                  );
-                },
-                child: const Text('View All'),
-              ),
-            ],
+          const Text(
+            'Recent Activity',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           if (_recentActivities.isEmpty)
@@ -722,7 +662,7 @@ class _HomepageState extends State<Homepage> {
       ),
       child: Column(
         children: [
-          Icon(Icons.receipt_long_outlined, size: 48, color: Colors.grey[400]),
+          Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey[400]),
           const SizedBox(height: 12),
           Text(
             'No recent activity',
@@ -730,7 +670,7 @@ class _HomepageState extends State<Homepage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Record a sale to see activity here',
+            'Add a product to see activity here',
             style: TextStyle(fontSize: 12, color: Colors.grey[500]),
           ),
         ],

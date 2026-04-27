@@ -1,23 +1,27 @@
 ```
-# Build artifacts
-/build/
-/dist/
+# Flutter/Dart specific
+.dart_tool/
+.packages
+pubspec.lock
+build/
+*.g.dart
+*.freezed.dart
 
 # Dependencies
-/.dart_tool/
-/pub/
-/pubspec.lock
+vendor/
+node_modules/
 
-# Logs and temp files
+# Logs
 *.log
-*.tmp
+**/logs
 
-# Environment
+# Environment variables
 .env
 .env.local
-*.env.*
+.env.*
+!.env.example
 
-# Editors
+# IDE files
 .vscode/
 .idea/
 *.swp
@@ -27,8 +31,16 @@
 .DS_Store
 Thumbs.db
 
-# Coverage
-/coverage/
-/htmlcov/
-.coverage
+# Build outputs
+dist/
+target/
+
+# Python related (if any mixed projects)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
 ```

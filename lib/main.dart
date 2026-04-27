@@ -34,9 +34,9 @@ import 'package:aurora/services/supabase.dart';
 import 'package:aurora/services/auth_provider.dart';
 import 'package:aurora/services/product_provider.dart';
 import 'package:aurora/services/permissions.dart';
-import 'package:aurora/services/notification_service.dart';
 import 'package:aurora/services/user_preferences_service.dart';
 import 'package:aurora/services/presence_service.dart';
+import 'package:aurora/services/factories_db.dart';
 import 'package:aurora/theme/themeprovider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -83,7 +83,6 @@ Future<void> main() async {
   final userPreferencesService = UserPreferencesService();
   await userPreferencesService.initialize();
 
-  final notificationService = NotificationService();
   final presenceService = PresenceService();
 
   // Initialize modular providers
@@ -109,13 +108,13 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: supabaseProvider),
         ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider.value(value: productProvider),
-        ChangeNotifierProvider.value(value: notificationService),
         ChangeNotifierProvider.value(value: userPreferencesService),
         ChangeNotifierProvider.value(value: presenceService),
         
         // Local databases
         ChangeNotifierProvider(create: (_) => sellerDb),
         Provider(create: (_) => productsDb),
+        ChangeNotifierProvider(create: (_) => FactoriesDB()),
         
         // Queue service
         Provider(create: (_) => authProvider.queue),
