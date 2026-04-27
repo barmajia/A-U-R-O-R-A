@@ -313,6 +313,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.3"
+  drift:
+    dependency: "direct main"
+    description:
+      name: drift
+      sha256: "055c249d1f91be5a47fe447f88afc24c4ca6f4cd6c5ed66767b4797d48acc2e5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.32.1"
   ed25519_edwards:
     dependency: transitive
     description:
@@ -1457,6 +1465,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.6"
+  sqlite3_flutter_libs:
+    dependency: "direct main"
+    description:
+      name: sqlite3_flutter_libs
+      sha256: eeb9e3a45207649076b808f8a5a74d68770d0b7f26ccef6d5f43106eee5375ad
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.42"
   stack_trace:
     dependency: transitive
     description:
