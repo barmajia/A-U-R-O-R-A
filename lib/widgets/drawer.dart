@@ -1,7 +1,4 @@
-import 'package:aurora/pages/analytics/analytics_page.dart';
-import 'package:aurora/pages/customers/customers_page.dart';
 import 'package:aurora/pages/product/product.dart';
-import 'package:aurora/pages/sales/sales_page.dart';
 import 'package:aurora/pages/seller/sellerProfile.dart';
 import 'package:aurora/pages/setting/setting.dart';
 import 'package:aurora/screens/chat/nearby_users_screen.dart';
@@ -89,39 +86,6 @@ class AppDrawer extends StatelessWidget {
                             context,
                             const ProductPage(),
                             'products',
-                          ),
-                        ),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.people_outlined,
-                          activeIcon: Icons.people,
-                          title: AppLocalizations.of(context).customers,
-                          pageName: 'customers',
-                          onTap: () => _navigateTo(
-                            context,
-                            const CustomersPage(),
-                            'customers',
-                          ),
-                        ),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.point_of_sale_outlined,
-                          activeIcon: Icons.point_of_sale,
-                          title: AppLocalizations.of(context).sales,
-                          pageName: 'sales',
-                          onTap: () =>
-                              _navigateTo(context, const SalesPage(), 'sales'),
-                        ),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.analytics_outlined,
-                          activeIcon: Icons.analytics,
-                          title: AppLocalizations.of(context).analytics,
-                          pageName: 'analytics',
-                          onTap: () => _navigateTo(
-                            context,
-                            const AnalyticsPage(),
-                            'analytics',
                           ),
                         ),
                         _buildMenuItem(

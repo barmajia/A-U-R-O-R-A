@@ -243,6 +243,30 @@ class AuroraProduct {
     );
   }
 
+  // Convert to JSON for Supabase (without local-only fields)
+  Map<String, dynamic> toSupabaseJson() {
+    return {
+      'asin': asin,
+      'sku': sku,
+      'seller_id': sellerId,
+      'title': title,
+      'description': description,
+      'brand': brand,
+      'selling_price': sellingPrice,
+      'quantity': quantity,
+      'status': status,
+      'category': category,
+      'subcategory': subcategory,
+      'attributes': attributes,
+      'color_hex': colorHex,
+      'brand_id': brandId,
+      'is_local_brand': isLocalBrand,
+      'currency': currency,
+      'images': images?.map((e) => {'url': e.url}).toList(),
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+  }
+
   // Convert to JSON for Supabase
   Map<String, dynamic> toJson() {
     return {
