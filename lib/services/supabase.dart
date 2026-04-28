@@ -560,9 +560,21 @@ class SupabaseProvider extends ChangeNotifier {
         return _failure('Signup failed. Please try again.');
       }
 
-      // Step 2: Create role-specific profile (seller)
+      // Step 2: Create role-specific profile (seller or factory)
       if (accountType == AccountType.seller) {
         await _createSellerRecord(
+          userId: authResponse.user!.id,
+          email: email,
+          fullName: fullName,
+          phone: phone,
+          location: location,
+          currency: currency,
+          password: password,
+          latitude: latitude,
+          longitude: longitude,
+        );
+      } else if (accountType == AccountType.factory) {
+        await _createFactoryRecord(
           userId: authResponse.user!.id,
           email: email,
           fullName: fullName,

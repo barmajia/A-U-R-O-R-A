@@ -268,9 +268,9 @@ class _FactorySignupState extends State<FactorySignup> {
       final longitude = _currentPosition?.longitude;
 
       // Create factory account type
-      final accountType = AccountType.seller;
+      final accountType = AccountType.factory;
 
-final result = await supabaseProvider.signup(
+      final result = await supabaseProvider.signup(
         fullName: fullName,
         accountType: accountType,
         phone: fullPhoneNumber,
