@@ -1,33 +1,3 @@
-```
-# Flutter/Dart specific
-.dart_tool/
-.build/
-packages/
-*.iws
-*.log
-*.lock
+Nothing should be ignored based on the provided file changes, as they only include Dart source files (.dart) which are legitimate source code files. No build artifacts, dependencies, or temporary files are present in the changes.
 
-# Environment
-.env
-.env.local
-*.env.*
-
-# Dependencies
-vendor/
-
-# Logs
-*.log
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Temporary folders
-tmp/
-temp/
-```
+Therefore, the output is empty.
