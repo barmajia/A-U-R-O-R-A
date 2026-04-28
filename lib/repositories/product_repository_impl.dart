@@ -61,9 +61,8 @@ class ProductRepositoryImpl implements ProductRepository {
     String? sellerId,
   }) async {
     try {
-      var query = _client.from('products').select(count: CountOption.exact);
+      var query = _client.from('products').select();
 
-      // Apply filters
       if (categoryId != null) {
         query = query.eq('category', categoryId);
       }
@@ -71,20 +70,14 @@ class ProductRepositoryImpl implements ProductRepository {
         query = query.eq('seller_id', sellerId);
       }
 
-      // Apply pagination
-      query = query.range(offset, offset + limit - 1);
-
-      final response = await query;
-
-      // Get total count from response headers
-      final totalCount = response.count ?? response.length;
+      final response = await query.range(offset, offset + limit - 1);
 
       final products = response.map((data) => _mapToProduct(data)).toList();
 
       return Result.success(
         PaginationResult(
           items: products,
-          total: totalCount,
+          total: products.length,
           limit: limit,
           offset: offset,
         ),
@@ -282,11 +275,11 @@ class ProductRepositoryImpl implements ProductRepository {
       // Use full-text search if available, otherwise use ILIKE
       final response = await _client
           .from('products')
-          .select(count: CountOption.exact)
+          .select()
           .ilike('title', '%$query%')
           .range(offset, offset + limit - 1);
 
-      final totalCount = response.count ?? response.length;
+      final totalCount = response.length;
       final products = response.map((data) => _mapToProduct(data)).toList();
 
       return Result.success(
@@ -397,20 +390,13 @@ class ProductRepositoryImpl implements ProductRepository {
       asin: data['asin'] as String?,
       sku: data['sku'] as String?,
       sellerId: data['seller_id'] as String?,
-      title: data['title'] as String?,
-      description: data['description'] as String?,
-      brand: data['brand'] as String?,
-      price: (data['price'] as num?)?.toDouble(),
-      quantity: data['quantity'] as int?,
       status: data['status'] as String?,
-      category: data['category'] as String?,
-      subcategory: data['subcategory'] as String?,
       attributes: data['attributes'] as Map<String, dynamic>?,
       brandId: data['brand_id'] as String?,
       isLocalBrand: data['is_local_brand'] as bool?,
-      images: _parseImages(data['images']),
       colorHex: data['color_hex'] as String?,
-      currency: data['currency'] as String?,
+      category: data['category'] as String?,
+      subcategory: data['subcategory'] as String?,
     );
   }
 
@@ -434,7 +420,7 @@ class ProductRepositoryImpl implements ProductRepository {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     return List.generate(
       length,
-      (index) => chars.charAtAt(chars.length ~/ 2 + (index % (chars.length ~/ 2))),
+      (index) => chars.charAt(chars.length ~/ 2 + (index % (chars.length ~/ 2))),
     ).join();
   }
 }

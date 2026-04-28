@@ -23,7 +23,8 @@ abstract class AppException implements Exception {
     this.userMessage,
     this.code,
     this.originalError,
-  });
+    StackTrace? stackTrace,
+  }) : stackTrace = stackTrace;
 
   /// Developer-facing error message with technical details.
   final String message;
@@ -89,20 +90,10 @@ class AuthorizationException extends AppException {
 class NetworkException extends AppException {
   NetworkException({
     required super.message,
-    String? userMessage,
+    super.userMessage,
     super.code = 'NETWORK_ERROR',
     super.originalError,
-  }) : userMessage = userMessage ?? _getDefaultUserMessage(message);
-
-  static String _getDefaultUserMessage(String message) {
-    if (message.toLowerCase().contains('timeout')) {
-      return 'Request timed out. Please check your connection and try again';
-    }
-    if (message.toLowerCase().contains('connection')) {
-      return 'Unable to connect. Please check your internet connection';
-    }
-    return 'Network error occurred. Please try again';
-  }
+  });
 }
 
 /// Exception thrown when data validation fails.
@@ -142,10 +133,10 @@ class ValidationException extends AppException {
 class NotFoundException extends AppException {
   NotFoundException({
     required super.message,
-    String? userMessage,
+    super.userMessage,
     super.code = 'NOT_FOUND',
     super.originalError,
-  }) : userMessage = userMessage ?? 'The requested item was not found';
+  });
 }
 
 /// Exception thrown when a conflict occurs during data operations.

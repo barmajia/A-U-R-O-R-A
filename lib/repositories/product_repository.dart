@@ -10,6 +10,8 @@ import '../core/exceptions/app_exception.dart';
 import '../core/result.dart';
 import '../models/product.dart';
 
+typedef Product = AmazonProduct;
+
 abstract class ProductRepository {
   /// Fetches a product by its ID.
   /// 
@@ -148,7 +150,7 @@ class CreateProductRequest {
       );
     }
 
-    return const Result.success(Unit.value);
+    return Result.success(Unit());
   }
 }
 
@@ -183,8 +185,7 @@ class UpdateProductRequest {
 
 /// Simple unit type for operations that don't return meaningful values.
 class Unit {
-  static const Unit value = Unit._();
-  const Unit._();
+  const Unit();
 }
 
 /// Pagination result wrapper for list operations.
@@ -209,7 +210,6 @@ class PaginationResult<T> {
       total: items.length,
       limit: limit,
       offset: offset,
-      hasMore: items.length == limit,
     );
   }
 }

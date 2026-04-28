@@ -1,8 +1,3 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'aurora_customer.g.dart';
-
-@JsonSerializable()
 class AuroraCustomer {
   final String id;
   final String name;
@@ -12,11 +7,10 @@ class AuroraCustomer {
   final DateTime createdAt;
   final DateTime updatedAt;
   
-  // Analysis fields
   double totalPurchases;
   int totalOrders;
   DateTime lastPurchaseDate;
-  String customerSegment; // e.g., 'VIP', 'Regular', 'New'
+  String customerSegment;
   double averageOrderValue;
   
   AuroraCustomer({
@@ -34,8 +28,41 @@ class AuroraCustomer {
     this.averageOrderValue = 0.0,
   }) : lastPurchaseDate = lastPurchaseDate ?? DateTime.now();
 
-  factory AuroraCustomer.fromJson(Map<String, dynamic> json) => _$AuroraCustomerFromJson(json);
-  Map<String, dynamic> toJson() => _$AuroraCustomerToJson(this);
+  factory AuroraCustomer.fromJson(Map<String, dynamic> json) {
+    return AuroraCustomer(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      phoneNumber: json['phoneNumber'] as String,
+      address: json['address'] as String?,
+      notes: json['notes'] as String?,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      totalPurchases: (json['totalPurchases'] as num?)?.toDouble() ?? 0.0,
+      totalOrders: json['totalOrders'] as int? ?? 0,
+      lastPurchaseDate: json['lastPurchaseDate'] != null 
+          ? DateTime.parse(json['lastPurchaseDate'] as String) 
+          : null,
+      customerSegment: json['customerSegment'] as String? ?? 'New',
+      averageOrderValue: (json['averageOrderValue'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'phoneNumber': phoneNumber,
+      'address': address,
+      'notes': notes,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'totalPurchases': totalPurchases,
+      'totalOrders': totalOrders,
+      'lastPurchaseDate': lastPurchaseDate.toIso8601String(),
+      'customerSegment': customerSegment,
+      'averageOrderValue': averageOrderValue,
+    };
+  }
 
   AuroraCustomer copyWith({
     String? id,

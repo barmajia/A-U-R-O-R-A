@@ -1,8 +1,3 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'product_provider.g.dart';
-
-@JsonSerializable()
 class ProductProvider {
   final String id;
   final String name;
@@ -14,11 +9,10 @@ class ProductProvider {
   final DateTime createdAt;
   final DateTime updatedAt;
   
-  // Provider analysis fields
   double totalSupplyValue;
   int totalSupplies;
   DateTime lastSupplyDate;
-  String providerRating; // e.g., 'Preferred', 'Standard', 'New'
+  String providerRating;
   List<String> suppliedProductIds;
   
   ProductProvider({
@@ -39,8 +33,47 @@ class ProductProvider {
   }) : lastSupplyDate = lastSupplyDate ?? DateTime.now(),
        suppliedProductIds = suppliedProductIds ?? [];
 
-  factory ProductProvider.fromJson(Map<String, dynamic> json) => _$ProductProviderFromJson(json);
-  Map<String, dynamic> toJson() => _$ProductProviderToJson(this);
+  factory ProductProvider.fromJson(Map<String, dynamic> json) {
+    return ProductProvider(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      contactName: json['contactName'] as String,
+      phoneNumber: json['phoneNumber'] as String,
+      email: json['email'] as String,
+      address: json['address'] as String?,
+      notes: json['notes'] as String?,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      totalSupplyValue: (json['totalSupplyValue'] as num?)?.toDouble() ?? 0.0,
+      totalSupplies: json['totalSupplies'] as int? ?? 0,
+      lastSupplyDate: json['lastSupplyDate'] != null 
+          ? DateTime.parse(json['lastSupplyDate'] as String) 
+          : null,
+      providerRating: json['providerRating'] as String? ?? 'New',
+      suppliedProductIds: (json['suppliedProductIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'contactName': contactName,
+      'phoneNumber': phoneNumber,
+      'email': email,
+      'address': address,
+      'notes': notes,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'totalSupplyValue': totalSupplyValue,
+      'totalSupplies': totalSupplies,
+      'lastSupplyDate': lastSupplyDate.toIso8601String(),
+      'providerRating': providerRating,
+      'suppliedProductIds': suppliedProductIds,
+    };
+  }
 
   ProductProvider copyWith({
     String? id,

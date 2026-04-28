@@ -254,15 +254,15 @@ class _SellersPageState extends State<SellersPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    seller.shopName.isNotEmpty ? seller.shopName : seller.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                   Text(
+                     (seller.shopName ?? '').isNotEmpty ? seller.shopName : (seller.name ?? ''),
+                     style: const TextStyle(
+                       fontWeight: FontWeight.bold,
+                       fontSize: 16,
+                     ),
+                     maxLines: 1,
+                     overflow: TextOverflow.ellipsis,
+                   ),
                   const SizedBox(height: 4),
                   Text(
                     seller.location ?? 'No location',

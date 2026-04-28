@@ -39,18 +39,18 @@ class _CreateBillPageState extends State<CreateBillPage> {
       _isSaving = true;
     });
 
-    try {
-      // TODO: Save bill to storage/database
-      final bill = {
-        'seller_id': _selectedSeller!.id,
-        'seller_name': _selectedSeller!.shopName.isNotEmpty 
-            ? _selectedSeller!.shopName 
-            : _selectedSeller!.name,
-        'total_amount': double.parse(_amountController.text),
-        'description': _descriptionController.text,
-        'status': _status,
-        'created_at': DateTime.now().toIso8601String(),
-      };
+     try {
+       // TODO: Save bill to storage/database
+       final bill = {
+         'seller_id': _selectedSeller!.id,
+          'seller_name': (_selectedSeller?.shopName ?? _selectedSeller?.name ?? '').isNotEmpty 
+              ? (_selectedSeller?.shopName ?? _selectedSeller?.name ?? '') 
+              : 'Unknown Seller',
+         'total_amount': double.parse(_amountController.text),
+         'description': _descriptionController.text,
+         'status': _status,
+         'created_at': DateTime.now().toIso8601String(),
+       };
 
       // TODO: Call storage service to save bill
       
@@ -96,14 +96,16 @@ class _CreateBillPageState extends State<CreateBillPage> {
                   border: OutlineInputBorder(),
                 ),
                 value: _selectedSeller,
-                items: widget.sellers.map((seller) {
-                  return DropdownMenuItem(
-                    value: seller,
-                    child: Text(
-                      seller.shopName.isNotEmpty ? seller.shopName : seller.name,
-                    ),
-                  );
-                }).toList(),
+                  items: widget.sellers.map((seller) {
+                    return DropdownMenuItem(
+                      value: seller,
+                      child: Text(
+                        (seller.shopName ?? seller.name ?? '').isNotEmpty 
+                            ? (seller.shopName ?? seller.name ?? '') 
+                            : 'Unknown Seller',
+                      ),
+                    );
+                  }).toList(),
                 onChanged: (value) {
                   setState(() {
                     _selectedSeller = value;
@@ -155,12 +157,12 @@ class _CreateBillPageState extends State<CreateBillPage> {
               const SizedBox(height: 16),
               
               // Status
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Status',
-                  prefixIcon: Icon(Icons.status),
-                  border: OutlineInputBorder(),
-                ),
+               DropdownButtonFormField<String>(
+                 decoration: const InputDecoration(
+                   labelText: 'Status',
+                   prefixIcon: Icon(Icons.check_circle_outline),
+                   border: OutlineInputBorder(),
+                 ),
                 value: _status,
                 items: ['Pending', 'Paid', 'Overdue'].map((status) {
                   return DropdownMenuItem(

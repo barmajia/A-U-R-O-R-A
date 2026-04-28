@@ -8,7 +8,10 @@ class FactoryModel {
   final String? specialization;
   final int? productionCapacity;
   final DateTime createdAt;
-
+  final String? description;
+  final String? website;
+  final List<String> certifications;
+  
   FactoryModel({
     required this.id,
     required this.name,
@@ -17,7 +20,10 @@ class FactoryModel {
     this.specialization,
     this.productionCapacity,
     required this.createdAt,
-  });
+    this.description,
+    this.website,
+    List<String>? certifications,
+  }) : certifications = certifications ?? [];
 
   Map<String, dynamic> toMap() {
     return {
@@ -28,6 +34,9 @@ class FactoryModel {
       'specialization': specialization,
       'production_capacity': productionCapacity,
       'created_at': createdAt.toIso8601String(),
+      'description': description,
+      'website': website,
+      'certifications': certifications,
     };
   }
 
@@ -42,6 +51,11 @@ class FactoryModel {
       createdAt: map['created_at'] != null 
           ? DateTime.parse(map['created_at']) 
           : DateTime.now(),
+      description: map['description'],
+      website: map['website'],
+      certifications: map['certifications'] != null 
+          ? List<String>.from(map['certifications']) 
+          : [],
     );
   }
 
@@ -53,6 +67,9 @@ class FactoryModel {
     String? specialization,
     int? productionCapacity,
     DateTime? createdAt,
+    String? description,
+    String? website,
+    List<String>? certifications,
   }) {
     return FactoryModel(
       id: id ?? this.id,
@@ -62,6 +79,9 @@ class FactoryModel {
       specialization: specialization ?? this.specialization,
       productionCapacity: productionCapacity ?? this.productionCapacity,
       createdAt: createdAt ?? this.createdAt,
+      description: description ?? this.description,
+      website: website ?? this.website,
+      certifications: certifications ?? this.certifications,
     );
   }
 }

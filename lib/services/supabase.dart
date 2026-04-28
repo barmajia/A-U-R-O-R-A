@@ -4,7 +4,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:aurora/backend/sellerdb.dart';
 import 'package:aurora/backend/products_db.dart';
+import 'package:aurora/models/aurora_customer.dart';
 import 'package:aurora/models/aurora_product.dart';
+import 'package:aurora/models/sale.dart';
 import 'package:aurora/services/queue_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +16,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:image/image.dart' as img;
+
+// Type aliases
+typedef Customer = AuroraCustomer;
 
 // ============================================================================
 // Constants & Configuration
@@ -99,7 +104,10 @@ class SupabaseConstants {
 
 /// Represents the type of user account in the Aurora seller system
 enum AccountType {
-  seller, // Seller/merchant
+  seller,
+  factory,
+  customer,
+  distributor,
 }
 
 /// Order Status
@@ -3043,10 +3051,82 @@ class SupabaseProvider extends ChangeNotifier {
         });
         if (kDebugMode) print('Seller created in local SQLite');
       }
-    } catch (e) {
-      if (kDebugMode) print('Failed to create seller in local DB: $e');
-    }
-  }
+     } catch (e) {
+       if (kDebugMode) print('Failed to create seller in local DB: $e');
+     }
+   }
+
+   /// Creates a new factory record in the database.
+   Future<void> _createFactoryRecord({
+     required String userId,
+     required String email,
+     required String fullName,
+     required String phone,
+     required String location,
+     required String currency,
+     required String password,
+     double? latitude,
+     double? longitude,
+   }) async {
+     final nameParts = fullName.split(' ');
+     final firstname = nameParts.isNotEmpty ? nameParts[0] : '';
+     final secondname = nameParts.length > 1 ? nameParts[1] : '';
+     final thirdname = nameParts.length > 2 ? nameParts[2] : '';
+     final fourthname = nameParts.length > 3 ? nameParts[3] : '';
+
+     try {
+       await _client.from(SupabaseConstants.tableFactories).insert({
+         'user_id': userId,
+         'email': email,
+         'full_name': fullName,
+         'firstname': firstname,
+         'second_name': secondname,
+         'thirdname': thirdname,
+         'fourth_name': fourthname,
+         // Backward compatibility for legacy edge functions expecting these typos
+         'forthname': fourthname,
+         'secondname': secondname,
+         'phone': phone,
+         'location': location,
+         'currency': currency,
+         'latitude': latitude,
+         'longitude': longitude,
+         SupabaseConstants.keyAccountType: 'factory',
+         'is_verified': false,
+         'created_at': DateTime.now().toIso8601String(),
+       }).select();
+
+       if (kDebugMode) print('Factory created in Supabase');
+     } catch (e) {
+       if (kDebugMode) print('Failed to create factory in Supabase: $e');
+     }
+
+     try {
+       if (_factoryDb != null) {
+         await _factoryDb.addFactory({
+           'user_id': userId,
+           'firstname': firstname,
+           'secondname': secondname,
+           'thirdname': thirdname,
+           'fourthname': fourthname,
+           'full_name': fullName,
+           'email': email,
+           'password': password,
+           'location': location,
+           'phone': phone,
+           'currency': currency,
+           'account_type': 'factory',
+           'is_verified': 0,
+           'latitude': latitude,
+           'longitude': longitude,
+           'created_at': DateTime.now().toIso8601String(),
+         });
+         if (kDebugMode) print('Factory created in local SQLite');
+       }
+     } catch (e) {
+       if (kDebugMode) print('Failed to create factory in local DB: $e');
+     }
+   }
 
   /// Invokes the signup edge function.
   Future<void> _invokeSignupFunction({

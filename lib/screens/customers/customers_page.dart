@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/aurora_customer.dart';
+import 'package:aurora/models/aurora_customer.dart';
 
 class CustomersPage extends StatefulWidget {
   const CustomersPage({super.key});

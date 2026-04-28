@@ -13,7 +13,6 @@
 // - User preferences (language, currency)
 // ============================================================================
 
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -40,8 +39,12 @@ typedef AuthResult = ({
 /// Manages Supabase authentication state and user-related operations
 class AuthProvider extends ChangeNotifier {
   /// Creates a new instance with the provided Supabase client
-  AuthProvider(this._client, this._sellerDb, this._productsDb, [FactoryDB? factoryDb])
-      : _factoryDb = factoryDb ?? FactoryDB() {
+  AuthProvider(
+    this._client,
+    this._sellerDb,
+    this._productsDb, [
+    FactoryDB? factoryDb,
+  ]) : _factoryDb = factoryDb ?? FactoryDB() {
     _init();
   }
 
@@ -228,7 +231,7 @@ class AuthProvider extends ChangeNotifier {
             longitude: longitude,
           );
         }
-        
+
         // Create factory profile for factory accounts
         if (accountType == AccountType.factory) {
           await _createFactoryProfile(
@@ -248,8 +251,8 @@ class AuthProvider extends ChangeNotifier {
           message: accountType == AccountType.seller
               ? 'Seller account created successfully!'
               : accountType == AccountType.factory
-                  ? 'Factory account created successfully!'
-                  : 'Account created successfully!',
+              ? 'Factory account created successfully!'
+              : 'Account created successfully!',
           data: {'user': _user!.toJson()},
         );
       }
@@ -428,7 +431,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       final nameParts = fullName.split(' ');
       final firstname = nameParts.isNotEmpty ? nameParts[0] : '';
-      
+
       // Create in Supabase sellers table with is_factory flag
       await _client.from('sellers').insert({
         'user_id': userId,

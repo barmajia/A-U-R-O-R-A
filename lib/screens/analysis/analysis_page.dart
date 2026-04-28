@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../engine/analysis_engine.dart';
-import '../services/analysis_storage_service.dart';
+import '../../services/analysis_storage_service.dart';
 
 class AnalysisPage extends StatefulWidget {
   const AnalysisPage({super.key});
@@ -45,8 +44,8 @@ class _AnalysisPageState extends State<AnalysisPage> {
     }
   }
 
-  void _refreshAnalysis() {
-    _loadAnalysisData();
+  Future<void> _refreshAnalysis() async {
+    await _loadAnalysisData();
   }
 
   @override

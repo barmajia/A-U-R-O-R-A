@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../models/seller.dart';
+import '../../models/factory_model.dart';
 
 /// Factory Storage Service
 /// Handles local storage for factory-specific data
@@ -62,11 +63,38 @@ class FactoryStorageService {
       final sellersData = jsonData['sellers'] as List? ?? [];
       
       return sellersData.map((data) {
-        return Seller.fromJson(data as Map<String, dynamic>);
+        return Seller.fromMap(data as Map<String, dynamic>);
       }).toList();
     } catch (e) {
       debugPrint('Error loading sellers: $e');
       return [];
+    }
+  }
+
+  /// Load factory from storage
+  Future<FactoryModel?> loadFactoryData({
+    String? userId,
+    String? username,
+  }) async {
+    try {
+      if (userId == null || username == null) return null;
+      
+      final file = await getUserFile(userId, username);
+      
+      if (!await file.exists()) {
+        return null;
+      }
+
+      final content = await file.readAsString();
+      final jsonData = json.decode(content) as Map<String, dynamic>;
+      
+      final factoryData = jsonData['factory'];
+      if (factoryData == null) return null;
+      
+      return FactoryModel.fromMap(factoryData as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('Error loading factory: $e');
+      return null;
     }
   }
 
@@ -79,7 +107,7 @@ class FactoryStorageService {
     try {
       final file = await getUserFile(userId, username);
       final jsonData = {
-        'sellers': sellers.map((s) => s.toJson()).toList(),
+        'sellers': sellers.map((s) => s.toMap()).toList(),
         'updated_at': DateTime.now().toIso8601String(),
       };
 
@@ -105,7 +133,7 @@ class FactoryStorageService {
       final content = await file.readAsString();
       final jsonData = json.decode(content) as Map<String, dynamic>;
       
-      return jsonData['bills'] as List? ?? [];
+      return jsonData['bills'] as List<Map<String, dynamic>>? ?? [];
     } catch (e) {
       debugPrint('Error loading bills: $e');
       return [];
@@ -128,12 +156,12 @@ class FactoryStorageService {
         final jsonData = json.decode(content) as Map<String, dynamic>;
         final sellersData = jsonData['sellers'] as List? ?? [];
         sellers = sellersData.map((data) {
-          return Seller.fromJson(data as Map<String, dynamic>);
+          return Seller.fromMap(data as Map<String, dynamic>);
         }).toList();
       }
 
       final jsonData = {
-        'sellers': sellers.map((s) => s.toJson()).toList(),
+        'sellers': sellers.map((s) => s.toMap()).toList(),
         'bills': bills,
         'updated_at': DateTime.now().toIso8601String(),
       };

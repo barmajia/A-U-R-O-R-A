@@ -9,10 +9,10 @@ class SellerDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(seller.shopName.isNotEmpty ? seller.shopName : seller.name),
-      ),
+     return Scaffold(
+       appBar: AppBar(
+          title: Text((seller.shopName ?? '').isNotEmpty ? seller.shopName ?? '' : seller.name ?? ''),
+       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -34,14 +34,16 @@ class SellerDetailsPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            seller.shopName.isNotEmpty ? seller.shopName : seller.name,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
+                   Text(
+                     (seller.shopName ?? '').isNotEmpty ? seller.shopName : (seller.name ?? ''),
+                     style: const TextStyle(
+                       fontWeight: FontWeight.bold,
+                       fontSize: 16,
+                     ),
+                     maxLines: 1,
+                     overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
                           Text(
                             seller.location ?? 'No location',
                             style: TextStyle(color: Colors.grey[600]),
