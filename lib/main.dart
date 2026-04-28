@@ -30,6 +30,8 @@ import 'package:aurora/backend/products_db.dart';
 import 'package:aurora/config/supabase_config.dart';
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/login.dart';
+import 'package:aurora/pages/customer/cart_page.dart';
+import 'package:aurora/pages/customer/checkout_page.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/services/auth_provider.dart';
 import 'package:aurora/services/product_provider.dart';
@@ -39,6 +41,8 @@ import 'package:aurora/services/user_preferences_service.dart';
 import 'package:aurora/services/presence_service.dart';
 import 'package:aurora/theme/themeprovider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/models/wallet.dart';
+import 'package:aurora/models/cart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -113,6 +117,10 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: userPreferencesService),
         ChangeNotifierProvider.value(value: presenceService),
         
+        // Customer E-commerce providers
+        ChangeNotifierProvider(create: (_) => WalletProvider()),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+        
         // Local databases
         ChangeNotifierProvider(create: (_) => sellerDb),
         Provider(create: (_) => productsDb),
@@ -178,9 +186,11 @@ class Aurora extends StatelessWidget {
       ],
       locale: locale,
       home: _buildHomeWidget(context, authProvider),
-      routes: const {
-        '/login': Login.new,
-        '/home': Homepage.new,
+      routes: {
+        '/login': (context) => const Login(),
+        '/home': (context) => const Homepage(),
+        '/cart': (context) => const CartPage(),
+        '/checkout': (context) => const CheckoutPage(),
       },
     );
   }

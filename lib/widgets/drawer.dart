@@ -4,6 +4,9 @@ import 'package:aurora/pages/product/product.dart';
 import 'package:aurora/pages/sales/sales_page.dart';
 import 'package:aurora/pages/seller/sellerProfile.dart';
 import 'package:aurora/pages/setting/setting.dart';
+import 'package:aurora/pages/customer/wallet_page.dart';
+import 'package:aurora/pages/customer/cart_page.dart';
+import 'package:aurora/pages/user/user_home_page.dart';
 import 'package:aurora/screens/chat/nearby_users_screen.dart';
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/login.dart';
@@ -138,7 +141,46 @@ class AppDrawer extends StatelessWidget {
                         ),
                       ],
 
-                      // Common Menu Items - Visible to all users
+                      // Customer E-commerce Section - Visible to all users
+                      _buildMenuItem(
+                        context,
+                        icon: Icons.storefront_outlined,
+                        activeIcon: Icons.storefront,
+                        title: 'Shop',
+                        pageName: 'user_home',
+                        onTap: () => _navigateTo(
+                          context,
+                          const UserHomePage(),
+                          'user_home',
+                        ),
+                      ),
+                      _buildMenuItem(
+                        context,
+                        icon: Icons.shopping_cart_outlined,
+                        activeIcon: Icons.shopping_cart,
+                        title: 'Cart',
+                        pageName: 'cart',
+                        badge: context.watch<CartProvider>().itemCount > 0
+                            ? '${context.watch<CartProvider>().itemCount}'
+                            : null,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const CartPage()),
+                        ),
+                      ),
+                      _buildMenuItem(
+                        context,
+                        icon: Icons.account_balance_wallet_outlined,
+                        activeIcon: Icons.account_balance_wallet,
+                        title: 'Wallet',
+                        pageName: 'wallet',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const WalletPage()),
+                        ),
+                      ),
+                      
+                      // Common Menu Items
                       _buildMenuItem(
                         context,
                         icon: Icons.settings_outlined,
