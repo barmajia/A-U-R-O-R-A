@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/bill.dart';
-import '../models/aurora_customer.dart';
-import '../models/product.dart';
-import '../engine/analysis_engine.dart';
-import '../services/analysis_storage_service.dart';
+import 'package:aurora/models/bill.dart';
+import 'package:aurora/models/aurora_customer.dart';
+import 'package:aurora/engine/analysis_engine.dart';
+import 'package:aurora/services/analysis_storage_service.dart';
 
 class BillsPage extends StatefulWidget {
   const BillsPage({super.key});

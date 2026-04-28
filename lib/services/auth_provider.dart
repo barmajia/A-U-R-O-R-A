@@ -13,7 +13,6 @@
 // - User preferences (language, currency)
 // ============================================================================
 
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -21,9 +20,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aurora/config/supabase_config.dart';
 import 'package:aurora/backend/sellerdb.dart';
 import 'package:aurora/backend/products_db.dart';
+import 'package:aurora/backend/factorydb.dart';
 import 'package:aurora/services/error_handler.dart';
 import 'package:aurora/services/queue_service.dart';
 import 'package:aurora/models/seller.dart';
+import 'package:aurora/models/aurora_factory.dart';
 
 /// Account types in the Aurora system
 enum AccountType { seller, customer, factory, distributor }
@@ -38,13 +39,19 @@ typedef AuthResult = ({
 /// Manages Supabase authentication state and user-related operations
 class AuthProvider extends ChangeNotifier {
   /// Creates a new instance with the provided Supabase client
-  AuthProvider(this._client, this._sellerDb, this._productsDb) {
+  AuthProvider(
+    this._client,
+    this._sellerDb,
+    this._productsDb, [
+    FactoryDB? factoryDb,
+  ]) : _factoryDb = factoryDb ?? FactoryDB() {
     _init();
   }
 
   final SupabaseClient _client;
   final SellerDB _sellerDb;
   final ProductsDB _productsDb;
+  final FactoryDB _factoryDb;
   final ErrorHandler _errorHandler = ErrorHandler();
   final QueueService _queue = QueueService(Supabase.instance.client);
 
@@ -225,10 +232,26 @@ class AuthProvider extends ChangeNotifier {
           );
         }
 
+        // Create factory profile for factory accounts
+        if (accountType == AccountType.factory) {
+          await _createFactoryProfile(
+            userId: _user!.id,
+            email: email,
+            fullName: fullName,
+            phone: phone,
+            location: location,
+            currency: currency,
+            latitude: latitude,
+            longitude: longitude,
+          );
+        }
+
         return (
           success: true,
           message: accountType == AccountType.seller
               ? 'Seller account created successfully!'
+              : accountType == AccountType.factory
+              ? 'Factory account created successfully!'
               : 'Account created successfully!',
           data: {'user': _user!.toJson()},
         );
@@ -390,6 +413,65 @@ class AuthProvider extends ChangeNotifier {
       _errorHandler.handleError(
         e,
         '_createSellerProfile',
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  Future<void> _createFactoryProfile({
+    required String userId,
+    required String email,
+    required String fullName,
+    required String phone,
+    required String location,
+    required String currency,
+    double? latitude,
+    double? longitude,
+  }) async {
+    try {
+      final nameParts = fullName.split(' ');
+      final firstname = nameParts.isNotEmpty ? nameParts[0] : '';
+
+      // Create in Supabase sellers table with is_factory flag
+      await _client.from('sellers').insert({
+        'user_id': userId,
+        'email': email,
+        'full_name': fullName,
+        'firstname': firstname,
+        'phone': phone,
+        'location': location,
+        'currency': currency,
+        'latitude': latitude,
+        'longitude': longitude,
+        'account_type': 'factory',
+        'is_factory': true,
+        'is_verified': false,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      // Create in local FactoryDB
+      final factory = AuroraFactory(
+        id: userId,
+        uuid: userId,
+        name: fullName,
+        ownerName: fullName,
+        email: email,
+        phone: phone,
+        location: location,
+        specialization: 'General',
+        latitude: latitude,
+        longitude: longitude,
+        createdAt: DateTime.now().toIso8601String(),
+        updatedAt: DateTime.now().toIso8601String(),
+      );
+
+      await _factoryDb.addFactory(factory);
+
+      debugPrint('[AuthProvider] Factory profile created');
+    } catch (e, stackTrace) {
+      _errorHandler.handleError(
+        e,
+        '_createFactoryProfile',
         stackTrace: stackTrace,
       );
     }

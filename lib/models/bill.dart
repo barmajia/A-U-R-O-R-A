@@ -1,8 +1,3 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'bill.g.dart';
-
-@JsonSerializable()
 class Bill {
   final String id;
   final String customerId;
@@ -14,8 +9,8 @@ class Bill {
   final double total;
   final DateTime createdAt;
   final String? notes;
-  final String paymentStatus; // 'paid', 'pending', 'partial'
-  final String paymentMethod; // 'cash', 'card', 'transfer'
+  final String paymentStatus;
+  final String paymentMethod;
   
   Bill({
     required this.id,
@@ -32,8 +27,41 @@ class Bill {
     this.paymentMethod = 'cash',
   });
 
-  factory Bill.fromJson(Map<String, dynamic> json) => _$BillFromJson(json);
-  Map<String, dynamic> toJson() => _$BillToJson(this);
+  factory Bill.fromJson(Map<String, dynamic> json) {
+    return Bill(
+      id: json['id'] as String,
+      customerId: json['customerId'] as String,
+      customerName: json['customerName'] as String,
+      items: (json['items'] as List<dynamic>?)
+          ?.map((e) => BillItem.fromJson(e as Map<String, dynamic>))
+          .toList() ?? [],
+      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
+      tax: (json['tax'] as num?)?.toDouble() ?? 0.0,
+      discount: (json['discount'] as num?)?.toDouble() ?? 0.0,
+      total: (json['total'] as num).toDouble(),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      notes: json['notes'] as String?,
+      paymentStatus: json['paymentStatus'] as String? ?? 'pending',
+      paymentMethod: json['paymentMethod'] as String? ?? 'cash',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'customerId': customerId,
+      'customerName': customerName,
+      'items': items.map((e) => e.toJson()).toList(),
+      'subtotal': subtotal,
+      'tax': tax,
+      'discount': discount,
+      'total': total,
+      'createdAt': createdAt.toIso8601String(),
+      'notes': notes,
+      'paymentStatus': paymentStatus,
+      'paymentMethod': paymentMethod,
+    };
+  }
 
   Bill copyWith({
     String? id,
@@ -66,7 +94,6 @@ class Bill {
   }
 }
 
-@JsonSerializable()
 class BillItem {
   final String productId;
   final String productName;
@@ -82,8 +109,25 @@ class BillItem {
     required this.totalPrice,
   });
 
-  factory BillItem.fromJson(Map<String, dynamic> json) => _$BillItemFromJson(json);
-  Map<String, dynamic> toJson() => _$BillItemToJson(this);
+  factory BillItem.fromJson(Map<String, dynamic> json) {
+    return BillItem(
+      productId: json['productId'] as String,
+      productName: json['productName'] as String,
+      quantity: json['quantity'] as int,
+      unitPrice: (json['unitPrice'] as num).toDouble(),
+      totalPrice: (json['totalPrice'] as num).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'productId': productId,
+      'productName': productName,
+      'quantity': quantity,
+      'unitPrice': unitPrice,
+      'totalPrice': totalPrice,
+    };
+  }
 
   BillItem copyWith({
     String? productId,

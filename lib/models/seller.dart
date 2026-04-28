@@ -5,7 +5,7 @@
 class Seller {
   final int id;
   final String firstname;
-  final String secondname; // Fixed typo from 'secoundname'
+  final String secondname;
   final String thirdname;
   final String forthname;
   final String email;
@@ -13,8 +13,10 @@ class Seller {
   final String currency;
   final int phonenumber;
   final int age;
-
-  // Location fields
+  final String? shopName;
+  final String? name;
+  final String? notes;
+  
   final double? latitude;
   final double? longitude;
 
@@ -29,6 +31,9 @@ class Seller {
     required this.currency,
     required this.phonenumber,
     required this.age,
+    this.shopName,
+    this.name,
+    this.notes,
     this.latitude,
     this.longitude,
   });
@@ -46,6 +51,9 @@ class Seller {
       currency: map['currency'] as String? ?? 'EGP',
       phonenumber: map['phonenumber'] as int? ?? 0,
       age: map['age'] as int? ?? 0,
+      shopName: map['shop_name'] as String?,
+      name: map['name'] as String?,
+      notes: map['notes'] as String?,
       latitude: (map['latitude'] as num?)?.toDouble(),
       longitude: (map['longitude'] as num?)?.toDouble(),
     );
@@ -64,6 +72,9 @@ class Seller {
       'currency': currency,
       'phonenumber': phonenumber,
       'age': age,
+      'shop_name': shopName,
+      'name': name,
+      'notes': notes,
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
     };
@@ -77,6 +88,8 @@ class Seller {
 
   /// Get full name by combining all name parts
   String get fullName => '$firstname $secondname $thirdname $forthname'.trim();
+  
+  String get phoneNumber => phonenumber.toString();
 
   @override
   String toString() => 'Seller(id: $id, email: $email, fullName: $fullName)';

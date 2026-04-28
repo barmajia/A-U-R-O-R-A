@@ -7,6 +7,9 @@ import 'package:aurora/pages/singup/login.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/theme/themeprovider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/pages/factory_dashboard_page.dart';
+import 'package:aurora/pages/factory_products_page.dart';
+import 'package:aurora/pages/factory_analysis_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -86,6 +89,80 @@ class AppDrawer extends StatelessWidget {
                             context,
                             const ProductPage(),
                             'products',
+                          ),
+                        ),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.people_outline,
+                          activeIcon: Icons.people,
+                          title: 'Customers',
+                          pageName: 'customers',
+                          onTap: () => _showComingSoon(
+                            context,
+                            'Customers',
+                          ),
+                        ),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.chat_bubble_outline,
+                          activeIcon: Icons.chat_bubble,
+                          title: AppLocalizations.of(context).messages,
+                          pageName: 'messages',
+                          onTap: () => _navigateTo(
+                            context,
+                            const NearbyUsersScreen(),
+                            'messages',
+                          ),
+                        ),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.analytics_outlined,
+                          activeIcon: Icons.analytics,
+                          title: 'Analysis',
+                          pageName: 'analysis',
+                          onTap: () => _showComingSoon(
+                            context,
+                            'Analysis',
+                          ),
+                        ),
+                      ],
+                      
+                      // Factory Profile - Only for factories
+                      if (accountType == AccountType.factory) ...[
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.business_outlined,
+                          activeIcon: Icons.business,
+                          title: 'Factory Dashboard',
+                          pageName: 'factory_dashboard',
+                          onTap: () => _navigateTo(
+                            context,
+                            const FactoryDashboardPage(),
+                            'factory_dashboard',
+                          ),
+                        ),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.inventory_2_outlined,
+                          activeIcon: Icons.inventory_2,
+                          title: AppLocalizations.of(context).products,
+                          pageName: 'factory_products',
+                          onTap: () => _navigateTo(
+                            context,
+                            const FactoryProductsPage(),
+                            'factory_products',
+                          ),
+                        ),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.analytics_outlined,
+                          activeIcon: Icons.analytics,
+                          title: 'Analysis',
+                          pageName: 'factory_analysis',
+                          onTap: () => _navigateTo(
+                            context,
+                            const FactoryAnalysisPage(),
+                            'factory_analysis',
                           ),
                         ),
                         _buildMenuItem(
@@ -202,13 +279,17 @@ class AppDrawer extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.store,
+                  accountType == AccountType.factory 
+                    ? Icons.business 
+                    : Icons.store,
                   size: 16,
                   color: isDark ? colorScheme.onPrimary : Colors.white,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  AppLocalizations.of(context).seller.toUpperCase(),
+                  accountType == AccountType.factory
+                    ? 'FACTORY'
+                    : AppLocalizations.of(context).seller.toUpperCase(),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,

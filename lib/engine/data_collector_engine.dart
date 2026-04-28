@@ -2,11 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
-import '../models/customer.dart';
-import '../models/bill.dart';
-import '../models/product_provider.dart';
-import 'analysis_engine.dart';
-import '../services/supabase_service.dart';
 
 /// **Data Collector Engine**
 /// 
@@ -20,39 +15,9 @@ import '../services/supabase_service.dart';
 /// 
 /// **Storage Path:** `/app_documents/{uuid}/{username}.json`
 class DataCollectorEngine {
-  final SupabaseService _db;
-  final AnalysisEngine _analysisEngine;
   final Uuid _uuid;
 
-  DataCollectorEngine({
-    SupabaseService? db,
-    AnalysisEngine? analysisEngine,
-  })  : _db = db ?? SupabaseService(),
-        _analysisEngine = analysisEngine ?? AnalysisEngine(),
-        _uuid = const Uuid();
-
-  /// The result structure that will be saved to JSON
-  Map<String, dynamic> _compileData({
-    required List<Customer> customers,
-    required List<Bill> bills,
-    required List<ProductProvider> providers,
-    required Map<String, dynamic> kpiData,
-    required String username,
-    required DateTime generatedAt,
-  }) {
-    return {
-      'meta': {
-        'username': username,
-        'generated_at': generatedAt.toIso8601String(),
-        'version': '1.0.0',
-        'seller_id': _db.currentUserId, // Assuming SupabaseService exposes this
-      },
-      'summary_kpi': kpiData,
-      'customers': customers.map((c) => c.toJson()).toList(),
-      'bills': bills.map((b) => b.toJson()).toList(),
-      'providers': providers.map((p) => p.toJson()).toList(),
-    };
-  }
+  DataCollectorEngine() : _uuid = const Uuid();
 
   /// **Main Collection Method**
   /// 
@@ -62,37 +27,26 @@ class DataCollectorEngine {
   /// 4. Saves combined JSON file.
   Future<Map<String, dynamic>> collectAndSaveAllData({
     required String username,
+    Map<String, dynamic>? dataMap,
   }) async {
     print('🚀 Starting Data Collection Engine...');
 
-    // 1. Fetch Raw Data
-    final customers = await _db.getCustomers(); // Assumes this method exists
-    final bills = await _db.getBills();         // Assumes this method exists
-    final providers = await _db.getProviders(); // Assumes this method exists
+    final compiledData = {
+      'meta': {
+        'username': username,
+        'generated_at': DateTime.now().toIso8601String(),
+        'version': '1.0.0',
+      },
+      'summary_kpi': dataMap?['kpi'] ?? {},
+      'customers': dataMap?['customers'] ?? [],
+      'bills': dataMap?['bills'] ?? [],
+      'providers': dataMap?['providers'] ?? [],
+    };
 
-    print('📦 Fetched: ${customers.length} Customers, ${bills.length} Bills, ${providers.length} Providers');
+    print('📦 Data compiled for: $username');
 
-    // 2. Run Analysis Engine to get KPIs
-    final kpiData = await _analysisEngine.generateFullAnalysis(
-      customers: customers,
-      bills: bills,
-      providers: providers,
-    );
-
-    // 3. Compile Data
-    final compiledData = _compileData(
-      customers: customers,
-      bills: bills,
-      providers: providers,
-      kpiData: kpiData,
-      username: username,
-      generatedAt: DateTime.now(),
-    );
-
-    // 4. Generate UUID for the folder
     final sessionId = _uuid.v4();
     
-    // 5. Save to File System
     final filePath = await _saveToFile(
       data: compiledData,
       folderName: sessionId,
@@ -115,23 +69,18 @@ class DataCollectorEngine {
     required String folderName,
     required String fileName,
   }) async {
-    // Get the application documents directory
     final Directory appDir = await getApplicationDocumentsDirectory();
     
-    // Create the UUID folder: /documents/{uuid}/
     final Directory targetFolder = Directory('${appDir.path}/$folderName');
     
     if (!await targetFolder.exists()) {
       await targetFolder.create(recursive: true);
     }
 
-    // Create the file path: /documents/{uuid}/{username}.json
     final File targetFile = File('${targetFolder.path}/$fileName');
 
-    // Convert to pretty JSON
     final String jsonString = const JsonEncoder.withIndent('  ').convert(data);
 
-    // Write to file
     await targetFile.writeAsString(jsonString);
 
     return targetFile.path;
@@ -173,8 +122,6 @@ class DataCollectorEngine {
     await for (final entity in appDir.list()) {
       if (entity is Directory) {
         final dirName = entity.uri.pathSegments.last;
-        // Simple validation: check if it looks like a UUID (basic check)
-        // Or just assume all subdirs are collections
         final fileList = await entity.list().toList();
         final jsonFiles = fileList.whereType<File>().where((f) => f.path.endsWith('.json')).toList();
         
