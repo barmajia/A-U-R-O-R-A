@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '/services/factory_storage_service.dart';
+import 'factory_storage_service.dart';
 import '../models/factory_model.dart';
 import 'factory_profile_page.dart';
 import 'factory_orders_page.dart';
