@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../engine/analysis_engine.dart';
-import '../services/analysis_storage_service.dart';
+import '/services/analysis_storage_service.dart';
 
 class AnalysisPage extends StatefulWidget {
   const AnalysisPage({super.key});
@@ -98,10 +97,7 @@ class _AnalysisPageState extends State<AnalysisPage> {
             const SizedBox(height: 16),
             Text(
               'No analysis data available',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
@@ -133,7 +129,7 @@ class _AnalysisPageState extends State<AnalysisPage> {
 
   Widget _buildSummaryCard() {
     final summary = _analysisData!['summary'] as Map<String, dynamic>;
-    
+
     return Card(
       elevation: 4,
       child: Padding(
@@ -168,15 +164,17 @@ class _AnalysisPageState extends State<AnalysisPage> {
   }
 
   Widget _buildCustomerAnalysisSection() {
-    final customerData = _analysisData!['analysis']
-        .firstWhere((a) => a['type'] == 'customers', orElse: () => null);
-    
+    final customerData = _analysisData!['analysis'].firstWhere(
+      (a) => a['type'] == 'customers',
+      orElse: () => null,
+    );
+
     if (customerData == null) {
       return const SizedBox.shrink();
     }
 
     final data = customerData['data'] as List<dynamic>;
-    
+
     return Card(
       elevation: 4,
       child: Padding(
@@ -217,15 +215,17 @@ class _AnalysisPageState extends State<AnalysisPage> {
   }
 
   Widget _buildProviderAnalysisSection() {
-    final providerData = _analysisData!['analysis']
-        .firstWhere((a) => a['type'] == 'providers', orElse: () => null);
-    
+    final providerData = _analysisData!['analysis'].firstWhere(
+      (a) => a['type'] == 'providers',
+      orElse: () => null,
+    );
+
     if (providerData == null) {
       return const SizedBox.shrink();
     }
 
     final data = providerData['data'] as List<dynamic>;
-    
+
     return Card(
       elevation: 4,
       child: Padding(
@@ -267,7 +267,7 @@ class _AnalysisPageState extends State<AnalysisPage> {
 
   Widget _buildCustomerTile(Map<String, dynamic> customer) {
     final kpiMetrics = customer['kpiMetrics'] as Map<String, dynamic>;
-    
+
     return ExpansionTile(
       leading: CircleAvatar(
         backgroundColor: _getSegmentColor(customer['customerSegment']),
@@ -277,7 +277,9 @@ class _AnalysisPageState extends State<AnalysisPage> {
         ),
       ),
       title: Text(customer['customerName']),
-      subtitle: Text('${customer['totalOrders']} orders • \$${(customer['totalPurchases'] as num).toStringAsFixed(2)}'),
+      subtitle: Text(
+        '${customer['totalOrders']} orders • \$${(customer['totalPurchases'] as num).toStringAsFixed(2)}',
+      ),
       trailing: Chip(
         label: Text(
           customer['customerSegment'],
@@ -291,11 +293,20 @@ class _AnalysisPageState extends State<AnalysisPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildKPIRow('Avg Order Value', '\$${(customer['averageOrderValue'] as num).toStringAsFixed(2)}'),
-              _buildKPIRow('Last Purchase', _formatDate(customer['lastPurchaseDate'])),
+              _buildKPIRow(
+                'Avg Order Value',
+                '\$${(customer['averageOrderValue'] as num).toStringAsFixed(2)}',
+              ),
+              _buildKPIRow(
+                'Last Purchase',
+                _formatDate(customer['lastPurchaseDate']),
+              ),
               _buildKPIRow('Churn Risk', kpiMetrics['churn_risk']),
               _buildKPIRow('Growth Trend', kpiMetrics['growth_trend']),
-              _buildKPIRow('Lifetime Value', '\$${(kpiMetrics['lifetime_value'] as num).toStringAsFixed(2)}'),
+              _buildKPIRow(
+                'Lifetime Value',
+                '\$${(kpiMetrics['lifetime_value'] as num).toStringAsFixed(2)}',
+              ),
               _buildKPIRow('RFM Segment', kpiMetrics['rfm_segment']),
             ],
           ),
@@ -306,7 +317,7 @@ class _AnalysisPageState extends State<AnalysisPage> {
 
   Widget _buildProviderTile(Map<String, dynamic> provider) {
     final kpiMetrics = provider['kpiMetrics'] as Map<String, dynamic>;
-    
+
     return ExpansionTile(
       leading: CircleAvatar(
         backgroundColor: Colors.orange[700],
@@ -316,7 +327,9 @@ class _AnalysisPageState extends State<AnalysisPage> {
         ),
       ),
       title: Text(provider['providerName']),
-      subtitle: Text('${provider['totalSupplies']} supplies • \$${(provider['totalSupplyValue'] as num).toStringAsFixed(2)}'),
+      subtitle: Text(
+        '${provider['totalSupplies']} supplies • \$${(provider['totalSupplyValue'] as num).toStringAsFixed(2)}',
+      ),
       trailing: Chip(
         label: Text(
           provider['providerRating'],
@@ -330,9 +343,18 @@ class _AnalysisPageState extends State<AnalysisPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildKPIRow('Reliability Score', '${(kpiMetrics['reliability_score'] as num).toStringAsFixed(2)}'),
-              _buildKPIRow('Cost Efficiency', '${(kpiMetrics['cost_efficiency'] as num).toStringAsFixed(2)}'),
-              _buildKPIRow('Partnership Duration', '${kpiMetrics['partnership_duration']} days'),
+              _buildKPIRow(
+                'Reliability Score',
+                '${(kpiMetrics['reliability_score'] as num).toStringAsFixed(2)}',
+              ),
+              _buildKPIRow(
+                'Cost Efficiency',
+                '${(kpiMetrics['cost_efficiency'] as num).toStringAsFixed(2)}',
+              ),
+              _buildKPIRow(
+                'Partnership Duration',
+                '${kpiMetrics['partnership_duration']} days',
+              ),
             ],
           ),
         ),
@@ -340,7 +362,11 @@ class _AnalysisPageState extends State<AnalysisPage> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {bool isHighlight = false}) {
+  Widget _buildSummaryRow(
+    String label,
+    String value, {
+    bool isHighlight = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -367,7 +393,10 @@ class _AnalysisPageState extends State<AnalysisPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );

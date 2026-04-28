@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/bill.dart';
-import '../models/aurora_customer.dart';
-import '../models/product.dart';
-import '../engine/analysis_engine.dart';
-import '../services/analysis_storage_service.dart';
+import '/models/bill.dart';
+import '/models/aurora_customer.dart';
+import '/engine/analysis_engine.dart';
+import '/services/analysis_storage_service.dart';
 
 class BillsPage extends StatefulWidget {
   const BillsPage({super.key});
@@ -49,10 +48,8 @@ class _BillsPageState extends State<BillsPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => BillCreationScreen(
-          customers: _customers,
-          onBillCreated: _loadData,
-        ),
+        builder: (context) =>
+            BillCreationScreen(customers: _customers, onBillCreated: _loadData),
       ),
     );
   }
@@ -67,7 +64,7 @@ class _BillsPageState extends State<BillsPage> {
 
     final customerAnalysis = engine.analyzeCustomers();
     final providerAnalysis = engine.analyzeProviders();
-    
+
     final analysisData = engine.exportAnalysisToJson(
       customerAnalysis: customerAnalysis,
       providerAnalysis: providerAnalysis,
@@ -86,17 +83,17 @@ class _BillsPageState extends State<BillsPage> {
         uuid: 'user-uuid-placeholder', // Replace with actual user UUID
         username: 'seller-username', // Replace with actual username
       );
-      
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Analysis saved to: $path')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Analysis saved to: $path')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving analysis: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving analysis: $e')));
       }
     }
   }
@@ -137,10 +134,7 @@ class _BillsPageState extends State<BillsPage> {
             const SizedBox(height: 16),
             Text('Error loading bills: $_error'),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadData,
-              child: const Text('Retry'),
-            ),
+            ElevatedButton(onPressed: _loadData, child: const Text('Retry')),
           ],
         ),
       );
@@ -155,10 +149,7 @@ class _BillsPageState extends State<BillsPage> {
             const SizedBox(height: 16),
             Text(
               'No bills yet',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
@@ -187,15 +178,13 @@ class _BillsPageState extends State<BillsPage> {
             margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: bill.paymentStatus == 'paid' 
-                    ? Colors.green[100] 
+                backgroundColor: bill.paymentStatus == 'paid'
+                    ? Colors.green[100]
                     : Colors.orange[100],
                 child: Icon(
-                  bill.paymentStatus == 'paid' 
-                      ? Icons.check 
-                      : Icons.pending,
-                  color: bill.paymentStatus == 'paid' 
-                      ? Colors.green[700] 
+                  bill.paymentStatus == 'paid' ? Icons.check : Icons.pending,
+                  color: bill.paymentStatus == 'paid'
+                      ? Colors.green[700]
                       : Colors.orange[700],
                 ),
               ),
@@ -228,8 +217,8 @@ class _BillsPageState extends State<BillsPage> {
                     bill.paymentStatus.toUpperCase(),
                     style: TextStyle(
                       fontSize: 10,
-                      color: bill.paymentStatus == 'paid' 
-                          ? Colors.green[700] 
+                      color: bill.paymentStatus == 'paid'
+                          ? Colors.green[700]
                           : Colors.orange[700],
                       fontWeight: FontWeight.bold,
                     ),
@@ -252,9 +241,7 @@ class _BillsPageState extends State<BillsPage> {
   void _viewBillDetails(Bill bill) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => BillDetailsScreen(bill: bill),
-      ),
+      MaterialPageRoute(builder: (context) => BillDetailsScreen(bill: bill)),
     );
   }
 }
@@ -280,7 +267,7 @@ class _BillCreationScreenState extends State<BillCreationScreen> {
   final TextEditingController _notesController = TextEditingController();
   String _paymentMethod = 'cash';
   String _paymentStatus = 'pending';
-  
+
   bool _showCustomerForm = false;
 
   @override
@@ -309,13 +296,15 @@ class _BillCreationScreenState extends State<BillCreationScreen> {
       builder: (context) => ProductSelectorDialog(
         onProductSelected: (product, quantity) {
           setState(() {
-            _items.add(BillItem(
-              productId: product.id,
-              productName: product.name,
-              quantity: quantity,
-              unitPrice: product.price,
-              totalPrice: product.price * quantity,
-            ));
+            _items.add(
+              BillItem(
+                productId: product.id,
+                productName: product.name,
+                quantity: quantity,
+                unitPrice: product.price,
+                totalPrice: product.price * quantity,
+              ),
+            );
           });
         },
       ),
@@ -342,9 +331,9 @@ class _BillCreationScreenState extends State<BillCreationScreen> {
 
   void _createBill() async {
     if (_selectedCustomer == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a customer')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a customer')));
       return;
     }
 
@@ -373,7 +362,7 @@ class _BillCreationScreenState extends State<BillCreationScreen> {
 
       // Save bill (TODO: Implement actual save)
       widget.onBillCreated();
-      
+
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -382,9 +371,9 @@ class _BillCreationScreenState extends State<BillCreationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating bill: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error creating bill: $e')));
       }
     }
   }
@@ -392,9 +381,7 @@ class _BillCreationScreenState extends State<BillCreationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Bill'),
-      ),
+      appBar: AppBar(title: const Text('Create Bill')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -437,7 +424,8 @@ class _BillCreationScreenState extends State<BillCreationScreen> {
                         subtitle: Text(_selectedCustomer!.phoneNumber),
                         trailing: IconButton(
                           icon: const Icon(Icons.edit),
-                          onPressed: () => setState(() => _showCustomerForm = true),
+                          onPressed: () =>
+                              setState(() => _showCustomerForm = true),
                         ),
                       )
                     else
@@ -494,16 +482,23 @@ class _BillCreationScreenState extends State<BillCreationScreen> {
                           final item = _items[index];
                           return ListTile(
                             title: Text(item.productName),
-                            subtitle: Text('${item.quantity} x \$${item.unitPrice}'),
+                            subtitle: Text(
+                              '${item.quantity} x \$${item.unitPrice}',
+                            ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
                                   '\$${item.totalPrice.toStringAsFixed(2)}',
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                  ),
                                   onPressed: () => _removeItem(index),
                                 ),
                               ],
@@ -541,7 +536,10 @@ class _BillCreationScreenState extends State<BillCreationScreen> {
                       items: const [
                         DropdownMenuItem(value: 'cash', child: Text('Cash')),
                         DropdownMenuItem(value: 'card', child: Text('Card')),
-                        DropdownMenuItem(value: 'transfer', child: Text('Bank Transfer')),
+                        DropdownMenuItem(
+                          value: 'transfer',
+                          child: Text('Bank Transfer'),
+                        ),
                       ],
                       onChanged: (value) {
                         setState(() => _paymentMethod = value!);
@@ -555,9 +553,15 @@ class _BillCreationScreenState extends State<BillCreationScreen> {
                         border: OutlineInputBorder(),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'pending', child: Text('Pending')),
+                        DropdownMenuItem(
+                          value: 'pending',
+                          child: Text('Pending'),
+                        ),
                         DropdownMenuItem(value: 'paid', child: Text('Paid')),
-                        DropdownMenuItem(value: 'partial', child: Text('Partial')),
+                        DropdownMenuItem(
+                          value: 'partial',
+                          child: Text('Partial'),
+                        ),
                       ],
                       onChanged: (value) {
                         setState(() => _paymentStatus = value!);
@@ -587,8 +591,14 @@ class _BillCreationScreenState extends State<BillCreationScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    _buildSummaryRow('Subtotal', '\$${_subtotal.toStringAsFixed(2)}'),
-                    _buildSummaryRow('Tax (10%)', '\$${_tax.toStringAsFixed(2)}'),
+                    _buildSummaryRow(
+                      'Subtotal',
+                      '\$${_subtotal.toStringAsFixed(2)}',
+                    ),
+                    _buildSummaryRow(
+                      'Tax (10%)',
+                      '\$${_tax.toStringAsFixed(2)}',
+                    ),
                     const Divider(),
                     _buildSummaryRow(
                       'Total',
@@ -617,7 +627,9 @@ class _BillCreationScreenState extends State<BillCreationScreen> {
 
   Widget _buildCustomerForm() {
     // Simplified customer form for inline creation
-    return const Text('Customer form placeholder - integrate with CustomersPage');
+    return const Text(
+      'Customer form placeholder - integrate with CustomersPage',
+    );
   }
 
   void _showCustomerSelector() {
@@ -626,7 +638,9 @@ class _BillCreationScreenState extends State<BillCreationScreen> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('No Customers'),
-          content: const Text('You have no customers yet. Would you like to add one?'),
+          content: const Text(
+            'You have no customers yet. Would you like to add one?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -653,9 +667,7 @@ class _BillCreationScreenState extends State<BillCreationScreen> {
         itemBuilder: (context, index) {
           final customer = widget.customers[index];
           return ListTile(
-            leading: CircleAvatar(
-              child: Text(customer.name.substring(0, 1)),
-            ),
+            leading: CircleAvatar(child: Text(customer.name.substring(0, 1))),
             title: Text(customer.name),
             subtitle: Text(customer.phoneNumber),
             onTap: () {
@@ -763,9 +775,7 @@ class BillDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bill Details'),
-      ),
+      appBar: AppBar(title: const Text('Bill Details')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -779,7 +789,10 @@ class BillDetailsScreen extends StatelessWidget {
                   children: [
                     Text(
                       'Bill #${bill.id}',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text('Customer: ${bill.customerName}'),
@@ -822,12 +835,22 @@ class BillDetailsScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    _buildRow('Subtotal', '\$${bill.subtotal.toStringAsFixed(2)}'),
+                    _buildRow(
+                      'Subtotal',
+                      '\$${bill.subtotal.toStringAsFixed(2)}',
+                    ),
                     _buildRow('Tax', '\$${bill.tax.toStringAsFixed(2)}'),
                     if (bill.discount > 0)
-                      _buildRow('Discount', '-\$${bill.discount.toStringAsFixed(2)}'),
+                      _buildRow(
+                        'Discount',
+                        '-\$${bill.discount.toStringAsFixed(2)}',
+                      ),
                     const Divider(),
-                    _buildRow('Total', '\$${bill.total.toStringAsFixed(2)}', isTotal: true),
+                    _buildRow(
+                      'Total',
+                      '\$${bill.total.toStringAsFixed(2)}',
+                      isTotal: true,
+                    ),
                   ],
                 ),
               ),
@@ -845,7 +868,13 @@ class BillDetailsScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: TextStyle(fontSize: isTotal ? 18 : 14)),
-          Text(value, style: TextStyle(fontSize: isTotal ? 18 : 14, fontWeight: isTotal ? FontWeight.bold : FontWeight.normal)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: isTotal ? 18 : 14,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
         ],
       ),
     );

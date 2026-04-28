@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/factory_storage_service.dart';
+import '/services/factory_storage_service.dart';
 import '../models/factory_model.dart';
 import 'factory_profile_page.dart';
 import 'factory_orders_page.dart';
@@ -34,7 +34,9 @@ class _FactoryDashboardPageState extends State<FactoryDashboardPage> {
     if (_factory == null) {
       // If no factory data, redirect to onboarding or signup
       if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/factory-signup', (route) => false);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/factory-signup', (route) => false);
       }
       return;
     }
@@ -61,9 +63,7 @@ class _FactoryDashboardPageState extends State<FactoryDashboardPage> {
   @override
   Widget build(BuildContext context) {
     if (_factory == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return LayoutBuilder(
@@ -167,7 +167,9 @@ class _FactoryDashboardPageState extends State<FactoryDashboardPage> {
           ),
           // Content Area
           Expanded(
-            child: _pages.isNotEmpty ? _pages[_selectedIndex] : const Center(child: CircularProgressIndicator()),
+            child: _pages.isNotEmpty
+                ? _pages[_selectedIndex]
+                : const Center(child: CircularProgressIndicator()),
           ),
         ],
       ),
@@ -186,7 +188,10 @@ class _FactoryDashboardPageState extends State<FactoryDashboardPage> {
             ),
             Text(
               _factory!.specialization ?? 'Manufacturer',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.normal,
+              ),
             ),
           ],
         ),
@@ -197,7 +202,9 @@ class _FactoryDashboardPageState extends State<FactoryDashboardPage> {
           ),
         ],
       ),
-      body: _pages.isNotEmpty ? _pages[_selectedIndex] : const Center(child: CircularProgressIndicator()),
+      body: _pages.isNotEmpty
+          ? _pages[_selectedIndex]
+          : const Center(child: CircularProgressIndicator()),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
@@ -206,10 +213,19 @@ class _FactoryDashboardPageState extends State<FactoryDashboardPage> {
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.business), label: 'Profile'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Orders'),
-          BottomNavigationBarItem(icon: Icon(Icons.inventory_2), label: 'Products'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: 'Orders',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_2),
+            label: 'Products',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Sellers'),
-          BottomNavigationBarItem(icon: Icon(Icons.analytics), label: 'Analysis'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.analytics),
+            label: 'Analysis',
+          ),
         ],
       ),
     );
@@ -218,10 +234,7 @@ class _FactoryDashboardPageState extends State<FactoryDashboardPage> {
   Widget _buildNavTile(int index, String title, IconData icon) {
     final isSelected = _selectedIndex == index;
     return ListTile(
-      leading: Icon(
-        icon,
-        color: isSelected ? Colors.white : Colors.white70,
-      ),
+      leading: Icon(icon, color: isSelected ? Colors.white : Colors.white70),
       title: Text(
         title,
         style: TextStyle(
@@ -248,7 +261,9 @@ class _FactoryDashboardPageState extends State<FactoryDashboardPage> {
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.of(context).pushNamedAndRemoveUntil('/welcome', (route) => false);
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil('/welcome', (route) => false);
             },
             child: const Text('Logout'),
           ),

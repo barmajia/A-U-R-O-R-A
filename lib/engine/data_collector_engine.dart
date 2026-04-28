@@ -6,30 +6,28 @@ import '../models/customer.dart';
 import '../models/bill.dart';
 import '../models/product_provider.dart';
 import 'analysis_engine.dart';
-import '../services/supabase_service.dart';
+import '../services/supabase.dart';
 
 /// **Data Collector Engine**
-/// 
+///
 /// This engine acts as the central aggregator. It collects:
 /// 1. All Customers
 /// 2. All Bills (Invoices)
 /// 3. All Product Providers
-/// 
+///
 /// It processes them through the [AnalysisEngine], then compiles everything
 /// into a single JSON file stored in a UUID-named folder.
-/// 
+///
 /// **Storage Path:** `/app_documents/{uuid}/{username}.json`
 class DataCollectorEngine {
   final SupabaseService _db;
   final AnalysisEngine _analysisEngine;
   final Uuid _uuid;
 
-  DataCollectorEngine({
-    SupabaseService? db,
-    AnalysisEngine? analysisEngine,
-  })  : _db = db ?? SupabaseService(),
-        _analysisEngine = analysisEngine ?? AnalysisEngine(),
-        _uuid = const Uuid();
+  DataCollectorEngine({SupabaseService? db, AnalysisEngine? analysisEngine})
+    : _db = db ?? SupabaseService(),
+      _analysisEngine = analysisEngine ?? AnalysisEngine(),
+      _uuid = const Uuid();
 
   /// The result structure that will be saved to JSON
   Map<String, dynamic> _compileData({
@@ -55,7 +53,7 @@ class DataCollectorEngine {
   }
 
   /// **Main Collection Method**
-  /// 
+  ///
   /// 1. Fetches raw data from DB.
   /// 2. Runs Analysis.
   /// 3. Creates UUID folder.
@@ -67,10 +65,12 @@ class DataCollectorEngine {
 
     // 1. Fetch Raw Data
     final customers = await _db.getCustomers(); // Assumes this method exists
-    final bills = await _db.getBills();         // Assumes this method exists
+    final bills = await _db.getBills(); // Assumes this method exists
     final providers = await _db.getProviders(); // Assumes this method exists
 
-    print('📦 Fetched: ${customers.length} Customers, ${bills.length} Bills, ${providers.length} Providers');
+    print(
+      '📦 Fetched: ${customers.length} Customers, ${bills.length} Bills, ${providers.length} Providers',
+    );
 
     // 2. Run Analysis Engine to get KPIs
     final kpiData = await _analysisEngine.generateFullAnalysis(
@@ -91,7 +91,7 @@ class DataCollectorEngine {
 
     // 4. Generate UUID for the folder
     final sessionId = _uuid.v4();
-    
+
     // 5. Save to File System
     final filePath = await _saveToFile(
       data: compiledData,
@@ -100,7 +100,7 @@ class DataCollectorEngine {
     );
 
     print('✅ Data successfully saved to: $filePath');
-    
+
     return {
       'status': 'success',
       'path': filePath,
@@ -117,10 +117,10 @@ class DataCollectorEngine {
   }) async {
     // Get the application documents directory
     final Directory appDir = await getApplicationDocumentsDirectory();
-    
+
     // Create the UUID folder: /documents/{uuid}/
     final Directory targetFolder = Directory('${appDir.path}/$folderName');
-    
+
     if (!await targetFolder.exists()) {
       await targetFolder.create(recursive: true);
     }
@@ -138,7 +138,7 @@ class DataCollectorEngine {
   }
 
   /// **Load Data from Specific UUID Folder**
-  /// 
+  ///
   /// Allows retrieving the saved master file if you know the UUID and username.
   Future<Map<String, dynamic>?> loadDataFromFolder({
     required String folderId,
@@ -162,7 +162,7 @@ class DataCollectorEngine {
   }
 
   /// **List All Available Collection Folders**
-  /// 
+  ///
   /// Scans the documents directory to find all UUID folders created by this engine.
   Future<List<Map<String, String>>> listAvailableCollections() async {
     final Directory appDir = await getApplicationDocumentsDirectory();
@@ -176,14 +176,19 @@ class DataCollectorEngine {
         // Simple validation: check if it looks like a UUID (basic check)
         // Or just assume all subdirs are collections
         final fileList = await entity.list().toList();
-        final jsonFiles = fileList.whereType<File>().where((f) => f.path.endsWith('.json')).toList();
-        
+        final jsonFiles = fileList
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.json'))
+            .toList();
+
         for (var file in jsonFiles) {
           collections.add({
             'folder_id': dirName,
             'filename': file.uri.pathSegments.last,
             'path': file.path,
-            'last_modified': await file.lastModified().then((d) => d.toIso8601String()),
+            'last_modified': await file.lastModified().then(
+              (d) => d.toIso8601String(),
+            ),
           });
         }
       }

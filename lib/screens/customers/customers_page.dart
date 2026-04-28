@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/aurora_customer.dart';
+import '/models/aurora_customer.dart';
 
 class CustomersPage extends StatefulWidget {
   const CustomersPage({super.key});
@@ -107,10 +107,7 @@ class _CustomersPageState extends State<CustomersPage> {
             const SizedBox(height: 16),
             Text(
               'No customers yet',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
@@ -241,9 +238,15 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.customer?.name ?? '');
-    _phoneController = TextEditingController(text: widget.customer?.phoneNumber ?? '');
-    _addressController = TextEditingController(text: widget.customer?.address ?? '');
-    _notesController = TextEditingController(text: widget.customer?.notes ?? '');
+    _phoneController = TextEditingController(
+      text: widget.customer?.phoneNumber ?? '',
+    );
+    _addressController = TextEditingController(
+      text: widget.customer?.address ?? '',
+    );
+    _notesController = TextEditingController(
+      text: widget.customer?.notes ?? '',
+    );
   }
 
   @override
@@ -266,9 +269,9 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving customer: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving customer: $e')));
       }
     }
   }
@@ -278,9 +281,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     final isEditing = widget.customer != null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? 'Edit Customer' : 'Add Customer'),
-      ),
+      appBar: AppBar(title: Text(isEditing ? 'Edit Customer' : 'Add Customer')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
