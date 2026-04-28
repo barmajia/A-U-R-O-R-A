@@ -1,23 +1,26 @@
 ```
-# Flutter/Dart specific
+# Dependencies
+.pub/
 .dart_tool/
-.packages
-.pub-cache/
+
+# Build artifacts
 build/
-*.g.dart
-*.freezed.dart
-
-# Supabase
-supabase/.temp/
-
-# Environment variables
-.env
-.env.local
-*.env.*
+**/generated_plugin_registrant.dart
 
 # Logs
 *.log
-**/logs
+**/logs/
+
+# Environment
+.env
+.env.local
+*.env*
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
 
 # OS generated files
 .DS_Store
