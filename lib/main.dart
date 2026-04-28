@@ -28,10 +28,19 @@
 import 'package:aurora/backend/sellerdb.dart';
 import 'package:aurora/backend/products_db.dart';
 import 'package:aurora/config/supabase_config.dart';
+import 'package:aurora/pages/onboarding/welcome_page.dart';
+import 'package:aurora/pages/onboarding/role_selection_page.dart';
+import 'package:aurora/pages/shop/home_page.dart';
+import 'package:aurora/pages/shop/cart_page.dart';
+import 'package:aurora/pages/shop/checkout_page.dart';
+import 'package:aurora/pages/shop/wallet_page.dart';
+import 'package:aurora/pages/middleman/middleman_login_page.dart';
+import 'package:aurora/pages/middleman/middleman_signup_page.dart';
+import 'package:aurora/pages/seller/seller_login_page.dart';
+import 'package:aurora/pages/factory/factory_login_page.dart';
+import 'package:aurora/pages/factory/factory_dashboard_page.dart';
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/login.dart';
-import 'package:aurora/pages/customer/cart_page.dart';
-import 'package:aurora/pages/customer/checkout_page.dart';
 import 'package:aurora/services/supabase.dart';
 import 'package:aurora/services/auth_provider.dart';
 import 'package:aurora/services/product_provider.dart';
@@ -185,25 +194,20 @@ class Aurora extends StatelessWidget {
         Locale('ar'),
       ],
       locale: locale,
-      home: _buildHomeWidget(context, authProvider),
+      home: const WelcomePage(),
       routes: {
         '/login': (context) => const Login(),
         '/home': (context) => const Homepage(),
-        '/cart': (context) => const CartPage(),
-        '/checkout': (context) => const CheckoutPage(),
+        '/shop/home': (context) => const ShopHomePage(),
+        '/shop/cart': (context) => const CartPage(),
+        '/shop/checkout': (context) => const CheckoutPage(),
+        '/shop/wallet': (context) => const WalletPage(),
+        '/middleman/login': (context) => const MiddlemanLoginPage(),
+        '/middleman/signup': (context) => const MiddlemanSignupPage(),
+        '/seller/login': (context) => const SellerLoginPage(),
+        '/factory/login': (context) => const FactoryLoginPage(),
+        '/factory/dashboard': (context) => const FactoryDashboardPage(),
       },
     );
-  }
-
-  Widget _buildHomeWidget(BuildContext context, AuthProvider authProvider) {
-    if (authProvider.isCheckingSession) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    return authProvider.isLoggedIn 
-        ? const Homepage() 
-        : const Login();
   }
 }
