@@ -1,0 +1,35 @@
+  error - The named parameter 'bills' is required, but there's no corresponding argument - lib\engine\data_collector_engine.dart:31:45 - missing_required_argument
+  error - The named parameter 'customers' is required, but there's no corresponding argument - lib\engine\data_collector_engine.dart:31:45 - missing_required_argument
+  error - The named parameter 'providers' is required, but there's no corresponding argument - lib\engine\data_collector_engine.dart:31:45 - missing_required_argument
+  error - The method 'generateFullAnalysis' isn't defined for the type 'AnalysisEngine' - lib\engine\data_collector_engine.dart:76:43 - undefined_method
+  error - Target of URI doesn't exist: 'package:file_picker/file_picker.dart' - lib\pages\auth\factory_signup_page.dart:3:8 - uri_does_not_exist
+  error - Undefined name 'FilePicker' - lib\pages\auth\factory_signup_page.dart:51:28 - undefined_identifier
+  error - Undefined name 'FileType' - lib\pages\auth\factory_signup_page.dart:52:15 - undefined_identifier
+  error - The named parameter 'count' isn't defined - lib\pages\factory_analysis_page.dart:72:24 - undefined_named_parameter
+  error - The getter 'certifications' isn't defined for the type 'FactoryModel' - lib\pages\factory_profile_page.dart:92:31 - undefined_getter
+  error - The getter 'certifications' isn't defined for the type 'FactoryModel' - lib\pages\factory_profile_page.dart:92:65 - undefined_getter
+  error - The getter 'certifications' isn't defined for the type 'FactoryModel' - lib\pages\factory_profile_page.dart:107:45 - undefined_getter
+  error - The getter 'description' isn't defined for the type 'FactoryModel' - lib\pages\factory_profile_page.dart:116:31 - undefined_getter
+  error - The getter 'description' isn't defined for the type 'FactoryModel' - lib\pages\factory_profile_page.dart:116:62 - undefined_getter
+  error - The getter 'description' isn't defined for the type 'FactoryModel' - lib\pages\factory_profile_page.dart:126:34 - undefined_getter
+  error - The getter 'website' isn't defined for the type 'FactoryModel' - lib\pages\factory_profile_page.dart:128:31 - undefined_getter
+  error - The getter 'website' isn't defined for the type 'FactoryModel' - lib\pages\factory_profile_page.dart:128:58 - undefined_getter
+  error - The getter 'website' isn't defined for the type 'FactoryModel' - lib\pages\factory_profile_page.dart:142:69 - undefined_getter
+  error - The getter 'website' isn't defined for the type 'FactoryModel' - lib\pages\factory_profile_page.dart:146:33 - undefined_getter
+  error - Target of URI doesn't exist: '../engine/analysis_engine.dart' - lib\screens\analysis\analysis_page.dart:2:8 - uri_does_not_exist
+  error - Target of URI doesn't exist: '../services/analysis_storage_service.dart' - lib\screens\analysis\analysis_page.dart:3:8 - uri_does_not_exist
+  error - The method 'AnalysisStorageService' isn't defined for the type '_AnalysisPageState' - lib\screens\analysis\analysis_page.dart:31:30 - undefined_method
+  error - The argument type 'void Function()' can't be assigned to the parameter type 'RefreshCallback'.  - lib\screens\analysis\analysis_page.dart:117:18 - argument_type_not_assignable
+  error - Target of URI doesn't exist: '../models/aurora_customer.dart' - lib\screens\customers\customers_page.dart:2:8 - uri_does_not_exist
+  error - The name 'AuroraCustomer' isn't a type, so it can't be used as a type argument - lib\screens\customers\customers_page.dart:12:8 - non_type_as_type_argument
+  error - Undefined class 'AuroraCustomer' - lib\screens\customers\customers_page.dart:52:22 - undefined_class
+  error - Undefined class 'AuroraCustomer' - lib\screens\customers\customers_page.dart:197:32 - undefined_class
+  error - Undefined class 'AuroraCustomer' - lib\screens\customers\customers_page.dart:225:9 - undefined_class
+  error - Undefined name 'analysisType_' - lib\services\bill_analysis_storage_service.dart:149:34 - undefined_identifier
+  error - Undefined name 'dateStr_' - lib\services\bill_analysis_storage_service.dart:149:48 - undefined_identifier
+  error - Undefined name 'dateStr_' - lib\services\bill_analysis_storage_service.dart:153:38 - undefined_identifier
+  error - The getter 'size' isn't defined for the type 'Map<String, dynamic>' - lib\services\bill_analysis_storage_service.dart:368:33 - undefined_getter
+  error - The argument type 'int' can't be assigned to the parameter type 'String?'.  - lib\services\bill_analysis_storage_service.dart:429:26 - argument_type_not_assignable
+  error - The argument type 'int' can't be assigned to the parameter type 'String?'.  - lib\services\factory_storage_service.dart:335:26 - argument_type_not_assignable
+  error - Undefined name 'updated_at' - lib\services\factory_storage_service.dart:357:55 - undefined_identifier
+  error - The getter 'auth' isn't defined for the type 'Supabase' - lib\services\supabase_service.dart:38:30 - undefined_getter
