@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import '../../services/supabase.dart';
+import '../../services/factory_storage_service.dart';
 
 class FactorySignupPage extends StatefulWidget {
   const FactorySignupPage({super.key});
@@ -20,6 +25,14 @@ class _FactorySignupPageState extends State<FactorySignupPage> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  File? _licenseFile;
+  String? _licenseUrl;
+  late FactoryStorageService _storageService;
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -33,24 +46,91 @@ class _FactorySignupPageState extends State<FactorySignupPage> {
     super.dispose();
   }
 
+  Future<void> _pickLicense() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        setState(() {
+          _licenseFile = File(result.files.single.path!);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Selected: ${result.files.single.name}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error picking file: $e')),
+      );
+    }
+  }
+
   Future<void> _handleSignup() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    // Fake signup delay
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // Get Supabase client
+      final supabaseProvider = Provider.of<SupabaseProvider>(context, listen: false);
+      _storageService = FactoryStorageService(supabaseProvider.client);
 
-    if (!mounted) return;
-    setState(() => _isLoading = false);
+      // Create user account with factory role
+      final response = await supabaseProvider.client.auth.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        data: {
+          'full_name': _nameController.text.trim(),
+          'account_type': 'factory',
+          'location': _locationController.text.trim(),
+          'specialization': _specializationController.text.trim(),
+        },
+      );
 
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Factory registration successful! Please login.')),
-    );
+      if (response.user != null) {
+        // Upload license if provided
+        if (_licenseFile != null) {
+          final licenseUrl = await _storageService.uploadFactoryLicense(
+            file: _licenseFile!,
+            factoryId: response.user!.id,
+          );
 
-    // Navigate back to login
-    Navigator.of(context).pop();
+          if (licenseUrl != null) {
+            // Update seller record with license URL
+            await _storageService.updateFactoryLicenseInDB(
+              factoryId: response.user!.id,
+              licenseUrl: licenseUrl,
+            );
+            setState(() {
+              _licenseUrl = licenseUrl;
+            });
+          }
+        }
+
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Factory registration successful! Please check your email to verify.'),
+          ),
+        );
+
+        // Navigate back to login
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registration failed: $e')),
+      );
+    }
   }
 
   @override

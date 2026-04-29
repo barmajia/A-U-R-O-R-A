@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/factory_storage_service.dart';
+import 'package:aurora/services/factory_storage_service.dart';
+import '../services/supabase.dart';
 import '../models/factory_model.dart';
 import 'factory_profile_page.dart';
 import 'factory_orders_page.dart';
@@ -25,19 +26,31 @@ class _FactoryDashboardPageState extends State<FactoryDashboardPage> {
   @override
   void initState() {
     super.initState();
-    _storageService = FactoryStorageService();
+    _storageService = FactoryStorageService(Provider.of<SupabaseProvider>(context, listen: false).client);
     _loadFactoryData();
   }
 
   Future<void> _loadFactoryData() async {
-    _factory = await _storageService.loadFactoryData();
-    if (_factory == null) {
+    final factoryData = await _storageService.loadFactoryData();
+    if (factoryData == null) {
       // If no factory data, redirect to onboarding or signup
       if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil('/factory-signup', (route) => false);
       }
       return;
     }
+    
+    // Convert Map to FactoryModel
+    _factory = FactoryModel(
+      id: factoryData['user_id'] ?? '',
+      name: factoryData['full_name'] ?? 'Unknown Factory',
+      email: factoryData['email'] ?? '',
+      location: factoryData['location'],
+      specialization: null, // Add if available in your schema
+      productionCapacity: factoryData['production_capacity'],
+      createdAt: DateTime.now(),
+    );
+    
     _initializePages();
   }
 
