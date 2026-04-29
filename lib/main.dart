@@ -28,6 +28,17 @@
 import 'package:aurora/backend/sellerdb.dart';
 import 'package:aurora/backend/products_db.dart';
 import 'package:aurora/config/supabase_config.dart';
+import 'package:aurora/pages/onboarding/welcome_page.dart';
+import 'package:aurora/pages/onboarding/role_selection_page.dart';
+import 'package:aurora/pages/shop/home_page.dart';
+import 'package:aurora/pages/shop/cart_page.dart';
+import 'package:aurora/pages/shop/checkout_page.dart';
+import 'package:aurora/pages/shop/wallet_page.dart';
+import 'package:aurora/pages/middleman/middleman_login_page.dart';
+import 'package:aurora/pages/middleman/middleman_signup_page.dart';
+import 'package:aurora/pages/seller/seller_login_page.dart';
+import 'package:aurora/pages/factory/factory_login_page.dart';
+import 'package:aurora/pages/factory/factory_dashboard_page.dart';
 import 'package:aurora/pages/singup/home.dart';
 import 'package:aurora/pages/singup/login.dart';
 import 'package:aurora/pages/welcome_page.dart';
@@ -41,6 +52,8 @@ import 'package:aurora/services/presence_service.dart';
 import 'package:aurora/services/factories_db.dart';
 import 'package:aurora/theme/themeprovider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/models/wallet.dart';
+import 'package:aurora/models/cart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -112,7 +125,11 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: productProvider),
         ChangeNotifierProvider.value(value: userPreferencesService),
         ChangeNotifierProvider.value(value: presenceService),
-
+        
+        // Customer E-commerce providers
+        ChangeNotifierProvider(create: (_) => WalletProvider()),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+        
         // Local databases
         ChangeNotifierProvider(create: (_) => sellerDb),
         Provider(create: (_) => productsDb),
@@ -174,27 +191,20 @@ class Aurora extends StatelessWidget {
       ],
       supportedLocales: const [Locale('en'), Locale('ar')],
       locale: locale,
-      home: _buildHomeWidget(context, authProvider),
+      home: const WelcomePage(),
       routes: {
-        '/login': (context) => const Login(), 
+        '/login': (context) => const Login(),
         '/home': (context) => const Homepage(),
-        '/welcome': (context) => const WelcomePage(),
-        '/factory-dashboard': (context) => const FactoryDashboardPage(),
+        '/shop/home': (context) => const ShopHomePage(),
+        '/shop/cart': (context) => const CartPage(),
+        '/shop/checkout': (context) => const CheckoutPage(),
+        '/shop/wallet': (context) => const WalletPage(),
+        '/middleman/login': (context) => const MiddlemanLoginPage(),
+        '/middleman/signup': (context) => const MiddlemanSignupPage(),
+        '/seller/login': (context) => const SellerLoginPage(),
+        '/factory/login': (context) => const FactoryLoginPage(),
+        '/factory/dashboard': (context) => const FactoryDashboardPage(),
       },
     );
-  }
-
-  Widget _buildHomeWidget(BuildContext context, AuthProvider authProvider) {
-    if (authProvider.isCheckingSession) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    // For now, show welcome page for new users or if not logged in
-    // This will be enhanced later with proper first-time user detection
-    if (!authProvider.isLoggedIn) {
-      return const WelcomePage();
-    }
-    
-    return const Homepage();
   }
 }
